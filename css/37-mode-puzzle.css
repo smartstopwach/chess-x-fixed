@@ -9,6 +9,26 @@ body[data-authoring="true"] #themesPanel {
   display: none !important;
 }
 
+/* While a puzzle is being PLAYED (▶ Test) the editing chrome is noise: hide the
+   racks, the editor and the library so it is just board + question, and keep
+   them hidden even though authoring mode is off during play. */
+body[data-testing="true"] #puzzleEditorPanel,
+body[data-testing="true"] #libraryPanel,
+body[data-testing="true"] #puzzleLeftPanel,
+body[data-testing="true"] #yellowPositionSetupPanel,
+body[data-testing="true"] #yellowFenPanel,
+body[data-testing="true"] #drawingToolsPanel,
+body[data-testing="true"] #themesPanel,
+body[data-testing="true"] .authoring-toolbar,
+body[data-mode="puzzle"] #yellowPositionSetupPanel,
+body[data-mode="puzzle"] #yellowFenPanel,
+body[data-mode="puzzle"] #drawingToolsPanel,
+body[data-mode="puzzle"] #themesPanel,
+body[data-mode="puzzle"] #leftSidebar .position-editor,
+body[data-mode="puzzle"] #leftSidebar .pos-controls {
+  display: none !important;
+}
+
 /* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards.
    While building a puzzle you set the position, solution and metadata —
    an engine eval box and a game clock add nothing, so they are removed from

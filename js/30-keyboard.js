@@ -4,6 +4,16 @@
 document.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea, select')) return;
 
+  if (e.key === 'Escape') {
+    // During a puzzle test, Esc leaves the test (back to the editor) before
+    // anything else - otherwise the user is stuck with a live overlay.
+    if (document.body.dataset.testing === 'true') {
+      e.preventDefault();
+      endPuzzleTest(true);
+      return;
+    }
+  }
+
   switch (e.key) {
     case '1':
       e.preventDefault();
@@ -22,8 +32,10 @@ document.addEventListener('keydown', (e) => {
       showFrontPage();
       break;
     case 'p': case 'P':
-      // Toggle authoring mode
-      if (isAuthoringMode()) exitAuthoringMode();
+      // Toggle authoring mode. While a puzzle is being played, P must not
+      // start a brand-new blank puzzle - it goes back to editing that one.
+      if (document.body.dataset.testing === 'true') endPuzzleTest(true);
+      else if (isAuthoringMode()) exitAuthoringMode();
       else enterAuthoringForNewPuzzle();
       break;
     case 'e': case 'E':

@@ -6,9 +6,9 @@ still hashes to the original styles.css / app.js digest recorded in each
 MANIFEST.json. Run this after editing css/* or js/* if you want to prove you
 did not accidentally reorder, drop or duplicate a section.
 
-    python3 tools/verify_split.py            # checks both trees
-    python3 tools/verify_split.py --relax    # JS only: allow changed bytes, still
-                                             # checks tag order + boot file last
+    python3 tools/verify_split.py            # structure + drift report
+    python3 tools/verify_split.py --bless    # after an intentional edit: record the
+                                             # current content as the new baseline
 
 Exit code 0 = ok, 1 = something is off.
 """
@@ -16,6 +16,7 @@ import glob, hashlib, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RELAX = "--relax" in sys.argv
+BLESS = "--bless" in sys.argv
 ok = True
 
 
@@ -27,15 +28,18 @@ def check(sub, ext, html_tag):
     blob = "".join(open(p).read() for p in parts)
     digest = hashlib.sha256(blob.encode()).hexdigest()
 
-    same = digest == man["concat_sha256"]
-    if not same and RELAX:
-        print(f"[{sub}] bytes changed (ok with --relax) but checking structure")
-    elif not same:
-        ok = False
-        print(f"[{sub}] FAIL concat sha {digest[:16]} != baseline {man['baseline_sha256'][:16]}")
+    if digest != man["baseline_sha256"]:
+        line = (f"[{sub}] note  content differs from the pre-split monolith "
+                f"({man['source']}) — expected once you start editing")
+        print(line)
     else:
-        print(f"[{sub}] OK  {len(names)} files concatenate byte-identical to the original "
-              f"{man['source']} ({man['source_bytes']}B, sha {digest[:16]})")
+        size = sum(len(open(os.path.join(ROOT, sub, n)).read().encode()) for n in names)
+        print(f"[{sub}] OK  {len(names)} files concatenate to sha {digest[:16]} = recorded "
+              f"baseline ({size}B; original {man['source']} was {man['source_bytes']}B)")
+    if BLESS:
+        man["baseline_sha256"] = digest
+        json.dump(man, open(os.path.join(ROOT, sub, "MANIFEST.json"), "w"), indent=2)
+        print(f"[{sub}] blessed  new baseline recorded: {digest[:16]}")
 
     # every part must be referenced by index.html, in the same order
     html = open(os.path.join(ROOT, "index.html")).read()

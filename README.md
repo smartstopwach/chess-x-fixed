@@ -73,9 +73,33 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 
 ### ❓ Puzzle / Question Mode
 - Display "YOUR MOVE?" with custom question
-- Computes the best move from Stockfish
-- "REVEAL ANSWER" button
+- **▶ Test plays the puzzle for real**: authoring is switched off, so clicks are
+  legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work)
+- The solution line is parsed from the free-text field and checked move by move:
+  correct → the opponent's reply is played automatically and you continue;
+  wrong → the move stays on the board and you get a ✗ so you can undo and retry
+- "REVEAL ANSWER" shows the answer and replays the rest of the line
+- The question card sits at the **top** of the board and is click-through
+  (`pointer-events:none`), so it never covers a square mid-puzzle
+- ✎ Edit (or `Esc`) returns to authoring with the same puzzle loaded; ✕ Done
+  leaves the position on the board
 - Perfect for YouTube "guess the move" segments
+
+## ⚠️ Known issues found while refactoring (not yet fixed)
+
+1. **Dead keyboard cases** — `js/30-keyboard.js` has `case 'e'`/`case 'E'` and
+   `case 'h'`/`case 'H'` twice in the same `switch`. A `switch` takes the first
+   match, so `E` toggles setup mode and `H` shows the front page; the
+   `setTool('eraser')` / `setTool('highlight')` branches are unreachable, even
+   though the table above advertises them. Use the tool buttons instead.
+2. **`test.html` DOM checks always fail** — that page loads the scripts but has
+   no `#board` markup, so "board element exists / 64 squares / 32 pieces" can
+   never pass (it fails identically before and after the split). The first four
+   checks are meaningful.
+3. **`css/23-modal-dead.css`** — in the original `styles.css`, line 1224 had a
+   section banner where `.modal-overlay {` belonged, so that block plus
+   `.modal-content/-header/-actions` is commented out and the file carries two
+   unmatched `}`. No modal exists in `index.html`/`app.js`, so nothing is lost.
 
 ### ⏱️ Chess Clock
 - Blitz / Rapid / Classical presets

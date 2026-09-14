@@ -1,43 +1,84 @@
 /* ============================================
    PUZZLE OVERLAY
    ============================================ */
+/* The card used to be absolutely centred over the board with pointer events on,
+   so it swallowed clicks on 12 squares and hid the whole back rank mid-puzzle.
+   It is now a bar in normal flow under the board: .board-wrapper is flex:1, so
+   the board simply shrinks (autoFitBoard is re-run when play starts) and no
+   square is ever covered. */
 .puzzle-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: static;
   z-index: 20;
+  pointer-events: none;          /* belt and braces: never eats a board click */
+  width: 100%;
+  max-width: 760px;
+  margin: 6px auto 0;
 }
 
 .puzzle-card {
-  background: rgba(13, 17, 23, 0.96);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-lg);
-  padding: 30px 40px;
-  box-shadow: var(--shadow-lg), 0 0 40px var(--accent-glow);
-  text-align: center;
-  min-width: 320px;
-  backdrop-filter: blur(8px);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  background: rgba(13, 17, 23, 0.92);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  box-shadow: var(--shadow), 0 0 18px var(--accent-glow);
+  text-align: left;
+  backdrop-filter: blur(6px);
+}
+
+/* Only the controls take the pointer. */
+.puzzle-card button {
+  pointer-events: auto;
+}
+
+.puzzle-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.puzzle-card-actions .btn-ghost-full {
+  flex: 0 0 auto;
+  width: auto;
+  font-size: 11px;
+  padding: 5px 10px;
+  margin: 0;
+}
+
+#btnRevealAnswer {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 11px;
+  margin: 0;
 }
 
 .puzzle-title {
   font-family: 'Playfair Display', serif;
-  font-size: 32px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent);
-  margin-bottom: 12px;
+  margin: 0;
+  white-space: nowrap;
   letter-spacing: 1px;
 }
 
 .puzzle-question {
-  font-size: 16px;
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 12px;
   color: var(--text-primary);
-  margin-bottom: 20px;
+  margin: 0;
   font-style: italic;
 }
 
 .puzzle-answer {
-  margin-top: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
   padding-top: 20px;
   border-top: 1px solid var(--border);
 }

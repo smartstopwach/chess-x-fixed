@@ -78,6 +78,9 @@ function doInit() {
   });
 
   $('btnTestPuzzle').addEventListener('click', testPuzzleAsStudent);
+  $('btnRevealAnswer').addEventListener('click', revealPuzzleAnswer);
+  $('btnPuzzleBack').addEventListener('click', () => endPuzzleTest(true));
+  $('btnPuzzleDone').addEventListener('click', () => endPuzzleTest(false));
   $('btnExportLibrary').addEventListener('click', exportLibrary);
   $('btnImportLibrary').addEventListener('click', () => $('libraryFileInput').click());
   $('libraryFileInput').addEventListener('change', (e) => {

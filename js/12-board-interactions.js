@@ -313,6 +313,8 @@ function tryMakeMove(from, to) {
   state.historyIndex = state.history.length - 1;
 
   renderAll();            // fail-safe: never throws out of a single panel
+  // Puzzle play mode: grade the move the user just made.
+  try { if (state.puzzle) onPuzzleMovePlayed(result.san); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}
   return true;
 }

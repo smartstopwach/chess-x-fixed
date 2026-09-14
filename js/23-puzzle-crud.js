@@ -237,29 +237,184 @@ function deleteCurrentPuzzle() {
   toast('Puzzle deleted', 'success');
 }
 
-function testPuzzleAsStudent() {
+// ============================================
+// PUZZLE PLAY / TEST MODE
+// ============================================
+// ▶ Test used to leave the board in authoring mode - and because
+// state.setupMode stays true even after authoring is switched off, every click
+// went to the piece editor instead of chess.js. A saved puzzle therefore could
+// not be played. Play mode is now a real state (body[data-testing="true"]):
+// authoring off, setupMode off, so the normal click-to-move path runs.
+
+function normSan(s) {
+  s = String(s == null ? '' : s).replace(/[+#!?]/g, '').trim();
+  if (/^0-0-0$/i.test(s) || /^o-o-o$/i.test(s)) return 'O-O-O';
+  if (/^0-0$/i.test(s) || /^o-o$/i.test(s)) return 'O-O';
+  return s.toUpperCase().replace(/[^A-Z0-9X\-=.]/g, '');
+}
+
+// Puzzle "solution" is free text ("1. Nxe5" / "Rd8+ e6 Re7#"), so the only
+// reliable parser is chess.js itself - we normalise the tokens and the caller
+// tries to play them one by one.
+function solutionSanList(text) {
+  if (!text) return [];
+  return String(text)
+    .replace(/\{[^}]*\}/g, ' ')              // drop variation braces
+    .replace(/\b([1-9]\d*)\.{1,3}/g, ' ')    // drop move numbers
+    .split(/[\s,;]+/)
+    .map(t => t.replace(/^[.]+|[.]+$/g, '').trim())
+    .filter(t => t && !/^\.{1,3}$/.test(t))
+    .slice(0, 12);
+}
+
+function startPuzzleTest() {
   const lib = getLibrary();
   const puz = getActivePuzzle();
-  if (!puz) { toast('Select a puzzle first', 'error'); return; }
-  if (!puz.fen) { toast('No position set', 'error'); return; }
-  state.game.load(puz.fen);
+  if (!puz) { toast('Select a puzzle in the library first', 'error'); return; }
+  if (!puz.fen) { toast('This puzzle has no position', 'error'); return; }
+
+  // The two flags that turn board clicks into editing:
+  if (isAuthoringMode()) setAuthoringMode(false);
+  state.setupMode = false;
+  state.heldPiece = null;
+  state.selectedRackPiece = null;
+  state.selectedSquare = null;
+  $$('.rack-piece, .pe-rack-piece').forEach(x => x.classList.remove('selected'));
+
+  try { state.game.load(puz.fen); }
+  catch (e) { toast('This puzzle FEN cannot be loaded: ' + e.message.slice(0, 40), 'error'); return; }
+
   state.history = [];
   state.historyIndex = -1;
+  clearAllAnnotations();
+
   state.puzzle = {
-    title: puz.title,
+    id: puz.id,
+    title: puz.title || 'Untitled',
     question: puz.description || 'Find the solution',
     solution: puz.solution || '',
     fen: puz.fen,
+    moves: solutionSanList(puz.solution),
+    progress: 0,
+    solved: false,
+    revealing: false,
   };
+  document.body.dataset.testing = 'true';
+
   renderAll();
-  // Show puzzle overlay
   const overlay = $('puzzleOverlay');
-  const question = $('puzzleQuestion');
-  if (overlay && question) {
-    question.textContent = puz.description || 'Find the solution';
-    overlay.classList.remove('hidden');
+  if (overlay) overlay.classList.remove('hidden');
+  const q = $('puzzleQuestion');
+  if (q) q.textContent = state.puzzle.question;
+  const ans = $('puzzleAnswer');
+  if (ans) ans.classList.add('hidden');
+  const rev = $('btnRevealAnswer');
+  if (rev) rev.textContent = state.puzzle.moves.length ? 'REVEAL ANSWER' : 'NO SOLUTION SAVED — EDIT FIRST';
+  const back = $('btnPuzzleBack');
+  if (back) back.style.display = '';
+  toast('Puzzle is live — click a piece, then its target square', 'success');
+  setTimeout(autoFitBoard, 50);
+}
+
+// kept because the toolbar / quick-action buttons call this name
+function testPuzzleAsStudent() { startPuzzleTest(); }
+
+function showPuzzleAnswer(show) {
+  const box = $('puzzleAnswer');
+  const mv = $('puzzleAnswerMove');
+  const pz = state.puzzle;
+  if (mv) {
+    let next = '';
+    if (pz && pz.moves && pz.moves.length) {
+      // while solving: the move still missing. once finished/revealed: the line.
+      next = (pz.solved || pz.progress >= pz.moves.length)
+        ? pz.moves.join(' ')
+        : pz.moves[pz.progress];
+    }
+    mv.textContent = next || (pz && pz.solution) || 'no solution saved';
   }
-  toast(`Testing puzzle: ${puz.title} — try to solve it!`);
+  if (box) box.classList.toggle('hidden', !show);
+}
+
+function revealPuzzleAnswer() {
+  const pz = state.puzzle;
+  if (!pz) { toast('Not playing a puzzle right now', 'error'); return; }
+  showPuzzleAnswer(true);
+  if (!pz.moves.length) { toast('No solution move was saved for this puzzle', 'error'); return; }
+  // Replay the rest of the line so it can be stepped through with ← →
+  pz.revealing = true;
+  let played = 0;
+  for (const mv of pz.moves.slice(pz.progress)) {
+    let res = null;
+    try { res = state.game.move(mv); } catch (e) { res = null; }
+    if (!res) break;
+    state.history.push(res.san);
+    state.historyIndex = state.history.length - 1;
+    played++;
+  }
+  pz.revealing = false;
+  pz.progress = Math.min(pz.moves.length, pz.progress + played);
+  renderAll();
+  toast(played
+    ? `Answer ${pz.moves[0]} — ${played} move(s) replayed, use ← → to step`
+    : `Answer is ${pz.moves[0]} (could not be played from here)`, 'info');
+}
+
+// Called by tryMakeMove() after every legal move while a puzzle is loaded.
+function onPuzzleMovePlayed(san) {
+  const pz = state.puzzle;
+  if (!pz || pz.revealing || !pz.moves || !pz.moves.length) return;
+  const want = normSan(pz.moves[pz.progress] || '');
+  if (!want) return;
+  if (normSan(san) === want) {
+    pz.progress++;
+    if (pz.progress >= pz.moves.length) {
+      pz.solved = true;
+      showPuzzleAnswer(true);
+      toast('✓ Solved — that is the whole line', 'success');
+    } else {
+      toast('✓ Correct — opponent replies, keep going', 'success');
+      // play the opponent's answer so the puzzle continues by itself
+      pz.revealing = true;
+      const nxt = pz.moves[pz.progress];
+      let res = null;
+      if (nxt) { try { res = state.game.move(nxt); } catch (e) { res = null; } }
+      if (res) {
+        state.history.push(res.san);
+        state.historyIndex = state.history.length - 1;
+        pz.progress++;
+      }
+      pz.revealing = false;
+      if (pz.progress >= pz.moves.length) { pz.solved = true; showPuzzleAnswer(true); }
+      renderAll();
+    }
+  } else {
+    toast(`✗ ${san} is not the solution — Ctrl+Z to undo and try again`, 'error');
+  }
+}
+
+function endPuzzleTest(backToEditor) {
+  document.body.dataset.testing = 'false';
+  const overlay = $('puzzleOverlay');
+  if (overlay) overlay.classList.add('hidden');
+  const wasId = state.puzzle && state.puzzle.id;
+  state.puzzle = null;
+  if (backToEditor) {
+    const lib = getLibrary();
+    if (wasId) {
+      lib.activePuzzleId = wasId;
+      saveLibrary(lib);
+      loadPuzzleToEditor(wasId);            // refills the editor + position
+    }
+    setAuthoringMode(true);                 // re-enables the piece editor
+    renderAll();
+    renderLibrary(($('librarySearch') && $('librarySearch').value) || '');
+    setTimeout(autoFitBoard, 50);
+    toast('Back to editing this puzzle', 'success');
+  } else {
+    renderAll();
+    toast('Finished', 'success');
+  }
 }
 
 // ============================================
