@@ -2349,6 +2349,17 @@ body[data-authoring="true"] #themesPanel {
   display: none !important;
 }
 
+/* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards.
+   While building a puzzle you set the position, solution and metadata —
+   an engine eval box and a game clock add nothing, so they are removed from
+   the right sidebar entirely. Normal / Custom Setup modes are untouched. */
+body[data-authoring="true"] #enginePanel,
+body[data-authoring="true"] #clockPanel,
+body[data-mode="puzzle"] #enginePanel,
+body[data-mode="puzzle"] #clockPanel {
+  display: none !important;
+}
+
 .panel-title-blue {
   color: var(--pe-blue) !important;
 }
