@@ -1,0 +1,155 @@
+{
+  "source": "app.js",
+  "source_bytes": 97288,
+  "baseline_sha256": "611bcf7367f8d0c57cf545c7559a9a76cec20d4cdc90df812f0931a48c03a004",
+  "concat_sha256": "611bcf7367f8d0c57cf545c7559a9a76cec20d4cdc90df812f0931a48c03a004",
+  "byte_identical": true,
+  "files": 29,
+  "parts": [
+    {
+      "file": "js/00-constants.js",
+      "lines": 11,
+      "bytes": 377
+    },
+    {
+      "file": "js/01-state.js",
+      "lines": 75,
+      "bytes": 1840
+    },
+    {
+      "file": "js/02-dom.js",
+      "lines": 23,
+      "bytes": 623
+    },
+    {
+      "file": "js/03-utils.js",
+      "lines": 26,
+      "bytes": 679
+    },
+    {
+      "file": "js/10-board-render.js",
+      "lines": 124,
+      "bytes": 3849
+    },
+    {
+      "file": "js/11-annotations-render.js",
+      "lines": 125,
+      "bytes": 3884
+    },
+    {
+      "file": "js/12-board-interactions.js",
+      "lines": 337,
+      "bytes": 11452
+    },
+    {
+      "file": "js/13-annotation-tools.js",
+      "lines": 44,
+      "bytes": 1393
+    },
+    {
+      "file": "js/14-tool-selection.js",
+      "lines": 11,
+      "bytes": 417
+    },
+    {
+      "file": "js/15-position-setup.js",
+      "lines": 288,
+      "bytes": 9087
+    },
+    {
+      "file": "js/16-move-list.js",
+      "lines": 97,
+      "bytes": 2884
+    },
+    {
+      "file": "js/17-fen.js",
+      "lines": 24,
+      "bytes": 583
+    },
+    {
+      "file": "js/18-themes.js",
+      "lines": 12,
+      "bytes": 333
+    },
+    {
+      "file": "js/19-layouts.js",
+      "lines": 4,
+      "bytes": 107
+    },
+    {
+      "file": "js/20-puzzle-library-store.js",
+      "lines": 57,
+      "bytes": 1514
+    },
+    {
+      "file": "js/21-puzzle-uid.js",
+      "lines": 18,
+      "bytes": 674
+    },
+    {
+      "file": "js/22-puzzle-library-ui.js",
+      "lines": 214,
+      "bytes": 8390
+    },
+    {
+      "file": "js/23-puzzle-crud.js",
+      "lines": 266,
+      "bytes": 8132
+    },
+    {
+      "file": "js/24-puzzle-editor-board.js",
+      "lines": 382,
+      "bytes": 12735
+    },
+    {
+      "file": "js/25-puzzle-authoring.js",
+      "lines": 139,
+      "bytes": 4490
+    },
+    {
+      "file": "js/26-engine.js",
+      "lines": 125,
+      "bytes": 3762
+    },
+    {
+      "file": "js/27-autofit.js",
+      "lines": 26,
+      "bytes": 1261
+    },
+    {
+      "file": "js/28-flip-reset.js",
+      "lines": 21,
+      "bytes": 505
+    },
+    {
+      "file": "js/29-chess-clock.js",
+      "lines": 53,
+      "bytes": 1753
+    },
+    {
+      "file": "js/30-keyboard.js",
+      "lines": 65,
+      "bytes": 1993
+    },
+    {
+      "file": "js/31-render-all.js",
+      "lines": 16,
+      "bytes": 824
+    },
+    {
+      "file": "js/32-event-bindings.js",
+      "lines": 172,
+      "bytes": 6722
+    },
+    {
+      "file": "js/33-mode-picker.js",
+      "lines": 88,
+      "bytes": 2991
+    },
+    {
+      "file": "js/90-boot.js",
+      "lines": 107,
+      "bytes": 4034
+    }
+  ]
+}

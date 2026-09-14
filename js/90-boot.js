@@ -1,0 +1,106 @@
+// ============================================
+// INITIALIZATION
+// ============================================
+function init() {
+  if (typeof Chess === 'undefined') {
+    console.warn('Chess.js not loaded yet, retrying...');
+    setTimeout(() => {
+      state.game = createGame();
+      doInit();
+    }, 100);
+    return;
+  }
+  doInit();
+}
+
+function safeCall(name, fn) {
+  try { fn(); } catch (e) { console.error(name + ' failed:', e); }
+}
+
+function doInit() {
+  // CRITICAL: render the board FIRST so user sees something even if other things fail
+  safeCall('renderBoard', renderBoard);
+  safeCall('updateFen', updateFen);
+
+  // Then do the rest independently
+  safeCall('initPieceRack', initPieceRack);
+  safeCall('initPEPieceRack', initPEPieceRack);
+  renderLibrary();
+  renderChapterSelect();
+  loadPuzzleToEditor(null);
+  pushSetupHistory(); // initial state
+  updatePieceCount();
+  updateSetupHint();
+  // Library / Puzzle editor event listeners
+  $('librarySearch').addEventListener('input', (e) => renderLibrary(e.target.value));
+  $('btnNewChapter').addEventListener('click', () => {
+    const name = prompt('Chapter name:', 'New Chapter');
+    if (!name || !name.trim()) return;
+    const lib = getLibrary();
+    const newChap = { id: uniqueId('chapter'), name: name.trim(), expanded: true, puzzles: [] };
+    lib.chapters.push(newChap);
+    lib.activeChapterId = newChap.id;
+    saveLibrary(lib);
+    renderLibrary($('librarySearch')?.value || '');
+    renderChapterSelect();
+    toast(`Chapter "${name.trim()}" created`, 'success');
+  });
+  $('btnSavePuzzle').addEventListener('click', saveCurrentPuzzle);
+  $('btnNewPuzzle').addEventListener('click', newPuzzle);
+  $('btnQuickChapter').addEventListener('click', () => $('btnNewChapter').click());
+  $('btnQuickPuzzle').addEventListener('click', enterAuthoringForNewPuzzle);
+  $('btnQuickTest').addEventListener('click', testPuzzleAsStudent);
+
+  // Authoring toolbar buttons
+  $('btnAuthoringCapture').addEventListener('click', peCaptureFromBoard);
+  $('btnAuthoringLoad').addEventListener('click', peLoadToBoard);
+  $('btnAuthoringSave').addEventListener('click', saveCurrentPuzzle);
+  $('btnAuthoringTest').addEventListener('click', testPuzzleAsStudent);
+  $('btnAuthoringNew').addEventListener('click', enterAuthoringForNewPuzzle);
+  $('btnAuthoringExit').addEventListener('click', exitAuthoringMode);
+  $('btnDeletePuzzle').addEventListener('click', deleteCurrentPuzzle);
+  $('btnPECaptureBoard').addEventListener('click', peCaptureFromBoard);
+  $('btnPELoadToBoard').addEventListener('click', peLoadToBoard);
+
+  // Puzzle editor position setup (independent state)
+  initPEPieceRack();
+  peSetupPushHistory();
+  peUpdatePieceCount();
+  peUpdateHint();
+
+  $('btnPEUndo').addEventListener('click', peSetupUndo);
+  $('btnPERedo').addEventListener('click', peSetupRedo);
+  $('btnPEEmpty').addEventListener('click', peClearBoard);
+  $('btnPEStart').addEventListener('click', resetPuzzleSetupToStandard);
+  $('btnPEUseForPuzzle').addEventListener('click', peUseForPuzzle);
+  $$('.pe-preset').forEach(btn => {
+    btn.addEventListener('click', () => peLoadPreset(btn.dataset.preset));
+  });
+
+  $('btnTestPuzzle').addEventListener('click', testPuzzleAsStudent);
+  $('btnExportLibrary').addEventListener('click', exportLibrary);
+  $('btnImportLibrary').addEventListener('click', () => $('libraryFileInput').click());
+  $('libraryFileInput').addEventListener('change', (e) => {
+    if (e.target.files[0]) importLibrary(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  safeCall('bindEvents', bindEvents);
+
+  // Try to init engine, but don't block the rest
+  setTimeout(() => safeCall('initEngine', initEngine), 50);
+
+  safeCall('updateClocks', updateClocks);
+
+  // Show front page on first load
+  showFrontPage();
+
+  console.log('ChessX initialized successfully');
+}
+
+// Fallback: if DOMContentLoaded already fired (script loaded late), init immediately
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

@@ -1,0 +1,170 @@
+{
+  "source": "styles.css",
+  "source_bytes": 66811,
+  "baseline_sha256": "21fb37bfd2ef2b313358f727528c66a7a8e27638437cbd3c7cb2f8391b51d798",
+  "concat_sha256": "21fb37bfd2ef2b313358f727528c66a7a8e27638437cbd3c7cb2f8391b51d798",
+  "byte_identical": true,
+  "files": 32,
+  "parts": [
+    {
+      "file": "css/00-base.css",
+      "lines": 71,
+      "bytes": 1800
+    },
+    {
+      "file": "css/10-topbar.css",
+      "lines": 85,
+      "bytes": 1542
+    },
+    {
+      "file": "css/11-lesson-header.css",
+      "lines": 76,
+      "bytes": 1757
+    },
+    {
+      "file": "css/12-layout.css",
+      "lines": 48,
+      "bytes": 1695
+    },
+    {
+      "file": "css/13-sidebars.css",
+      "lines": 43,
+      "bytes": 994
+    },
+    {
+      "file": "css/14-drawing-tools.css",
+      "lines": 100,
+      "bytes": 2035
+    },
+    {
+      "file": "css/15-position-editor.css",
+      "lines": 126,
+      "bytes": 2947
+    },
+    {
+      "file": "css/16-bookmarks.css",
+      "lines": 48,
+      "bytes": 1105
+    },
+    {
+      "file": "css/17-themes.css",
+      "lines": 52,
+      "bytes": 1007
+    },
+    {
+      "file": "css/18-board.css",
+      "lines": 279,
+      "bytes": 5559
+    },
+    {
+      "file": "css/19-puzzle-overlay.css",
+      "lines": 182,
+      "bytes": 3503
+    },
+    {
+      "file": "css/20-move-list.css",
+      "lines": 43,
+      "bytes": 1053
+    },
+    {
+      "file": "css/21-chess-clock.css",
+      "lines": 44,
+      "bytes": 876
+    },
+    {
+      "file": "css/22-teacher-notes.css",
+      "lines": 40,
+      "bytes": 901
+    },
+    {
+      "file": "css/23-modal-dead.css",
+      "lines": 42,
+      "bytes": 754
+    },
+    {
+      "file": "css/24-utils.css",
+      "lines": 6,
+      "bytes": 147
+    },
+    {
+      "file": "css/25-responsive.css",
+      "lines": 33,
+      "bytes": 964
+    },
+    {
+      "file": "css/26-right-sidebar.css",
+      "lines": 24,
+      "bytes": 480
+    },
+    {
+      "file": "css/27-left-sidebar-toggle.css",
+      "lines": 11,
+      "bytes": 478
+    },
+    {
+      "file": "css/28-position-setup-advanced.css",
+      "lines": 116,
+      "bytes": 2767
+    },
+    {
+      "file": "css/30-puzzle-library.css",
+      "lines": 185,
+      "bytes": 3813
+    },
+    {
+      "file": "css/31-puzzle-editor.css",
+      "lines": 134,
+      "bytes": 2935
+    },
+    {
+      "file": "css/32-puzzle-authoring.css",
+      "lines": 106,
+      "bytes": 2616
+    },
+    {
+      "file": "css/33-puzzle-editor-enhanced.css",
+      "lines": 199,
+      "bytes": 3710
+    },
+    {
+      "file": "css/34-puzzle-inline-setup.css",
+      "lines": 190,
+      "bytes": 3640
+    },
+    {
+      "file": "css/35-puzzle-editor-blue.css",
+      "lines": 70,
+      "bytes": 2278
+    },
+    {
+      "file": "css/36-mode-setup.css",
+      "lines": 14,
+      "bytes": 489
+    },
+    {
+      "file": "css/37-mode-puzzle.css",
+      "lines": 40,
+      "bytes": 1295
+    },
+    {
+      "file": "css/38-puzzle-editor-ui.css",
+      "lines": 434,
+      "bytes": 8758
+    },
+    {
+      "file": "css/40-home-button.css",
+      "lines": 36,
+      "bytes": 837
+    },
+    {
+      "file": "css/41-front-page.css",
+      "lines": 154,
+      "bytes": 3223
+    },
+    {
+      "file": "css/45-mode-normal.css",
+      "lines": 25,
+      "bytes": 853
+    }
+  ]
+}

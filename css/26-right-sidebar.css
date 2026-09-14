@@ -1,0 +1,23 @@
+/* ============================================
+   RIGHT SIDEBAR — fill remaining height
+   ============================================ */
+.sidebar-right {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Teacher notes panel grows to fill remaining space, textarea expands */
+.sidebar-right #notesPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 180px;
+}
+
+.sidebar-right #notesPanel textarea {
+  flex: 1 1 auto;
+  resize: none;
+  min-height: 120px;
+}
+
+

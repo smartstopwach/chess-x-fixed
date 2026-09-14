@@ -1,0 +1,39 @@
+/* When in puzzle mode, HIDE all panels that have no purpose in puzzle editing
+   (Drawing Tools, Themes, yellow Position Setup + yellow FEN — replaced by blue puzzle setup) */
+body[data-authoring="true"] #leftSidebar .position-editor,
+body[data-authoring="true"] #leftSidebar .pos-controls,
+body[data-authoring="true"] #yellowPositionSetupPanel,
+body[data-authoring="true"] #yellowFenPanel,
+body[data-authoring="true"] #drawingToolsPanel,
+body[data-authoring="true"] #themesPanel {
+  display: none !important;
+}
+
+/* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards.
+   While building a puzzle you set the position, solution and metadata —
+   an engine eval box and a game clock add nothing, so they are removed from
+   the right sidebar entirely. Normal / Custom Setup modes are untouched. */
+body[data-authoring="true"] #enginePanel,
+body[data-authoring="true"] #clockPanel,
+body[data-mode="puzzle"] #enginePanel,
+body[data-mode="puzzle"] #clockPanel {
+  display: none !important;
+}
+
+.panel-title-blue {
+  color: var(--pe-blue) !important;
+}
+
+.panel-title-blue svg {
+  color: var(--pe-blue) !important;
+}
+
+.editor-subtitle {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}

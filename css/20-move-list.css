@@ -1,0 +1,42 @@
+/* ============================================
+   MOVE LIST
+   ============================================ */
+.moves-wrapper {
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+}
+
+.moves-wrapper::-webkit-scrollbar { width: 6px; }
+.moves-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.moves-list {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  line-height: 1.7;
+}
+
+.move-num {
+  color: var(--text-muted);
+  margin-right: 2px;
+  font-weight: 600;
+}
+
+.move-san {
+  padding: 1px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.move-san:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.move-san.current { background: var(--accent); color: var(--bg-primary); font-weight: 700; }
+.move-san.variation { color: var(--warning); font-style: italic; }
+

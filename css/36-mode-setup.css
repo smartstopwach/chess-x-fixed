@@ -1,0 +1,13 @@
+/* ============================================
+   SETUP MODE: HIDE puzzle editor, library, move list,
+   chess clock, engine analysis. Only show what's needed
+   for setting up a position: Position Setup + FEN.
+   ============================================ */
+body[data-mode="setup"] #puzzleEditorPanel,
+body[data-mode="setup"] #libraryPanel,
+body[data-mode="setup"] #enginePanel,
+body[data-mode="setup"] #movePanel,
+body[data-mode="setup"] #clockPanel {
+  display: none !important;
+}
+

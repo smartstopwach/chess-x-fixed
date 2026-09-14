@@ -1,0 +1,278 @@
+/* ============================================
+   BOARD AREA
+   ============================================ */
+.board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 8px;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 400px;
+}
+
+.board-meta-top, .board-meta-bottom {
+  width: 100%;
+  max-width: var(--board-size, 640px);
+  padding: 2px 4px;
+  flex-shrink: 0;
+  min-height: 24px;
+  font-size: 11px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.player-flag {
+  width: 24px;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.player-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.captured {
+  display: flex;
+  gap: 1px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.board-container {
+  position: relative;
+  width: var(--board-size, 640px);
+  height: var(--board-size, 640px);
+  min-width: var(--board-size, 640px);
+  min-height: var(--board-size, 640px);
+  border: 3px solid var(--board-border);
+  border-radius: 4px;
+  box-shadow: var(--shadow-lg);
+  background: #739552;
+  overflow: hidden;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: none;
+}
+
+/* FLIP: rotate the entire board 180deg so it appears from the other side */
+body[data-flipped="true"] .board {
+  transform: rotate(180deg);
+}
+
+/* Counter-rotate pieces and labels so they stay upright */
+body[data-flipped="true"] .board .piece,
+body[data-flipped="true"] .board .coord {
+  transform: rotate(180deg);
+}
+
+.square {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.square.light { background: var(--light-sq); }
+.square.dark { background: var(--dark-sq); }
+
+.square.flipped-light { background: var(--dark-sq); }
+.square.flipped-dark { background: var(--light-sq); }
+
+.square.selected {
+  background: rgba(232, 197, 71, 0.55) !important;
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.square.last-move::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(232, 197, 71, 0.32);
+  pointer-events: none;
+}
+
+.square.check {
+  background: radial-gradient(circle, rgba(248, 81, 73, 0.85) 0%, rgba(248, 81, 73, 0) 70%) !important;
+}
+
+/* Rejected / illegal click feedback — the square flashes red and shakes once
+   so the player immediately knows why nothing moved. */
+.square.square-reject {
+  animation: squareReject 0.42s ease;
+}
+
+.square.square-reject::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 81, 73, 0.45);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 5;
+  animation: squareRejectFade 0.42s ease;
+}
+
+@keyframes squareReject {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes squareRejectFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.square .move-dot {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.square.light .move-dot { background: rgba(0, 0, 0, 0.25); }
+.square.dark .move-dot { background: rgba(255, 255, 255, 0.35); }
+
+.square .capture-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 2;
+  margin: 6%;
+}
+
+.square.light .capture-dot { border-color: rgba(0, 0, 0, 0.25); }
+.square.dark .capture-dot { border-color: rgba(255, 255, 255, 0.4); }
+
+.square .coord {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 3;
+  font-family: 'Inter', sans-serif;
+}
+
+.square .coord.file {
+  right: 4px;
+  bottom: 2px;
+}
+
+.square .coord.rank {
+  left: 4px;
+  top: 2px;
+}
+
+.square.light .coord { color: var(--dark-sq); }
+.square.dark .coord { color: var(--light-sq); }
+
+/* Pieces */
+.piece {
+  width: 92%;
+  height: 92%;
+  z-index: 4;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.55));
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.piece svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Rack pieces (in position editor) — smaller, simpler */
+.rack-piece svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rack-piece .piece-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Board SVG layer */
+.board-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.board-svg.eraser-mode { pointer-events: auto; cursor: crosshair; }
+
+/* Annotations */
+.annotation {
+  fill-opacity: 0.6;
+  stroke-opacity: 1;
+  stroke-width: 3;
+}
+
+.highlight-sq {
+  fill-opacity: 0.45;
+}
+
+/* Drawing preview */
+.drawing-preview { stroke-opacity: 0.7; stroke-dasharray: 5,5; }
+

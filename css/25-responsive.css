@@ -1,0 +1,32 @@
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 240px 1fr 280px; }
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  .sidebar { max-height: 200px; }
+  .sidebar-left { order: 2; }
+  .sidebar-right { order: 3; }
+  .board-area { order: 1; min-height: 400px; }
+  .topbar-actions .btn-ghost span { display: none; }
+  .brand-tag { display: none; }
+}
+
+@media (max-width: 600px) {
+  .topbar { padding: 8px 10px; }
+  .lesson-header { padding: 8px 12px; flex-wrap: wrap; }
+  .lesson-title { font-size: 16px; }
+  .lesson-subtitle { font-size: 12px; }
+  .layout { padding: 6px; gap: 6px; }
+  .board-area { padding: 8px; }
+}
+
+/* Tablet landscape */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .layout { grid-template-columns: 240px 1fr 280px; }
+}
+
+

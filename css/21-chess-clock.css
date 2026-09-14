@@ -1,0 +1,43 @@
+/* ============================================
+   CHESS CLOCK
+   ============================================ */
+.clocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.clock {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.clock.active {
+  border-color: var(--accent);
+  background: rgba(232, 197, 71, 0.1);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.clock-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+}
+
+.clock.low-time .clock-time { color: var(--danger); }
+
+.clock-name {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+

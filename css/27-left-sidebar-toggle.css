@@ -1,0 +1,10 @@
+/* ============================================
+   LEFT SIDEBAR TOGGLE (when hidden via Tools button)
+   ============================================ */
+.layout.left-sidebar-visible { grid-template-columns: 280px 1fr 280px; }
+.layout.left-sidebar-visible .sidebar-left { display: flex; }
+.layout.left-sidebar-visible .sidebar-left { grid-column: 1; }
+.layout.left-sidebar-visible .board-area { grid-column: 2; }
+.layout.left-sidebar-visible .sidebar-right { grid-column: 3; }
+
+

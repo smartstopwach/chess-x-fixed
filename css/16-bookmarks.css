@@ -1,0 +1,47 @@
+/* ============================================
+   BOOKMARKS
+   ============================================ */
+.bookmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.bookmark-list:empty::before {
+  content: "No saved positions yet";
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: italic;
+  text-align: center;
+  padding: 10px;
+  display: block;
+}
+
+.bookmark-item {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  transition: var(--transition);
+}
+
+.bookmark-item:hover { background: var(--bg-elevated); border-color: var(--accent); }
+.bookmark-item .bm-name { color: var(--text-primary); font-weight: 500; }
+.bookmark-item .bm-del {
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+}
+.bookmark-item .bm-del:hover { color: var(--danger); }
+

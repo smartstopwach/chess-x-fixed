@@ -1,0 +1,69 @@
+/* ============================================
+   PUZZLE EDITOR — BLUE THEME (NEW DESIGN)
+   ============================================ */
+/* Blue accent to differentiate from yellow position setup */
+:root {
+  --pe-blue: #4a9eff;
+  --pe-blue-glow: rgba(74, 158, 255, 0.25);
+  --pe-blue-bg: rgba(74, 158, 255, 0.08);
+  --pe-blue-border: rgba(74, 158, 255, 0.4);
+}
+
+.puzzle-editor-panel {
+  border-color: var(--pe-blue-border) !important;
+  background: linear-gradient(180deg, var(--pe-blue-bg) 0%, var(--bg-panel) 30%) !important;
+  box-shadow: 0 0 0 1px var(--pe-blue-border), 0 4px 12px rgba(74, 158, 255, 0.08) !important;
+}
+
+.puzzle-editor-panel:hover {
+  border-color: var(--pe-blue) !important;
+}
+
+/* Puzzle-mode-only: hidden unless authoring mode is active */
+.puzzle-mode-only {
+  display: none;
+}
+
+body[data-authoring="true"] .puzzle-mode-only {
+  display: block;
+}
+
+/* Setup mode: HIDE the blue puzzle panel, SHOW the yellow position setup */
+body[data-mode="setup"] .puzzle-mode-only {
+  display: none !important;
+}
+body[data-mode="setup"] #yellowPositionSetupPanel,
+body[data-authoring="true"][data-mode="setup"] #yellowPositionSetupPanel {
+  display: block !important;
+}
+body[data-mode="setup"] #yellowFenPanel,
+body[data-authoring="true"][data-mode="setup"] #yellowFenPanel {
+  display: block !important;
+}
+body[data-mode="setup"] #leftSidebar .position-editor,
+body[data-mode="setup"] #leftSidebar .pos-controls,
+body[data-authoring="true"][data-mode="setup"] #leftSidebar .position-editor,
+body[data-authoring="true"][data-mode="setup"] #leftSidebar .pos-controls {
+  display: block !important;
+}
+body[data-mode="setup"] #drawingToolsPanel,
+body[data-mode="setup"] #themesPanel {
+  display: none !important;
+}
+/* Force left sidebar visible in setup mode with 3-column layout */
+body[data-mode="setup"] #leftSidebar {
+  display: flex !important;
+}
+body[data-mode="setup"] .layout[data-layout="focus"] {
+  grid-template-columns: 280px 1fr 280px !important;
+}
+body[data-mode="setup"] .layout[data-layout="focus"] .sidebar-left {
+  grid-column: 1 !important;
+}
+body[data-mode="setup"] .layout[data-layout="focus"] .board-area {
+  grid-column: 2 !important;
+}
+body[data-mode="setup"] .layout[data-layout="focus"] .sidebar-right {
+  grid-column: 3 !important;
+}
+

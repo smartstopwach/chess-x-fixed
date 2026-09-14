@@ -142,6 +142,50 @@ Then visit `http://localhost:8000`.
 
 Works on all modern Chromium / Firefox / Safari browsers. Screen recording requires Chromium-based browsers (Chrome, Edge, Brave, Opera) for full API support.
 
+## 🗂 File structure
+
+The old monolithic `styles.css` (3,025 lines) and `app.js` (2,922 lines) are split
+into one file per section, so you can open exactly the file you need when fixing
+something. Load order in `index.html` **is** the original order, and file names are
+numbered to match it — so alphabetical order = load order.
+
+```
+index.html            the only page: markup + the <link>/<script> list (edit here)
+css/                  32 files — was styles.css, one file per section banner
+  00-base.css           tokens, reset, typography
+  10..28-*.css          shared chrome: topbar, layout, board, panels, clock, notes…
+  30..35-puzzle-*.css   puzzle library + editor styling
+  36-mode-setup.css     Custom Setup overrides
+  37-mode-puzzle.css    Puzzle mode overrides (hides Analysis + Clock cards)
+  38-puzzle-editor-ui.css  editor controls (.pe-*)
+  40-home-button.css 41-front-page.css
+  45-mode-normal.css    Normal mode overrides
+  23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
+                        CSS (.modal-overlay selector line is missing). No modal exists
+                        in index.html/app.js, so nothing is lost — safe to delete.
+js/                   29 files — was app.js, one file per section banner
+  00-constants.js       PIECE_FONT
+  01-state.js 02-dom.js 03-utils.js          shared core
+  10..19-*.js           board render, interactions, annotations, tools, setup,
+                        move list, FEN, themes, layouts
+  20..25-puzzle-*.js    puzzle library, editor board, authoring mode
+  26-engine.js 27-autofit.js 28-flip-reset.js 29-chess-clock.js 30-keyboard.js
+  31-render-all.js 32-event-bindings.js 33-mode-picker.js
+  90-boot.js            init() — MUST stay the last script
+tools/verify_split.py   integrity check (see below)
+```
+
+Nothing was rewritten while splitting: the files are byte-exact slices of the
+originals, recorded in `css/MANIFEST.json` and `js/MANIFEST.json`. To prove the
+split is still intact after your edits:
+
+```bash
+python3 tools/verify_split.py      # PASS = concatenation + load order unchanged
+```
+
+Still no build step: `index.html` opens by double-click (`file://`) or via any
+static server.
+
 ## 📦 Tech Stack
 
 - **Vanilla JavaScript** — no build step, no framework overhead

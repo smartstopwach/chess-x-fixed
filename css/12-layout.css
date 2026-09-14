@@ -1,0 +1,47 @@
+/* ============================================
+   LAYOUT
+   ============================================ */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 12px;
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.layout[data-layout="board"] { grid-template-columns: 0 1fr 0; }
+.layout[data-layout="board"] .sidebar { display: none; }
+
+/* FOCUS LAYOUT (default): hide left sidebar, narrow right sidebar — board fills most space */
+.layout[data-layout="focus"] { grid-template-columns: 1fr 280px; }
+.layout[data-layout="focus"] .sidebar-left { display: none; }
+.layout[data-layout="focus"] .board-area { grid-column: 1; }
+.layout[data-layout="focus"] .sidebar-right { grid-column: 2; }
+
+/* PUZZLE MODE: Show BOTH sidebars (left for puzzle setup, right for puzzle editor) */
+body[data-authoring="true"] .layout[data-layout="focus"] {
+  grid-template-columns: 280px 1fr 280px;
+}
+body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-left {
+  display: flex;
+  grid-column: 1;
+}
+body[data-authoring="true"] .layout[data-layout="focus"] .board-area {
+  grid-column: 2;
+}
+body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-right {
+  grid-column: 3;
+}
+
+.layout[data-layout="moves"] { grid-template-columns: 0 1fr 320px; }
+.layout[data-layout="moves"] .sidebar-left { display: none; }
+
+.layout[data-layout="explain"] { grid-template-columns: 280px 1fr 0; }
+.layout[data-layout="explain"] .sidebar-right { display: none; }
+
+.layout[data-layout="present"] { grid-template-columns: 0 1fr 0; padding: 4px; }
+.layout[data-layout="present"] .sidebar { display: none; }
+.layout[data-layout="present"] .lesson-header { display: none; }
+

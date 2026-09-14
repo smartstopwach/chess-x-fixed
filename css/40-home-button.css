@@ -1,0 +1,35 @@
+/* ============================================
+   HOME BUTTON + MODE INDICATOR (topbar)
+   ============================================ */
+.btn-home {
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-home svg {
+  display: block;
+}
+.mode-indicator {
+  margin-left: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+body[data-mode="puzzle"] .mode-indicator {
+  background: var(--pe-blue-bg);
+  color: var(--pe-blue);
+  border-color: var(--pe-blue-border);
+}
+body[data-mode="setup"] .mode-indicator {
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
