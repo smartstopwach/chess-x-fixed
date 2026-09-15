@@ -21,8 +21,8 @@ function puzzleGame() {
 }
 
 function peSetupPushHistory() {
-  if (!puzzleGame()) return;
-  const fen = puzzleGame().fen();
+  const fen = state.game ? state.game.fen() : (puzzleGame() ? puzzleGame().fen() : '');
+  if (!fen) return;
   puzzleState.history.length = puzzleState.historyIndex + 1;
   puzzleState.history.push(fen);
   if (puzzleState.history.length > 50) puzzleState.history.shift();
@@ -30,25 +30,42 @@ function peSetupPushHistory() {
 }
 
 function peSetupUndo() {
-  if (!puzzleGame()) return;
   if (puzzleState.historyIndex <= 0) return;
   puzzleState.historyIndex--;
-  puzzleGame().load(puzzleState.history[puzzleState.historyIndex]);
-  peUpdatePieceCount();
-  toast('Undid puzzle setup', 'success');
+  const fen = puzzleState.history[puzzleState.historyIndex];
+  if (!fen) return;
+  try {
+    state.game.load(fen);
+    if (puzzleGame()) puzzleGame().load(fen);
+    $('puzzleFen').value = fen;
+    updateFenDisplay(fen);
+    peUpdatePieceCount();
+    renderAll();
+    toast('Undid puzzle setup', 'success');
+  } catch (e) {
+    console.error('peSetupUndo failed', e);
+  }
 }
 
 function peSetupRedo() {
-  if (!puzzleGame()) return;
   if (puzzleState.historyIndex >= puzzleState.history.length - 1) return;
   puzzleState.historyIndex++;
-  puzzleGame().load(puzzleState.history[puzzleState.historyIndex]);
-  peUpdatePieceCount();
-  toast('Redid puzzle setup', 'success');
+  const fen = puzzleState.history[puzzleState.historyIndex];
+  if (!fen) return;
+  try {
+    state.game.load(fen);
+    if (puzzleGame()) puzzleGame().load(fen);
+    $('puzzleFen').value = fen;
+    updateFenDisplay(fen);
+    peUpdatePieceCount();
+    renderAll();
+    toast('Redid puzzle setup', 'success');
+  } catch (e) {
+    console.error('peSetupRedo failed', e);
+  }
 }
 
 function peLoadPreset(name) {
-  if (!puzzleGame()) return;
   const presets = {
     standard: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     empty: '8/8/8/8/8/8/8/8 w - - 0 1',
@@ -61,11 +78,21 @@ function peLoadPreset(name) {
   const fen = presets[name];
   if (!fen) return;
   try {
-    puzzleGame().load(fen);
-    puzzleState.history = [];
-    puzzleState.historyIndex = -1;
+    state.game.load(fen);
+    if (puzzleGame()) puzzleGame().load(fen);
+    state.history = [];
+    state.historyIndex = -1;
+    state.selectedSquare = null;
+    state.heldPiece = null;
+    puzzleState.heldPiece = null;
+    puzzleState.selectedSquare = null;
+    $$('.pe-rack-piece').forEach(x => x.classList.remove('selected'));
     peSetupPushHistory();
     peUpdatePieceCount();
+    peUpdateHint();
+    $('puzzleFen').value = fen;
+    updateFenDisplay(fen);
+    renderAll();
     toast(`Loaded preset: ${name.replace(/_/g, ' ')}`, 'success');
   } catch (e) {
     toast('Invalid preset', 'error');
@@ -73,13 +100,7 @@ function peLoadPreset(name) {
 }
 
 function peClearBoard() {
-  if (!puzzleGame()) return;
-  puzzleGame().load('8/8/8/8/8/8/8/8 w - - 0 1');
-  puzzleState.history = [];
-  puzzleState.historyIndex = -1;
-  peSetupPushHistory();
-  peUpdatePieceCount();
-  toast('Board cleared', 'success');
+  peLoadPreset('empty');
 }
 
 function pePlacePiece(sq, piece) {
@@ -212,11 +233,15 @@ function peSelectRackPiece(p) {
 }
 
 function pePickFromBoard(sq) {
-  if (!puzzleGame()) return false;
-  const board = puzzleGame().board();
-  const r = 8 - parseInt(sq[1]);
-  const c = sq.charCodeAt(0) - 97;
-  const piece = board[r][c];
+  let piece = null;
+  try { piece = state.game.get(sq); } catch (e) {}
+  if (!piece && puzzleGame()) {
+    const board = puzzleGame().board();
+    const r = 8 - parseInt(sq[1]);
+    const c = sq.charCodeAt(0) - 97;
+    const p = board[r][c];
+    if (p) piece = { color: p.color, type: p.type };
+  }
   if (!piece) {
     // Empty — if holding, place
     if (puzzleState.heldPiece) {
@@ -235,19 +260,22 @@ function pePickFromBoard(sq) {
 }
 
 function peGetPieceAt(sq) {
+  let piece = null;
+  try { piece = state.game.get(sq); } catch (e) {}
+  if (piece) return piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
   if (!puzzleGame()) return null;
   const board = puzzleGame().board();
   const r = 8 - parseInt(sq[1]);
   const c = sq.charCodeAt(0) - 97;
-  const piece = board[r][c];
-  if (!piece) return null;
-  return piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
+  const p = board[r][c];
+  if (!p) return null;
+  return p.color === 'w' ? p.type.toUpperCase() : p.type.toLowerCase();
 }
 
 function peUpdatePieceCount() {
   const el = $('pePieceCount');
-  if (!el || !puzzleGame()) return;
-  const fen = puzzleGame().fen().split(' ')[0];
+  if (!el) return;
+  const fen = (state.game ? state.game.fen() : (puzzleGame() ? puzzleGame().fen() : '')).split(' ')[0];
   const counts = { K:0, Q:0, R:0, B:0, N:0, P:0, k:0, q:0, r:0, b:0, n:0, p:0 };
   for (const ch of fen) {
     if (counts[ch] !== undefined) counts[ch]++;
@@ -303,14 +331,19 @@ function initPEPieceRack() {
 }
 
 function peUseForPuzzle() {
-  if (!puzzleGame()) return;
-  const fen = puzzleGame().fen();
-  $('puzzleFen').value = fen;
-  updateFenDisplay(fen);
+  let fen = null;
+  try { fen = state.game.fen(); } catch (e) {}
+  if (!fen && puzzleGame()) fen = puzzleGame().fen();
+  if (fen) {
+    $('puzzleFen').value = fen;
+    updateFenDisplay(fen);
+    if (puzzleGame()) puzzleGame().load(fen);
+  }
   if (isAuthoringMode()) {
     setAuthoringMode(false);
   }
   if (typeof setTool === 'function') setTool('arrow');
+  renderAll();
   toast('Position captured for puzzle — left click to draw arrows ✓', 'success');
 }
 

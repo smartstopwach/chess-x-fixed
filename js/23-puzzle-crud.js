@@ -401,7 +401,16 @@ function onPuzzleMovePlayed(san) {
       renderAll();
     }
   } else {
-    toast(`✗ ${san} is not the solution — Ctrl+Z to undo and try again`, 'error');
+    // Revert the wrong move so student can immediately try again
+    try {
+      state.game.undo();
+      if (state.history.length > 0) {
+        state.history.pop();
+        state.historyIndex = state.history.length - 1;
+      }
+      renderAll();
+    } catch (e) {}
+    toast(`✗ ${san} is not the solution — try again`, 'error');
   }
 }
 

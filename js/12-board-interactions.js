@@ -205,8 +205,6 @@ function endSquarePress(sq, x, y) {
 
   // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
   if (isDrag) {
-  // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
-  if (isDrag) {
     if (state.currentTool === 'rectangle') {
       addRectangle(from, sqName);
     } else if (state.currentTool === 'eraser') {

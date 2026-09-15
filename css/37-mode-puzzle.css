@@ -1,24 +1,10 @@
 /* When in puzzle mode, HIDE all panels that have no purpose in puzzle editing
-   (Themes, yellow Position Setup + yellow FEN — replaced by blue puzzle setup).
-   Drawing Tools panel REMAINS AVAILABLE in puzzle mode! */
+   (Themes, yellow Position Setup + yellow FEN — replaced by blue puzzle setup). */
 body[data-authoring="true"] #leftSidebar .position-editor,
 body[data-authoring="true"] #leftSidebar .pos-controls,
 body[data-authoring="true"] #yellowPositionSetupPanel,
 body[data-authoring="true"] #yellowFenPanel,
-body[data-authoring="true"] #themesPanel {
-  display: none !important;
-}
-
-/* While a puzzle is being PLAYED (▶ Test) the editing chrome is noise: hide the
-   racks, the editor and the library so it is just board + question, and keep
-   them hidden even though authoring mode is off during play. */
-body[data-testing="true"] #puzzleEditorPanel,
-body[data-testing="true"] #libraryPanel,
-body[data-testing="true"] #puzzleLeftPanel,
-body[data-testing="true"] #yellowPositionSetupPanel,
-body[data-testing="true"] #yellowFenPanel,
-body[data-testing="true"] #themesPanel,
-body[data-testing="true"] .authoring-toolbar,
+body[data-authoring="true"] #themesPanel,
 body[data-mode="puzzle"] #yellowPositionSetupPanel,
 body[data-mode="puzzle"] #yellowFenPanel,
 body[data-mode="puzzle"] #themesPanel,
@@ -27,17 +13,35 @@ body[data-mode="puzzle"] #leftSidebar .pos-controls {
   display: none !important;
 }
 
-/* Ensure drawing tools panel is visible in puzzle mode */
-body[data-mode="puzzle"] #drawingToolsPanel,
+/* While authoring/editing a puzzle: SHOW blue position setup, HIDE drawing tools */
+body[data-authoring="true"] #puzzleLeftPanel,
+body[data-mode="puzzle"][data-authoring="true"] #puzzleLeftPanel {
+  display: block !important;
+}
 body[data-authoring="true"] #drawingToolsPanel,
+body[data-mode="puzzle"][data-authoring="true"] #drawingToolsPanel {
+  display: none !important;
+}
+
+/* While NOT authoring (puzzle saved, viewing puzzle, or test play):
+   HIDE position setup rack, SHOW drawing tools */
+body[data-mode="puzzle"][data-authoring="false"] #puzzleLeftPanel {
+  display: none !important;
+}
+body[data-mode="puzzle"][data-authoring="false"] #drawingToolsPanel,
 body[data-testing="true"] #drawingToolsPanel {
   display: block !important;
 }
 
-/* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards.
-   While building a puzzle you set the position, solution and metadata —
-   an engine eval box and a game clock add nothing, so they are removed from
-   the right sidebar entirely. Normal / Custom Setup modes are untouched. */
+/* While a puzzle is being PLAYED (▶ Test) the editing chrome is hidden */
+body[data-testing="true"] #puzzleEditorPanel,
+body[data-testing="true"] #libraryPanel,
+body[data-testing="true"] #puzzleLeftPanel,
+body[data-testing="true"] .authoring-toolbar {
+  display: none !important;
+}
+
+/* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards. */
 body[data-authoring="true"] #enginePanel,
 body[data-authoring="true"] #clockPanel,
 body[data-mode="puzzle"] #enginePanel,

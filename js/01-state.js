@@ -72,3 +72,7 @@ const state = {
   drag: { active: false, piece: null, from: null }
 };
 
+if (typeof window !== 'undefined') {
+  window.state = state;
+}
+
