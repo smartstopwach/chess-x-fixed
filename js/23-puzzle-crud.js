@@ -89,13 +89,15 @@ function saveCurrentPuzzle() {
   const solution = $('puzzleSolution').value.trim();
   const difficulty = parseInt($('puzzleDifficulty').value) || 3;
   const tags = $('puzzleTags').value.trim();
-  // Prefer puzzle editor's independent FEN (puzzleState.game), fallback to main board
-  let fen;
-  if (puzzleState.game) {
-    fen = puzzleGame().fen();
-  } else {
-    fen = state.game.fen();
-  }
+  // Save the position that is actually ON THE BOARD - that is what the user
+  // built and sees. This used to read the editor's private copy, so anything
+  // placed through the normal setup path (drag from either rack) never reached
+  // the saved puzzle and the piece "vanished" after SAVE.
+  let fen = null;
+  try { fen = state.game.fen(); } catch (e) { fen = null; }
+  if (!fen && puzzleState.game && puzzleGame()) fen = puzzleGame().fen();
+  if (!fen) { toast('Nothing to save - the position could not be read', 'error'); return; }
+  try { if (puzzleGame()) puzzleGame().load(fen); } catch (e) {}
   $('puzzleFen').value = fen;
   updateFenDisplay(fen);
   const newChapterId = $('puzzleChapterSelect').value;

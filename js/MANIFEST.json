@@ -1,7 +1,7 @@
 {
   "source": "app.js",
   "source_bytes": 97288,
-  "baseline_sha256": "2ea7710f7b5a1206ea9265f2e9d0bc1bfa9c101d6d085cdfc62e296b7e9ebf7c",
+  "baseline_sha256": "b27cf6cc1f8cd737881ab67c5c97733b959897c02aefd6682d79bbc78e317872",
   "concat_sha256": "611bcf7367f8d0c57cf545c7559a9a76cec20d4cdc90df812f0931a48c03a004",
   "byte_identical": true,
   "files": 29,

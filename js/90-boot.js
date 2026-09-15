@@ -78,6 +78,13 @@ function doInit() {
   });
 
   $('btnTestPuzzle').addEventListener('click', testPuzzleAsStudent);
+  $('btnEditPosition').addEventListener('click', () => {
+    // Enter the piece editor from a playable board, keeping the position.
+    try { if (puzzleGame()) puzzleGame().load(state.game.fen()); } catch (e) {}
+    setAuthoringMode(true);
+    renderAll();
+    toast('Editing position - clicks place/move pieces. ✕ Exit (or Esc) to play again', 'success');
+  });
   $('btnRevealAnswer').addEventListener('click', revealPuzzleAnswer);
   $('btnPuzzleBack').addEventListener('click', () => endPuzzleTest(true));
   $('btnPuzzleDone').addEventListener('click', () => endPuzzleTest(false));

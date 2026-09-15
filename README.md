@@ -73,6 +73,14 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 
 ### ❓ Puzzle / Question Mode
 - Display "YOUR MOVE?" with custom question
+- **Clicking a puzzle in the library gives you a playable board** (it used to
+  leave the piece editor armed, so every click edited instead of moved)
+- **✎ Edit position** (in the Puzzle Editor panel) is the explicit way to place
+  or remove pieces; `Esc` or ✕ Exit hands the board back to play with the
+  position intact — exiting no longer resets to the starting position
+- Pieces placed from **either** rack (drag or click) are what SAVE writes: the
+  saved FEN is now read from the visible board and the editor copy is kept in
+  step, so a dragged piece can no longer disappear after saving
 - **▶ Test plays the puzzle for real**: authoring is switched off, so clicks are
   legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work)
 - The solution line is parsed from the free-text field and checked move by move:

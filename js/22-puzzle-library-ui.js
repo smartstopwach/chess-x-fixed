@@ -88,6 +88,17 @@ function handleLibraryAction(action, chapterId, puzzleId) {
     saveLibrary(lib);
     renderLibrary($('librarySearch')?.value || '');
     loadPuzzleToEditor(puzzleId);
+    // Selecting a puzzle from the library should hand you a playable board, not
+    // a frozen editor. Authoring/setup mode used to stay armed, so every click
+    // edited the position and the puzzle could never actually be played.
+    if (isAuthoringMode()) setAuthoringMode(false);
+    state.setupMode = false;
+    state.heldPiece = null;
+    state.selectedSquare = null;
+    clearAllAnnotations();
+    renderAll();
+    const _p = lib.chapters.flatMap(c => c.puzzles).find(x => x.id === puzzleId);
+    toast(`${(_p && _p.title) || 'Puzzle'} loaded - play it, or press ✎ Edit position`, 'success');
   } else if (action === 'add-puzzle') {
     // Same as + New Puzzle button — enter authoring mode with fresh state
     // Reset main board to standard so user gets a clean slate

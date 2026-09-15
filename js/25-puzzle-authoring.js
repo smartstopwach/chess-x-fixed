@@ -7,6 +7,15 @@ function setAuthoringMode(on) {
     state.setupMode = true; // auto-enable setup mode
     toast('Authoring Mode ON — set up your puzzle position', 'success');
   } else {
+    // The part that used to be missing: setAuthoringMode(true) arms the piece
+    // editor (state.setupMode) but turning it off left that flag on - so after
+    // "exiting" the editor every click kept picking/placing pieces instead of
+    // playing a legal move, and no piece you touched was ever a real move.
+    state.setupMode = false;
+    state.heldPiece = null;
+    state.selectedRackPiece = null;
+    $$('.rack-piece, .pe-rack-piece').forEach(x => x.classList.remove('selected'));
+    $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source'));
     toast('Authoring Mode OFF', 'success');
   }
   updateSetupHint();
@@ -90,8 +99,19 @@ function enterAuthoringForNewPuzzle() {
 
 function exitAuthoringMode() {
   setAuthoringMode(false);
-  // CRITICAL: Reset main board to standard so user gets clean state after exit
-  state.game.reset();
+  // Leave a PLAYABLE board with the position that was being edited (or the
+  // saved puzzle's position). Resetting to the standard position here used to
+  // destroy the puzzle you just built, so "exit editing" landed on a board that
+  // looked like the puzzle but was not it.
+  const puz = (typeof getActivePuzzle === 'function') ? getActivePuzzle() : null;
+  if (puz && puz.fen) {
+    try { state.game.load(puz.fen); }
+    catch (e) { /* keep whatever is on the board */ }
+  }
+  state.setupMode = false;
+  state.heldPiece = null;
+  state.selectedRackPiece = null;
+  state.selectedSquare = null;
   state.history = [];
   state.historyIndex = -1;
   state.selectedSquare = null;

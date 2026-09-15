@@ -12,6 +12,13 @@ document.addEventListener('keydown', (e) => {
       endPuzzleTest(true);
       return;
     }
+    // While editing a position, Esc is the obvious "stop editing" key - it must
+    // also disarm the piece editor, which is what exitAuthoringMode now does.
+    if (isAuthoringMode()) {
+      e.preventDefault();
+      exitAuthoringMode();
+      return;
+    }
   }
 
   switch (e.key) {

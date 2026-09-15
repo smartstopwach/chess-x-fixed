@@ -162,8 +162,12 @@ function bindEvents() {
     if (!sq) return;
     const sqName = sq.dataset.square;
     const piece = e.dataTransfer.getData('text/plain') || state.dragPiece;
+    state.dragPiece = null;
     if (piece) {
-      placePieceOnSetup(sqName, piece);
+      // While authoring a puzzle the editor owns placement (its own undo history
+      // and piece count); otherwise use the plain position-setup path.
+      if (isAuthoringMode() && typeof pePlacePiece === 'function') pePlacePiece(sqName, piece);
+      else placePieceOnSetup(sqName, piece);
       toast(`Dropped ${pieceName(piece)} on ${sqName}`);
     }
   });

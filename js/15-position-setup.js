@@ -170,6 +170,17 @@ function placePieceOnSetup(sq, piece) {
     const newFen = parts.join(' ');
     state.game.load(newFen);
 
+    // The puzzle editor keeps its OWN Chess instance. Keep it in step with the
+    // visible board, otherwise SAVE and the editor disagree and a piece that
+    // was just dragged from a rack silently disappears once you save.
+    try {
+      if (typeof puzzleGame === 'function' && puzzleGame()) {
+        puzzleGame().load(state.game.fen());
+        if (typeof peUpdatePieceCount === 'function') peUpdatePieceCount();
+        if (typeof peUpdateHint === 'function') peUpdateHint();
+      }
+    } catch (e) { /* editor copy is best-effort; the board is the truth */ }
+
     pushSetupHistory(); // save for undo
 
     // If we moved a piece from the board, clear the held state
