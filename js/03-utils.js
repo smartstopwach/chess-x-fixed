@@ -2,10 +2,8 @@
 // UTILITIES
 // ============================================
 function toast(message, type = '') {
-  els.toast.textContent = message;
-  els.toast.className = 'toast show ' + type;
-  clearTimeout(els.toast._timer);
-  els.toast._timer = setTimeout(() => { els.toast.classList.remove('show'); }, 2500);
+  // Toast notifications permanently disabled per user request
+  return;
 }
 
 function squareName(r, c) {
