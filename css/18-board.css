@@ -316,3 +316,130 @@ body[data-flipped="true"] .board .coord {
 /* Drawing preview */
 .drawing-preview { stroke-opacity: 0.7; stroke-dasharray: 5,5; }
 
+/* ============================================
+   PAWN PROMOTION MODAL / DIALOG
+   ============================================ */
+.promotion-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.promotion-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.promotion-dialog {
+  background: var(--bg-primary, #1e293b);
+  border: 2px solid var(--accent, #e8c547);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(232, 197, 71, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 90%;
+  animation: promoPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes promoPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.promotion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.promotion-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.promotion-cancel-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.promotion-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary, #ffffff);
+}
+
+.promotion-pieces {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.promotion-option {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-secondary, #334155);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.promotion-option:hover,
+.promotion-option:focus-visible {
+  background: rgba(232, 197, 71, 0.2);
+  border-color: var(--accent, #e8c547);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232, 197, 71, 0.4);
+}
+
+.promotion-option svg {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.promotion-option-key {
+  position: absolute;
+  bottom: 2px;
+  right: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.promotion-hint {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+}
+

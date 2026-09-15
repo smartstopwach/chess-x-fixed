@@ -57,6 +57,7 @@ const state = {
   authoringMode: false,
   selectedRackPiece: null,
   deletingMode: false,
+  pendingPromotion: null,
   movesListData: [],
   engine: {
     stockfish: null,

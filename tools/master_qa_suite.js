@@ -493,6 +493,11 @@ async function runMasterSuite() {
     const mateInfo = window.finishInfo(mateGame);
     assert(mateInfo.kind === 'checkmate' && mateInfo.variant === 'is-mate');
 
+    // 2-Bishop Checkmate position (KBB vs K is checkmate and NOT draw!)
+    const kbbMate = new window.Chess('7k/5B2/6K1/8/3B4/8/8/8 b - - 0 1');
+    assert(window.mateStatus(kbbMate) === 'checkmate', '2 Bishops delivering checkmate must be detected');
+    assert(window.looksDrawnMaterial('7k/5B2/6K1/8/3B4/8/8/8 b - - 0 1') === false, '2 Bishops vs King is not drawn');
+
     // Stalemate position
     const staleGame = new window.Chess('k7/8/1Q6/8/8/8/8/K7 b - - 0 1');
     assert(window.mateStatus(staleGame) === 'stalemate');

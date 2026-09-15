@@ -2,7 +2,21 @@
 // KEYBOARD SHORTCUTS
 // ============================================
 document.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, textarea, select')) return;
+  if (e.target && typeof e.target.matches === 'function' && e.target.matches('input, textarea, select')) return;
+
+  if (state.pendingPromotion) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelPromotionDialog();
+      return;
+    }
+    const k = e.key.toLowerCase();
+    if (k === 'q' || k === '1') { e.preventDefault(); choosePromotion('q'); return; }
+    if (k === 'r' || k === '2') { e.preventDefault(); choosePromotion('r'); return; }
+    if (k === 'b' || k === '3') { e.preventDefault(); choosePromotion('b'); return; }
+    if (k === 'n' || k === 'k' || k === '4') { e.preventDefault(); choosePromotion('n'); return; }
+    return;
+  }
 
   if (e.key === 'Escape') {
     // During a puzzle test, Esc leaves the test (back to the editor) before

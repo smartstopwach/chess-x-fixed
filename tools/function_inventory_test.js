@@ -242,7 +242,14 @@ async function testInventory() {
   // CHECKMATE, STALEMATE, DRAW
   check('mateStatus', () => { window.mateStatus(window.state.game); });
   check('finishInfo', () => { window.finishInfo(window.state.game); });
-  check('looksDrawnMaterial', () => { window.looksDrawnMaterial('4k3/8/8/8/8/8/8/4K3 w - - 0 1'); });
+  check('looksDrawnMaterial', () => {
+    window.looksDrawnMaterial('4k3/8/8/8/8/8/8/4K3 w - - 0 1');
+    if (window.looksDrawnMaterial('7k/5B2/6K1/8/3B4/8/8/8 b - - 0 1') !== false) throw new Error('2 bishops should not be drawn');
+  });
+  check('isPromotionMove', () => { window.isPromotionMove('e7', 'e8'); });
+  check('showPromotionDialog', () => { window.showPromotionDialog('e7', 'e8', 'w'); });
+  check('cancelPromotionDialog', () => { window.cancelPromotionDialog(); });
+  check('choosePromotion', () => { window.choosePromotion('q'); });
   check('cbCall', () => { window.cbCall(window.state.game, 'turn'); });
   check('cbHalfmoveClock', () => { window.cbHalfmoveClock('8/8/8/8/8/8/8/8 w - - 10 1'); });
   check('celebrateMate', () => { window.celebrateMate(); });

@@ -34,28 +34,52 @@ function cbHalfmoveClock(fen) {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Kings-only, or one minor (or two same-coloured bishops) per side. Used only
- *  when the engine build has no insufficient_material() to ask. */
+/** Kings-only, or one minor per side (or two same-coloured bishops on opposite sides).
+ *  Two bishops on the same side can force checkmate and are NEVER insufficient material.
+ *  Used only when the engine build has no insufficient_material() to ask. */
 function looksDrawnMaterial(fen) {
   const placement = String(fen || '').split(' ')[0];
   if (!placement) return false;
-  const counts = { w: {}, b: {} };
-  let color = null;
+  const pieces = [];
+  let r = 0, c = 0;
   for (const ch of placement) {
-    if (ch === '/') continue;
-    if (/[1-8]/.test(ch)) continue;
-    color = ch === ch.toUpperCase() ? 'w' : 'b';
-    counts[color][ch.toLowerCase()] = (counts[color][ch.toLowerCase()] || 0) + 1;
+    if (ch === '/') { r++; c = 0; continue; }
+    if (/[1-8]/.test(ch)) { c += parseInt(ch, 10); continue; }
+    const color = ch === ch.toUpperCase() ? 'w' : 'b';
+    const type = ch.toLowerCase();
+    const isLightSq = (r + c) % 2 === 0;
+    pieces.push({ type, color, isLightSq, ch });
+    c++;
   }
-  for (const side of ['w', 'b']) {
-    const c = counts[side];
-    for (const type of Object.keys(c)) {
-      if (type === 'k') continue;
-      if (type !== 'b' && type !== 'n') return false;   // pawn / rook / queen
+
+  // Any pawn, rook, or queen means sufficient material
+  if (pieces.some(p => p.type === 'p' || p.type === 'r' || p.type === 'q')) {
+    return false;
+  }
+
+  const whitePieces = pieces.filter(p => p.color === 'w');
+  const blackPieces = pieces.filter(p => p.color === 'b');
+  const whiteMinors = whitePieces.filter(p => p.type !== 'k');
+  const blackMinors = blackPieces.filter(p => p.type !== 'k');
+
+  // K vs K
+  if (whiteMinors.length === 0 && blackMinors.length === 0) return true;
+
+  // K+B vs K or K+N vs K
+  if ((whiteMinors.length === 1 && blackMinors.length === 0) ||
+      (whiteMinors.length === 0 && blackMinors.length === 1)) {
+    return true;
+  }
+
+  // K+B vs K+B with bishops on the SAME square color
+  if (whiteMinors.length === 1 && blackMinors.length === 1 &&
+      whiteMinors[0].type === 'b' && blackMinors[0].type === 'b') {
+    if (whiteMinors[0].isLightSq === blackMinors[0].isLightSq) {
+      return true;
     }
-    if ((c.b || 0) + (c.n || 0) > 2) return false;
   }
-  return true;
+
+  return false;
 }
 
 /** 'checkmate' | 'stalemate' | 'draw' | null for the position on the board. */

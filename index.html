@@ -404,6 +404,16 @@
       <div class="board-container" id="boardContainer">
         <div class="board" id="board"></div>
         <svg class="board-svg" id="boardSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="promotionOverlay" class="promotion-overlay" style="display: none;">
+          <div class="promotion-dialog" role="dialog" aria-modal="true" aria-label="Promote Pawn">
+            <div class="promotion-header">
+              <span class="promotion-title">Promote Pawn</span>
+              <button id="btnPromoCancel" class="promotion-cancel-btn" title="Cancel promotion (Esc)">✕</button>
+            </div>
+            <div class="promotion-pieces" id="promotionPieces"></div>
+            <div class="promotion-hint">Choose Queen, Rook, Bishop or Knight (or press Q, R, B, N)</div>
+          </div>
+        </div>
       </div>
 
       <div class="board-meta-bottom">

@@ -399,10 +399,117 @@ function rejectMove(from, to, piece) {
   }
 }
 
-function tryMakeMove(from, to) {
+function isPromotionMove(from, to) {
+  try {
+    const piece = state.game.get(from);
+    if (!piece || piece.type !== 'p') return false;
+    const isWhite = piece.color === 'w';
+    if ((isWhite && from[1] === '7' && to[1] === '8') || (!isWhite && from[1] === '2' && to[1] === '1')) {
+      const legal = state.game.moves({ verbose: true });
+      return legal.some(m => m.from === from && m.to === to && m.promotion);
+    }
+  } catch (e) {}
+  return false;
+}
+
+function showPromotionDialog(from, to, color) {
+  state.pendingPromotion = { from, to, color };
+  const overlay = $('promotionOverlay');
+  if (!overlay) return;
+
+  const piecesContainer = $('promotionPieces');
+  if (piecesContainer) {
+    piecesContainer.innerHTML = '';
+    const promoOptions = [
+      { type: 'q', name: 'Queen', key: 'Q / 1', fenChar: color === 'w' ? 'Q' : 'q' },
+      { type: 'r', name: 'Rook', key: 'R / 2', fenChar: color === 'w' ? 'R' : 'r' },
+      { type: 'b', name: 'Bishop', key: 'B / 3', fenChar: color === 'w' ? 'B' : 'b' },
+      { type: 'n', name: 'Knight', key: 'N / 4', fenChar: color === 'w' ? 'N' : 'n' },
+    ];
+
+    promoOptions.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'promotion-option';
+      btn.dataset.piece = opt.type;
+      btn.title = `${opt.name} (${opt.key})`;
+      btn.setAttribute('aria-label', opt.name);
+
+      const svg = typeof getPieceSvg === 'function' ? getPieceSvg(opt.fenChar, state.pieceStyle) : null;
+      if (svg) {
+        btn.innerHTML = svg;
+      } else {
+        btn.textContent = opt.name[0];
+      }
+
+      const keyLabel = document.createElement('span');
+      keyLabel.className = 'promotion-option-key';
+      keyLabel.textContent = opt.type.toUpperCase();
+      btn.appendChild(keyLabel);
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        choosePromotion(opt.type);
+      });
+
+      piecesContainer.appendChild(btn);
+    });
+  }
+
+  const cancelBtn = $('btnPromoCancel');
+  if (cancelBtn && !cancelBtn._promoBound) {
+    cancelBtn._promoBound = true;
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cancelPromotionDialog();
+    });
+  }
+
+  if (!overlay._promoBound) {
+    overlay._promoBound = true;
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cancelPromotionDialog();
+      }
+    });
+  }
+
+  overlay.style.display = 'flex';
+  void overlay.offsetWidth;
+  overlay.classList.add('show');
+}
+
+function choosePromotion(pieceType) {
+  if (!state.pendingPromotion) return;
+  const { from, to } = state.pendingPromotion;
+  cancelPromotionDialog();
+  tryMakeMove(from, to, pieceType);
+}
+
+function cancelPromotionDialog() {
+  state.pendingPromotion = null;
+  const overlay = $('promotionOverlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      if (!state.pendingPromotion) overlay.style.display = 'none';
+    }, 150);
+  }
+  state.selectedSquare = null;
+  highlightSquares();
+}
+
+function tryMakeMove(from, to, promotion = null) {
+  if (!promotion && isPromotionMove(from, to)) {
+    const piece = state.game.get(from);
+    const color = piece ? piece.color : state.game.turn();
+    showPromotionDialog(from, to, color);
+    return true;
+  }
+
+  const promoPiece = promotion || 'q';
   let result = null;
   try {
-    result = state.game.move({ from, to, promotion: 'q' });
+    result = state.game.move({ from, to, promotion: promoPiece });
   } catch (e) {
     return false;          // chess.js rejects the move object outright
   }
