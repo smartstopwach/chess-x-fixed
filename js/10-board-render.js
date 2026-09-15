@@ -41,8 +41,9 @@ function renderBoard() {
         const key = piece.color === 'w' ? piece.type.toUpperCase() : piece.type;
         const p = document.createElement('div');
         p.className = 'piece';
-        if (typeof PIECE_SVG !== 'undefined' && PIECE_SVG[key]) {
-          p.innerHTML = PIECE_SVG[key];
+        const svg = typeof getPieceSvg === 'function' ? getPieceSvg(key, state.pieceStyle) : (typeof PIECE_SVG !== 'undefined' ? PIECE_SVG[key] : null);
+        if (svg) {
+          p.innerHTML = svg;
         } else {
           p.textContent = PIECE_FONT[key];
           p.style.color = piece.color === 'w' ? '#ffffff' : '#1a1a1a';

@@ -280,8 +280,9 @@ function initPEPieceRack() {
     const div = document.createElement('div');
     div.className = 'pe-rack-piece';
     div.dataset.piece = p;
-    if (typeof PIECE_SVG !== 'undefined' && PIECE_SVG[p]) {
-      div.innerHTML = PIECE_SVG[p];
+    const svg = typeof getPieceSvg === 'function' ? getPieceSvg(p, state.pieceStyle) : (typeof PIECE_SVG !== 'undefined' ? PIECE_SVG[p] : null);
+    if (svg) {
+      div.innerHTML = svg;
     } else {
       div.textContent = PIECE_FONT[p];
       div.style.color = p === p.toUpperCase() ? '#ffffff' : '#1a1a1a';

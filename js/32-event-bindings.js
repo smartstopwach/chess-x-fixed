@@ -91,7 +91,14 @@ function bindEvents() {
   $('engineMultiPV').addEventListener('change', (e) => setEngineMultiPV(e.target.value));
 
   $$('.theme-btn').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
-  $('pieceStyle').addEventListener('change', (e) => { state.pieceStyle = e.target.value; renderBoard(); });
+  $('pieceStyle').addEventListener('change', (e) => {
+    state.pieceStyle = e.target.value;
+    renderBoard();
+    if (typeof initPieceRack === 'function') initPieceRack();
+    if (typeof initPEPieceRack === 'function') initPEPieceRack();
+    const styleName = e.target.options[e.target.selectedIndex]?.text || e.target.value;
+    toast(`Piece style: ${styleName}`, 'success');
+  });
 
   $$('[data-clock]').forEach(b => b.addEventListener('click', () => {
     setClock(parseInt(b.dataset.time));

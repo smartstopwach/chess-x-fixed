@@ -212,7 +212,13 @@ function applySession(s) {
     state.flipped = !!s.flipped;
     document.body.dataset.flipped = state.flipped ? 'true' : 'false';
     if (s.theme && typeof setTheme === 'function' && s.theme !== state.boardTheme) setTheme(s.theme);
-    if (s.pieceStyle) { state.pieceStyle = s.pieceStyle; setFieldVal('pieceStyle', s.pieceStyle); renderBoard(); }
+    if (s.pieceStyle) {
+      state.pieceStyle = s.pieceStyle;
+      setFieldVal('pieceStyle', s.pieceStyle);
+      renderBoard();
+      if (typeof initPieceRack === 'function') initPieceRack();
+      if (typeof initPEPieceRack === 'function') initPEPieceRack();
+    }
     if (s.color) state.currentColor = s.color;
     // the drawing tool you left selected, so an F5 does not silently put you
     // back on 'select' mid-lesson
