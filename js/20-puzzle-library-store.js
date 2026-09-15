@@ -45,12 +45,17 @@ function saveLibrary(lib) {
 
 function getActiveChapter() {
   const lib = getLibrary();
-  return lib.chapters.find(c => c.id === lib.activeChapterId);
+  if (!lib.chapters || !lib.chapters.length) return null;
+  return lib.chapters.find(c => c.id === lib.activeChapterId) || lib.chapters[0];
 }
+
 function getActivePuzzle() {
   const lib = getLibrary();
-  const chap = getActiveChapter();
-  if (!chap) return null;
-  return chap.puzzles.find(p => p.id === lib.activePuzzleId);
+  if (!lib.activePuzzleId) return null;
+  for (const chap of (lib.chapters || [])) {
+    const p = (chap.puzzles || []).find(x => x && x.id === lib.activePuzzleId);
+    if (p) return p;
+  }
+  return null;
 }
 

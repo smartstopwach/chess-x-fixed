@@ -54,7 +54,8 @@ function onTouchStart(e) {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   touchHandledPress = true;
-  beginSquarePress(document.elementFromPoint(t.clientX, t.clientY), t.clientX, t.clientY, 0);
+  const el = (typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
+  beginSquarePress(el ? el.closest('.square') : null, t.clientX, t.clientY, 0);
 }
 
 function onTouchMove(e) {
@@ -66,15 +67,15 @@ function onTouchMove(e) {
   }
   // Only claim the gesture once it really is a drag (arrow drawing), so the
   // page can still be scrolled with a plain swipe.
-  if (pressMoved) e.preventDefault();
+  if (pressMoved && e.preventDefault) e.preventDefault();
 }
 
 function onTouchEnd(e) {
   if (!touchHandledPress) return;
   touchHandledPress = false;
   const t = (e.changedTouches && e.changedTouches[0]) || null;
-  const target = t ? document.elementFromPoint(t.clientX, t.clientY) : null;
-  if (pressMoved) e.preventDefault();
+  const target = (t && typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
+  if (pressMoved && e.preventDefault) e.preventDefault();
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 

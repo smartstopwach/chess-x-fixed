@@ -35,6 +35,19 @@ function arrowIsKnightMove(from, dr, dc) {
   return true;
 }
 
+function sqPos(name, sqSize = 80) {
+  const { r, c } = squareRC(name);
+  return {
+    x: (c + 0.5) * sqSize,
+    y: (r + 0.5) * sqSize
+  };
+}
+
+function sqTopLeft(name, sqSize = 80) {
+  const { r, c } = squareRC(name);
+  return { x: c * sqSize, y: r * sqSize };
+}
+
 function renderAnnotations() {
   const svg = els.boardSvg;
   svg.innerHTML = '';
@@ -43,19 +56,6 @@ function renderAnnotations() {
   if (rect.width === 0) return;
   const sqSize = rect.width / 8;
   svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
-
-  const sqPos = (name) => {
-    const { r, c } = squareRC(name);
-    return {
-      x: (c + 0.5) * sqSize,
-      y: (r + 0.5) * sqSize
-    };
-  };
-
-  const sqTopLeft = (name) => {
-    const { r, c } = squareRC(name);
-    return { x: c * sqSize, y: r * sqSize };
-  };
 
   if (state.flipped) {
     svg.style.transform = 'rotate(180deg)';

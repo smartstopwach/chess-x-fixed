@@ -101,6 +101,17 @@ function updateSetupHint() {
   }
 }
 
+function enterSetupEditing() {
+  state.setupMode = true;
+  document.body.dataset.setupEditing = 'true';
+  updateSetupHint();
+  highlightDropSquares();
+}
+
+function finishSetupEditing() {
+  startFromPosition();
+}
+
 function pieceName(p) {
   const names = { K:'White King', Q:'White Queen', R:'White Rook', B:'White Bishop', N:'White Knight', P:'White Pawn', k:'Black King', q:'Black Queen', r:'Black Rook', b:'Black Bishop', n:'Black Knight', p:'Black Pawn' };
   return names[p] || p;
