@@ -3,6 +3,7 @@
 // ============================================
 function initPieceRack() {
   const rack = $('pieceRack');
+  if (!rack) return;
   rack.innerHTML = '';
   const pieces = ['K', 'Q', 'R', 'B', 'N', 'P', 'k', 'q', 'r', 'b', 'n', 'p'];
   pieces.forEach(p => {
@@ -24,6 +25,7 @@ function initPieceRack() {
     div.addEventListener('dragstart', (e) => {
       state.dragPiece = p;
       state.setupMode = true;
+      document.body.dataset.setupEditing = 'true';
       e.dataTransfer.setData('text/plain', p);
       e.dataTransfer.effectAllowed = 'copy';
       div.classList.add('dragging');
@@ -40,6 +42,7 @@ function initPieceRack() {
 function selectRackPiece(p) {
   state.selectedRackPiece = p;
   state.setupMode = true;
+  document.body.dataset.setupEditing = 'true';
   state.heldPiece = { piece: p, source: 'rack' };
   $$('.rack-piece').forEach(x => x.classList.remove('selected'));
   const el = document.querySelector(`.rack-piece[data-piece="${p}"]`);
@@ -51,25 +54,22 @@ function selectRackPiece(p) {
   highlightDropSquares();
 }
 
-// PICK A PIECE FROM THE BOARD by double-click
+// PICK A PIECE FROM THE BOARD by double-click or click
 function pickPieceFromBoard(sqName) {
   const piece = getPieceAt(sqName);
   if (!piece) {
     // Empty square — if we are holding a piece, place it here
     if (state.heldPiece) {
       placePieceOnSetup(sqName, state.heldPiece.piece);
-      // After placing, automatically deselect for faster workflow
-      // state.heldPiece = null;
-      // state.selectedRackPiece = null;
-      // $$('.rack-piece').forEach(x => x.classList.remove('selected'));
       return true;
     }
     return false;
   }
-  // Pick up the piece — single click picks it
+  // Pick up the piece
   state.heldPiece = { piece: piece, source: sqName };
   state.selectedRackPiece = piece;
   state.setupMode = true;
+  document.body.dataset.setupEditing = 'true';
   $$('.rack-piece').forEach(x => x.classList.remove('selected'));
   const el = document.querySelector(`.rack-piece[data-piece="${piece}"]`);
   if (el) el.classList.add('selected');
@@ -150,21 +150,20 @@ function placePieceOnSetup(sq, piece) {
     const fen = state.game.fen();
     const parts = fen.split(' ');
     const rows = parts[0].split('/');
+    const targetRC = squareRC(sq);
 
-    const { r, c } = squareRC(sq);
-    const row = rows[r];
-    const expanded = expandRow(row);
-
-    // If piece was picked from the board, remove it from old position (move/copy)
-    if (state.heldPiece && state.heldPiece.source && state.heldPiece.source !== 'rack') {
+    // If piece was picked from the board and not the same square, remove from old square
+    if (state.heldPiece && state.heldPiece.source && state.heldPiece.source !== 'rack' && state.heldPiece.source !== sq) {
       const oldRC = squareRC(state.heldPiece.source);
       const oldExpanded = expandRow(rows[oldRC.r]);
       oldExpanded[oldRC.c] = null;
       rows[oldRC.r] = collapseRow(oldExpanded);
     }
 
-    expanded[c] = piece;
-    rows[r] = collapseRow(expanded);
+    // Now place piece on target square
+    const targetExpanded = expandRow(rows[targetRC.r]);
+    targetExpanded[targetRC.c] = piece;
+    rows[targetRC.r] = collapseRow(targetExpanded);
 
     parts[0] = rows.join('/');
     const newFen = parts.join(' ');
@@ -213,6 +212,7 @@ function erasePieceAt(sq) {
     pushSetupHistory();
     renderAll();
     updatePieceCount();
+    updateSetupHint();
   } catch (e) {
     toast('Cannot erase', 'error');
   }
@@ -260,6 +260,36 @@ function updatePieceCount() {
   el.innerHTML = `<span class="count-w">${wCount}</span><span class="count-sep">·</span><span class="count-b">${bCount}</span>`;
 }
 
+function syncSetupControlsFromFen(fen) {
+  if (!fen) return;
+  const parts = fen.split(' ');
+  // Side to move
+  const side = parts[1] || 'w';
+  const sideEl = $('optSideToMove');
+  if (sideEl) sideEl.value = side;
+
+  // Castling
+  const castling = parts[2] || '-';
+  const wK = $('optWhiteCastleK'); if (wK) wK.checked = castling.includes('K');
+  const wQ = $('optWhiteCastleQ'); if (wQ) wQ.checked = castling.includes('Q');
+  const bK = $('optBlackCastleK'); if (bK) bK.checked = castling.includes('k');
+  const bQ = $('optBlackCastleQ'); if (bQ) bQ.checked = castling.includes('q');
+
+  // En passant
+  const ep = parts[3] || '-';
+  const epEl = $('optEnPassant');
+  if (epEl) {
+    const validEp = ['-', 'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6'];
+    epEl.value = validEp.includes(ep) ? ep : '-';
+  }
+
+  // Halfmove & Fullmove
+  const hm = parseInt(parts[4]) || 0;
+  const fm = parseInt(parts[5]) || 1;
+  const hmEl = $('optHalfmove'); if (hmEl) hmEl.value = hm;
+  const fmEl = $('optFullmove'); if (fmEl) fmEl.value = fm;
+}
+
 // Quick position presets
 function loadPreset(name) {
   const presets = {
@@ -300,11 +330,19 @@ function loadPreset(name) {
   if (!fen) return;
   try {
     state.game.load(fen);
+    state.setupMode = true;
+    document.body.dataset.setupEditing = 'true';
+    state.heldPiece = null;
+    state.selectedRackPiece = null;
+    $$('.rack-piece').forEach(x => x.classList.remove('selected'));
     setupHistory.length = 0;
     setupHistoryIndex = -1;
     pushSetupHistory();
+    syncSetupControlsFromFen(fen);
     renderAll();
     updatePieceCount();
+    updateSetupHint();
+    highlightDropSquares();
     toast(`Loaded preset: ${presetLabels[name] || name.replace(/_/g, ' ')}`);
   } catch (e) {
     toast('Invalid preset', 'error');
@@ -313,8 +351,65 @@ function loadPreset(name) {
 
 function clearBoard() {
   state.game.load('8/8/8/8/8/8/8/8 w - - 0 1');
+  state.setupMode = true;
+  document.body.dataset.setupEditing = 'true';
+  state.heldPiece = null;
+  state.selectedRackPiece = null;
+  $$('.rack-piece').forEach(x => x.classList.remove('selected'));
   state.history = [];
   state.historyIndex = -1;
+  setupHistory.length = 0;
+  setupHistoryIndex = -1;
+  pushSetupHistory();
+  syncSetupControlsFromFen('8/8/8/8/8/8/8/8 w - - 0 1');
   renderAll();
+  updatePieceCount();
+  updateSetupHint();
+  highlightDropSquares();
+  toast('Board cleared');
 }
 
+function startFromPosition() {
+  try {
+    const placement = state.game.fen().split(' ')[0];
+    const side = ($('optSideToMove') && $('optSideToMove').value) || 'w';
+    let castling = '';
+    if ($('optWhiteCastleK') && $('optWhiteCastleK').checked) castling += 'K';
+    if ($('optWhiteCastleQ') && $('optWhiteCastleQ').checked) castling += 'Q';
+    if ($('optBlackCastleK') && $('optBlackCastleK').checked) castling += 'k';
+    if ($('optBlackCastleQ') && $('optBlackCastleQ').checked) castling += 'q';
+    if (!castling) castling = '-';
+    const ep = ($('optEnPassant') && $('optEnPassant').value) || '-';
+    const halfmove = ($('optHalfmove') && parseInt($('optHalfmove').value)) || 0;
+    const fullmove = ($('optFullmove') && parseInt($('optFullmove').value)) || 1;
+
+    const fullFen = `${placement} ${side} ${castling} ${ep} ${halfmove} ${fullmove}`;
+    state.game.load(fullFen);
+  } catch (e) {
+    console.warn('Could not load constructed FEN, keeping current board position:', e);
+  }
+
+  // Finish setup editing mode
+  state.setupMode = false;
+  document.body.dataset.setupEditing = 'false';
+  state.heldPiece = null;
+  state.selectedRackPiece = null;
+  state.dragPiece = null;
+  state.selectedSquare = null;
+  $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+  $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source', 'selected'));
+  updateSetupHint();
+
+  // Reset move history for play from this position
+  state.history = [];
+  state.historyIndex = -1;
+
+  // Restore active tool
+  if (!state.currentTool) state.currentTool = 'select';
+  if (typeof setTool === 'function') setTool(state.currentTool);
+
+  renderAll();
+  updateFen();
+  try { requestEngineEval(); } catch (e) {}
+  toast('Position set — start playing or drawing annotations', 'success');
+}

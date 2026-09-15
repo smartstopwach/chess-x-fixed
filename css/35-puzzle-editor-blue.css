@@ -46,9 +46,13 @@ body[data-authoring="true"][data-mode="setup"] #leftSidebar .position-editor,
 body[data-authoring="true"][data-mode="setup"] #leftSidebar .pos-controls {
   display: block !important;
 }
-body[data-mode="setup"] #drawingToolsPanel,
-body[data-mode="setup"] #themesPanel {
+body[data-mode="setup"][data-setup-editing="true"] #drawingToolsPanel,
+body[data-mode="setup"][data-setup-editing="true"] #themesPanel {
   display: none !important;
+}
+body[data-mode="setup"][data-setup-editing="false"] #drawingToolsPanel,
+body[data-mode="setup"][data-setup-editing="false"] #themesPanel {
+  display: block !important;
 }
 /* Force left sidebar visible in setup mode with 3-column layout */
 body[data-mode="setup"] #leftSidebar {
@@ -66,4 +70,3 @@ body[data-mode="setup"] .layout[data-layout="focus"] .board-area {
 body[data-mode="setup"] .layout[data-layout="focus"] .sidebar-right {
   grid-column: 3 !important;
 }
-

@@ -181,8 +181,10 @@ function celebrateMate(force) {
     '</div>' +
     (info.kind === 'stalemate' ? '<div class="fx-ripple"></div>' : '') +
     (isDraw ? '<div class="fx-sweep fx-sweep-a"></div><div class="fx-sweep fx-sweep-b"></div>' : '');
-  box.querySelector('.mate-fx-title').textContent = info.title;
-  box.querySelector('.mate-fx-sub').textContent = info.sub;
+  const titleEl = box.querySelector('.mate-fx-title');
+  const subEl = box.querySelector('.mate-fx-sub');
+  if (titleEl) titleEl.textContent = info.title;
+  if (subEl) subEl.textContent = info.sub;
   box.className = 'mate-fx ' + info.variant;
 
   __mateFxUntil = Date.now() + 3000;

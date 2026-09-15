@@ -72,6 +72,8 @@ function sessionPayload() {
   return {
     v: 1,
     mode: (typeof currentMode === 'string') ? currentMode : null,
+    setupMode: !!state.setupMode,
+    setupEditing: document.body.dataset.setupEditing === 'true',
     fen: fenOf(state.game),
     history: asArray(state.history).slice(0, 500),
     historyIndex: state.historyIndex,
@@ -232,6 +234,15 @@ function applySession(s) {
       state.clock.running = false;                     // a timer is never resumed
       if (typeof updateClocks === 'function') updateClocks();
     }
+    if (s.mode === 'setup') {
+      if (s.setupEditing === false || s.setupMode === false) {
+        state.setupMode = false;
+        document.body.dataset.setupEditing = 'false';
+      } else {
+        state.setupMode = true;
+        document.body.dataset.setupEditing = 'true';
+      }
+    }
   } catch (e) {
     console.error('applySession failed', e);
   }
@@ -295,6 +306,14 @@ function restoreSession() {
       }
     } catch (e) {}
     try { draftBack = restorePuzzleDraft(); } catch (e) {}
+  } else if (mode === 'setup') {
+    if (s.setupEditing === false || s.setupMode === false) {
+      state.setupMode = false;
+      document.body.dataset.setupEditing = 'false';
+    } else {
+      state.setupMode = true;
+      document.body.dataset.setupEditing = 'true';
+    }
   }
 
   applySession(s);

@@ -34,28 +34,12 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       setMode('setup');
       break;
-    case 'h': case 'H':
-      e.preventDefault();
-      showFrontPage();
-      break;
     case 'p': case 'P':
       // Toggle authoring mode. While a puzzle is being played, P must not
       // start a brand-new blank puzzle - it goes back to editing that one.
       if (document.body.dataset.testing === 'true') endPuzzleTest(true);
       else if (isAuthoringMode()) exitAuthoringMode();
       else enterAuthoringForNewPuzzle();
-      break;
-    case 'e': case 'E':
-      // Toggle setup mode
-      state.setupMode = !state.setupMode;
-      if (!state.setupMode) {
-        state.heldPiece = null;
-        state.selectedRackPiece = null;
-        $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-        $$('.square').forEach(sq => sq.classList.remove('drop-target'));
-      }
-      toast(state.setupMode ? 'Setup Mode: ON — click/drag to edit position' : 'Setup Mode: OFF — play moves normally');
-      updateSetupHint();
       break;
     case 'ArrowLeft': e.preventDefault(); prevMove(); break;
     case 'ArrowRight': e.preventDefault(); nextMove(); break;
@@ -83,4 +67,3 @@ document.addEventListener('keydown', (e) => {
       break;
   }
 });
-

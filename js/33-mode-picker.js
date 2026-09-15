@@ -32,34 +32,44 @@ function setMode(mode) {
   }
 
   // Exit any current authoring/puzzle mode first
-  if (isAuthoringMode && isAuthoringMode()) {
+  if (typeof isAuthoringMode === 'function' && isAuthoringMode()) {
     setAuthoringMode(false);
   }
 
-  // Reset state for clean mode entry
+  // Reset setup editing state completely for clean mode entry
+  state.setupMode = false;
+  document.body.dataset.setupEditing = 'false';
   state.selectedSquare = null;
-  puzzleState.selectedSquare = null;
-  puzzleState.heldPiece = null;
-  $$('.pe-rack-piece').forEach(x => x.classList.remove('selected'));
   state.heldPiece = null;
   state.selectedRackPiece = null;
-  $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+  state.dragPiece = null;
+  $$('.rack-piece, .pe-rack-piece').forEach(x => x.classList.remove('selected'));
+  $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source', 'selected'));
+  if (typeof updateSetupHint === 'function') updateSetupHint();
+
+  if (typeof puzzleState !== 'undefined') {
+    puzzleState.selectedSquare = null;
+    puzzleState.heldPiece = null;
+  }
+
   state.game.reset();
   state.history = [];
   state.historyIndex = -1;
-  if (puzzleGame()) {
+  if (typeof puzzleGame === 'function' && puzzleGame()) {
     puzzleGame().load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     puzzleState.history = [];
     puzzleState.historyIndex = -1;
-    peSetupPushHistory();
-    peUpdatePieceCount();
-    peUpdateHint();
+    if (typeof peSetupPushHistory === 'function') peSetupPushHistory();
+    if (typeof peUpdatePieceCount === 'function') peUpdatePieceCount();
+    if (typeof peUpdateHint === 'function') peUpdateHint();
   }
   clearAllAnnotations();
 
   if (mode === 'normal') {
     // Normal mode: clean board, no authoring, no puzzle editor showing
     document.body.dataset.authoring = 'false';
+    document.body.dataset.setupEditing = 'false';
+    state.setupMode = false;
     // Force left sidebar hidden (focus mode default)
     const layout = document.getElementById('layout');
     if (layout) layout.classList.remove('left-sidebar-visible');
@@ -68,15 +78,20 @@ function setMode(mode) {
   } else if (mode === 'puzzle') {
     // Puzzle mode: enter authoring, show puzzle editor + blue position setup
     document.body.dataset.authoring = 'true';
+    document.body.dataset.setupEditing = 'false';
+    state.setupMode = false;
     enterAuthoringForNewPuzzle();
     setTimeout(autoFitBoard, 50);
   } else if (mode === 'setup') {
-    // Custom setup mode: just show the yellow Position Setup on left
-    // NO authoring mode (no authoring toolbar), NO puzzle editor, NO library
-    // Just a clean Position Setup + FEN panel + board to play with
+    // Custom setup mode: show yellow Position Setup on left, editing enabled
     document.body.dataset.authoring = 'false';
-    document.body.dataset.mode = 'setup';
-    toast('Custom Setup — drag pieces to set up a position', 'success');
+    document.body.dataset.setupEditing = 'true';
+    state.setupMode = true;
+    const layout = document.getElementById('layout');
+    if (layout) layout.classList.add('left-sidebar-visible');
+    loadPreset('standard');
+    setTimeout(autoFitBoard, 50);
+    toast('Custom Setup — arrange pieces and click START FROM POSITION', 'success');
   }
   renderAll();
 }
@@ -84,4 +99,3 @@ function setMode(mode) {
 function showFrontPage() {
   setMode('front');
 }
-

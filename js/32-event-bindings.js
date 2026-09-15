@@ -38,21 +38,7 @@ function bindEvents() {
   }));
   $('btnClearAnnotations').addEventListener('click', clearAllAnnotations);
 
-  $('btnStartFromPosition').addEventListener('click', () => {
-    state.setupMode = false;
-    state.heldPiece = null;
-    state.selectedRackPiece = null;
-    $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-    $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source'));
-    updateSetupHint();
-    state.selectedRackPiece = null;
-    $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-    state.history = [];
-    state.historyIndex = -1;
-    renderAll();
-    requestEngineEval();
-    toast('Position set', 'success');
-  });
+  $('btnStartFromPosition').addEventListener('click', startFromPosition);
 
   // Position setup advanced controls
   $('btnSetupUndo').addEventListener('click', setupUndo);
@@ -119,7 +105,6 @@ function bindEvents() {
 
   // Zoom buttons removed — board auto-fits to available space
 
-
   window.addEventListener('resize', () => { autoFitBoard(); renderAnnotations(); });
   setTimeout(autoFitBoard, 200);
 
@@ -172,4 +157,3 @@ function bindEvents() {
     }
   });
 }
-
