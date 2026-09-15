@@ -134,6 +134,11 @@ function mateKingSquare(color) {
  * the square already carrying .check; draws have nothing to mark.
  */
 function decorateMateKing() {
+  if (state.setupMode || state.authoringMode ||
+      (document.body && (document.body.dataset.setupEditing === 'true' || document.body.dataset.authoring === 'true'))) {
+    clearMateFx();
+    return;
+  }
   if (!__mateFxUntil || Date.now() > __mateFxUntil) return;
   const sq = document.querySelector('.square.check');
   if (sq) sq.classList.add('mate-king');
@@ -155,6 +160,13 @@ function clearMateFx() {
  * @returns {boolean} true when an animation was started
  */
 function celebrateMate(force) {
+  // Never celebrate or show mate/stalemate effects during setup editing or puzzle authoring!
+  if (state.setupMode || state.authoringMode ||
+      (document.body && (document.body.dataset.setupEditing === 'true' || document.body.dataset.authoring === 'true'))) {
+    clearMateFx();
+    return false;
+  }
+
   const info = finishInfo(state.game);
   let key = '';
   try { key = state.game.fen() + '|' + (state.history ? state.history.length : 0); } catch (e) { return false; }

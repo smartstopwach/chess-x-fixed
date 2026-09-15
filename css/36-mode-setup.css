@@ -1,12 +1,13 @@
 /* ============================================
-   SETUP MODE: HIDE puzzle editor, library.
+   SETUP MODE: HIDE puzzle editor, library, puzzle setup.
    During position setup editing (data-setup-editing="true"),
-   hide analysis, move list, chess clock.
+   hide analysis, move list, chess clock, drawing tools, themes.
    After START FROM POSITION (data-setup-editing="false"),
-   show analysis, move list, chess clock for playing/teaching.
+   show analysis, move list, chess clock, drawing tools, themes for playing/teaching.
    ============================================ */
 body[data-mode="setup"] #puzzleEditorPanel,
-body[data-mode="setup"] #libraryPanel {
+body[data-mode="setup"] #libraryPanel,
+body[data-mode="setup"] #puzzleLeftPanel {
   display: none !important;
 }
 

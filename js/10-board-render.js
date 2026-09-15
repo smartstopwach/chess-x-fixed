@@ -164,9 +164,11 @@ function highlightSquares() {
     }
   } catch (e) {}
 
-  // Check
+  // Check (only when actually playing a game, not during setup editing or puzzle authoring)
   try {
-    if (state.game.in_check()) {
+    const isEditing = state.setupMode || state.authoringMode ||
+      (document.body && (document.body.dataset.setupEditing === 'true' || document.body.dataset.authoring === 'true'));
+    if (!isEditing && state.game.in_check()) {
       const turn = state.game.turn();
       state.game.board().forEach((row, r) => {
         row.forEach((p, c) => {
