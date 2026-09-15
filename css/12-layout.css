@@ -4,8 +4,8 @@
 .layout {
   display: grid;
   grid-template-columns: 280px 1fr 320px;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 8px;
   flex: 1;
   min-height: 0;
   overflow: hidden;

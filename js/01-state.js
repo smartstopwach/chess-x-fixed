@@ -34,7 +34,7 @@ const state = {
   flipped: false,
   selectedSquare: null,
   currentTool: 'select',
-  currentColor: '#ef4444',
+  currentColor: '#ffaa00',
   annotations: [],
   arrows: [],
   circles: [],

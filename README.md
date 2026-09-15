@@ -17,13 +17,63 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - 3 piece styles (Alpha, Merida, Classic)
 
 ### ✏️ Teaching Drawing Tools
-- Arrows (drag from one square to another)
+- Arrows (drag from one square to another) — thick **lichess-style** arrows, see below
 - Circles (click to toggle)
 - Square highlights
 - Rectangle highlight areas
 - Eraser (per-square)
-- 7 colors
+- 8 colors, default amber `#ffaa00`
 - "Clear all annotations" button
+
+### 🏹 Arrows that read on a recording (`js/11-annotations-render.js`)
+Arrows are drawn as one SVG group per arrow — a round-capped band plus a filled
+triangular head — with every dimension expressed as a fraction of a square, so
+they look the same at 200px and at 1300px:
+
+| part | value | how it was chosen |
+|---|---|---|
+| band width | `0.22 × square` | a 16px band on the 73px squares of the reference shot |
+| head | `0.31 × square` long, `0.47 × square` wide, tip exactly on the target square centre | measured the same way |
+| colour | `#ffaa00` at `opacity .8` | the reference reads `rgb(251,183,42)` over a light square and `rgb(227,166,16)` over a dark one; solving the two equations gives `255,170,0` at alpha `0.8` |
+| layering | `z-index 2`, pieces are `4` | the band slides *under* the piece standing on its origin square |
+| joins | `stroke-linejoin: round` | a soft elbow instead of a spike |
+
+**Knight moves get their own shape.** A move whose displacement is (1, 2) or
+(2, 1) and whose origin square holds (or just lost) a knight is drawn as the
+letter L it actually travels — long leg first, so `Nb1-c3` goes up the b-file to
+b3 and only then turns into c3. A bishop/rook drag that happens to land a knight
+jump away stays a straight line, and if the origin square is already empty (the
+move was played) the L is kept, because the shape is what the class is reading.
+
+Flip needs no special case: the geometry is in board coordinates and the whole
+`<svg>` is rotated 180°, so arrows, circles and the highlight layer flip together.
+`python3 tools/arrow_style_test.py` re-measures all of this on a real Chromium
+render (it pixel-scans our own screenshot, and the flip, the under-piece layering
+and the knight L are all asserted, not eyeballed).
+
+### 📐 The board always fills the room (`js/27-autofit.js`)
+`autoFitBoard()` measures `#boardWrapper`'s free box, subtracts only the rows
+that really sit above and below it, and gives the board that whole square — no
+design-size ceiling any more (the old 1100px cap meant a 1440px-tall screen got
+a 1100px board). The same value is published as `--board-size` on `:root` so the
+player-name rows track the board width. A fit that lands in the middle of a mode
+transition measures a box that is about to change, so the result is re-checked on
+the next frame and a `ResizeObserver` on the wrapper keeps it honest.
+
+Measured board size (before → after), no clipped rank in any mode:
+
+| window | Normal | Puzzle | Custom Setup |
+|---|---|---|---|
+| 2560×1440 | 1100 → **1309** | 1100 → **1259** | 1100 → **1309** |
+| 1920×1080 | 893 → **949** | 843 → **899** | 843 → **949** |
+| 1440×900 | 713 → **769** | 663 → **719** | 663 → **769** |
+| 1366×768 | 581 → **637** | 531 → **587** | 531 → **637** |
+| 390×844 (phone) | clipped → **370** | | |
+
+Supporting trims: `.layout` padding 12→8 and gap 12→8, `.board-area` padding
+8→4, the two player-info rows 28px→16px each, board frame 3px→2px. Below 900px
+every layout collapses to one column — the desktop rules used to pin the panels
+to numbered grid columns, which left a phone with a 56px-wide board.
 
 ### 🧩 Position Setup
 - Visual piece rack to add/remove pieces
@@ -274,15 +324,19 @@ css/                  33 files — was styles.css, one file per section banner
 js/                   31 files — was app.js, one file per section banner
   00-constants.js       PIECE_FONT
   01-state.js 02-dom.js 03-utils.js          shared core
-  10..19-*.js           board render, interactions, annotations, tools, setup,
+  10..19-*.js           board render, interactions, annotations (arrow shapes
+                        live in 11-annotations-render.js), tools, setup,
                         move list, FEN, themes, layouts
   20..25-puzzle-*.js    puzzle library, editor board, authoring mode
-  26-engine.js 27-autofit.js 28-flip-reset.js 29-chess-clock.js 30-keyboard.js
+  26-engine.js          Stockfish worker bridge
+  27-autofit.js         board sizing — fills the whole free box, re-checks itself
+  28-flip-reset.js 29-chess-clock.js 30-keyboard.js
   31-render-all.js 32-event-bindings.js 33-mode-picker.js
   35-checkmate.js       checkmate / stalemate / draw animation (hooked into renderAll)
   36-persist.js         session + unsaved-draft autosave (restores after a reload)
   90-boot.js            init() — MUST stay the last script
 tools/verify_split.py   integrity check (see below)
+tools/arrow_style_test.py  pixel-checks the arrows against the reference numbers
 ```
 
 Nothing was rewritten while splitting: the files are byte-exact slices of the
@@ -291,6 +345,10 @@ split is still intact after your edits:
 
 ```bash
 python3 tools/verify_split.py      # PASS = concatenation + load order unchanged
+
+# arrows still look like the reference (needs playwright + chromium + pillow)
+python3 tools/arrow_style_test.py  # 37 checks: band width, head, colour, the
+                                   # knight L, flip, under-piece layering
 ```
 
 Still no build step: `index.html` opens by double-click (`file://`) or via any

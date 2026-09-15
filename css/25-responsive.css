@@ -5,14 +5,42 @@
   .layout { grid-template-columns: 240px 1fr 280px; }
 }
 
+/* Below 900px the three columns cannot work, so every layout mode collapses to
+   one column and the board sits on top. The attribute-specific rules in
+   12-layout.css (.layout[data-layout="focus"], the authoring override) are
+   more specific than a bare .layout, so they are repeated here - without that
+   the board stays trapped in a 92px-wide column on a phone. */
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  .layout,
+  .layout[data-layout],
+  body[data-authoring="true"] .layout[data-layout] {
+    grid-template-columns: minmax(0, 1fr);
+    /* rows follow `order`: board first, then the two panels, so the board row
+       is the flexible one and fills the height a phone has left */
+    grid-template-rows: 1fr auto auto;
+  }
+  /* The desktop rules pin every panel to a numbered column. On a phone that
+     creates a phantom second track and squeezes the board to 56px, so all three
+     panels go back into the single column and rely on `order` instead. */
+  .layout > *,
+  .layout[data-layout] > * { grid-column: 1 !important; }
   .sidebar { max-height: 200px; }
   .sidebar-left { order: 2; }
   .sidebar-right { order: 3; }
-  .board-area { order: 1; min-height: 400px; }
+  /* 400px of reserved height pushed the board out of a landscape phone: the
+     auto-fit sizes it now, so only a small floor is needed */
+  .board-area { order: 1; min-height: 240px; }
   .topbar-actions .btn-ghost span { display: none; }
   .brand-tag { display: none; }
+}
+
+/* short landscape phones: keep the panels small so the board keeps its row, and
+   drop the two player-info rows - with ~200px of height there is no room to
+   spare, and the same names are in the panels anyway */
+@media (max-width: 900px) and (orientation: landscape) {
+  .sidebar { max-height: 120px; }
+  .board-area { min-height: 200px; }
+  .board-meta-top, .board-meta-bottom { display: none; }
 }
 
 @media (max-width: 600px) {
@@ -21,12 +49,11 @@
   .lesson-title { font-size: 16px; }
   .lesson-subtitle { font-size: 12px; }
   .layout { padding: 6px; gap: 6px; }
-  .board-area { padding: 8px; }
+  .board-area { padding: 4px; }
 }
 
-/* Tablet landscape */
-@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
-  .layout { grid-template-columns: 240px 1fr 280px; }
+/* Tablet landscape - starts above the one-column breakpoint so the two rules
+   can never both match and fight each other */
+@media (min-width: 901px) and (max-width: 1024px) and (orientation: landscape) {
+  .layout, .layout[data-layout] { grid-template-columns: 240px 1fr 280px; }
 }
-
-
