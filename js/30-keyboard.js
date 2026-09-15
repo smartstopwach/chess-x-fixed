@@ -46,7 +46,10 @@ document.addEventListener('keydown', (e) => {
     case 'f': case 'F': flipBoard(); break;
     case 'r': case 'R': if (!e.ctrlKey && !e.metaKey) resetBoard(); break;
     case 'a': case 'A': setTool('arrow'); break;
-    case 'c': case 'C': setTool('circle'); break;
+    case 'c': case 'C':
+      if (typeof cycleDrawingColor === 'function') cycleDrawingColor();
+      break;
+    case 'o': case 'O': setTool('circle'); break;
     case 'e': case 'E': setTool('eraser'); break;
     case 'v': case 'V': setTool('select'); break;
     case 'h': case 'H': setTool('highlight'); break;

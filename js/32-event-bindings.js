@@ -32,10 +32,11 @@ function bindEvents() {
 
   $$('.tool-btn').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $$('.color-dot').forEach(b => b.addEventListener('click', () => {
-    state.currentColor = b.dataset.color;
-    $$('.color-dot').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
+    if (typeof setDrawingColor === 'function') setDrawingColor(b.dataset.color);
+    else state.currentColor = b.dataset.color;
   }));
+  const cycleBtn = $('btnCycleColor');
+  if (cycleBtn) cycleBtn.addEventListener('click', cycleDrawingColor);
   $('btnClearAnnotations').addEventListener('click', clearAllAnnotations);
 
   const u1 = $('btnAnnoUndo'); if (u1) u1.addEventListener('click', undoAnnotation);

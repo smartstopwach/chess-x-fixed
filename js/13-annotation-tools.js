@@ -1,6 +1,40 @@
 // ============================================
 // ANNOTATION HELPERS & 1-BY-1 UNDO / REDO HISTORY
 // ============================================
+const DRAWING_COLORS = [
+  { hex: '#ffaa00', name: 'Amber / Gold' },
+  { hex: '#ef4444', name: 'Red' },
+  { hex: '#22c55e', name: 'Green' },
+  { hex: '#06b6d4', name: 'Cyan / Sky' },
+  { hex: '#3b82f6', name: 'Blue' },
+  { hex: '#a855f7', name: 'Purple' },
+  { hex: '#ec4899', name: 'Pink' },
+  { hex: '#f97316', name: 'Orange' },
+  { hex: '#84cc16', name: 'Lime' },
+  { hex: '#14b8a6', name: 'Teal' },
+  { hex: '#f59e0b', name: 'Warm Gold' },
+  { hex: '#ffffff', name: 'White' },
+];
+
+function setDrawingColor(color) {
+  if (!color) return;
+  state.currentColor = color;
+  $$('.color-dot').forEach(x => {
+    x.classList.toggle('active', x.dataset.color && x.dataset.color.toLowerCase() === color.toLowerCase());
+  });
+  const colObj = DRAWING_COLORS.find(c => c.hex.toLowerCase() === color.toLowerCase());
+  const name = colObj ? colObj.name : color;
+  toast(`Color: ${name}`, 'info');
+}
+
+function cycleDrawingColor() {
+  const cur = (state.currentColor || '#ffaa00').toLowerCase();
+  const currentIdx = DRAWING_COLORS.findIndex(c => c.hex.toLowerCase() === cur);
+  const nextIdx = (currentIdx + 1) % DRAWING_COLORS.length;
+  const nextColor = DRAWING_COLORS[nextIdx];
+  setDrawingColor(nextColor.hex);
+}
+
 const annoHistory = [];
 let annoHistoryIndex = -1;
 

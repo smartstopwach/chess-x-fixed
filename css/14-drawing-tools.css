@@ -43,43 +43,102 @@
 
 .color-row {
   display: flex;
-  align-items: center;
-  /* 8 swatches do not fit on one line inside a 280px sidebar, and the row is
-     the only way to pick a drawing colour - so let them wrap instead of
-     squishing the dots into ellipses */
-  flex-wrap: wrap;
-  row-gap: 6px;
-  gap: 5px;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 10px;
-  padding: 8px;
+  padding: 8px 10px;
   background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 
+.color-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .color-label {
   font-size: 11px;
   color: var(--text-secondary);
-  margin-right: 1px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.color-cycle-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.color-cycle-btn:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+}
+
+.color-cycle-btn:hover svg {
+  stroke: var(--bg-primary);
+}
+
+.color-cycle-btn:hover .kbd-badge {
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  border-color: transparent;
+}
+
+.kbd-badge {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 9px;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.color-dots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
 .color-dot {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--c);
   border: 2px solid transparent;
   cursor: pointer;
   transition: var(--transition);
   outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.color-dot:hover { transform: scale(1.15); }
+.color-dot:hover {
+  transform: scale(1.22);
+}
 
 .color-dot.active {
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px var(--bg-panel);
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: scale(1.15);
 }
 
 .btn-danger-full {

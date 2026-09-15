@@ -205,14 +205,27 @@
         </button>
       </div>
       <div class="color-row">
-        <span class="color-label">Color</span>
-        <button class="color-dot active" style="--c:#ffaa00" data-color="#ffaa00" title="Amber (lichess arrows)"></button>
-        <button class="color-dot" style="--c:#ef4444" data-color="#ef4444" title="Red"></button>
-        <button class="color-dot" style="--c:#22c55e" data-color="#22c55e" title="Green"></button>
-        <button class="color-dot" style="--c:#3b82f6" data-color="#3b82f6" title="Blue"></button>
-        <button class="color-dot" style="--c:#f97316" data-color="#f97316" title="Orange"></button>
-        <button class="color-dot" style="--c:#a855f7" data-color="#a855f7" title="Purple"></button>
-        <button class="color-dot" style="--c:#ffffff" data-color="#ffffff" title="White"></button>
+        <div class="color-row-header">
+          <span class="color-label">Color</span>
+          <button class="btn-mini color-cycle-btn" id="btnCycleColor" title="Cycle Color (Press C)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Cycle <kbd class="kbd-badge">C</kbd>
+          </button>
+        </div>
+        <div class="color-dots-grid">
+          <button class="color-dot active" style="--c:#ffaa00" data-color="#ffaa00" title="Amber / Gold (Press C)"></button>
+          <button class="color-dot" style="--c:#ef4444" data-color="#ef4444" title="Red"></button>
+          <button class="color-dot" style="--c:#22c55e" data-color="#22c55e" title="Green"></button>
+          <button class="color-dot" style="--c:#06b6d4" data-color="#06b6d4" title="Cyan / Sky"></button>
+          <button class="color-dot" style="--c:#3b82f6" data-color="#3b82f6" title="Blue"></button>
+          <button class="color-dot" style="--c:#a855f7" data-color="#a855f7" title="Purple / Violet"></button>
+          <button class="color-dot" style="--c:#ec4899" data-color="#ec4899" title="Pink / Magenta"></button>
+          <button class="color-dot" style="--c:#f97316" data-color="#f97316" title="Orange"></button>
+          <button class="color-dot" style="--c:#84cc16" data-color="#84cc16" title="Lime"></button>
+          <button class="color-dot" style="--c:#14b8a6" data-color="#14b8a6" title="Teal"></button>
+          <button class="color-dot" style="--c:#f59e0b" data-color="#f59e0b" title="Warm Gold"></button>
+          <button class="color-dot" style="--c:#ffffff" data-color="#ffffff" title="White"></button>
+        </div>
       </div>
       <div class="anno-bottom-row">
         <button class="btn-mini anno-mini" id="btnAnnoUndoBottom" title="Undo drawing (1 by 1)" disabled>↶ Undo</button>
