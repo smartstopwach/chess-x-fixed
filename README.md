@@ -70,6 +70,13 @@ Measured board size (before → after), no clipped rank in any mode:
 | 1366×768 | 581 → **637** | 531 → **587** | 531 → **637** |
 | 390×844 (phone) | clipped → **370** | | |
 
+**Full (the `Full` button) is the recording path**, and it now really means
+bigger: `css/47-fullscreen.css` compacts the topbar (54px → 40px) and the layout
+gaps while fullscreen is on, and `autoFitBoard()` re-runs on `fullscreenchange`,
+so the board takes the freed rows — 949 → **975** at 1920×1080, 637 → **663** at
+1366×768. Nothing is hidden (every button stays reachable mid-recording) and
+leaving fullscreen restores the normal sizing exactly.
+
 Supporting trims: `.layout` padding 12→8 and gap 12→8, `.board-area` padding
 8→4, the two player-info rows 28px→16px each, board frame 3px→2px. Below 900px
 every layout collapses to one column — the desktop rules used to pin the panels
@@ -318,6 +325,7 @@ css/                  33 files — was styles.css, one file per section banner
   40-home-button.css 41-front-page.css
   45-mode-normal.css    Normal mode overrides
   46-checkmate.css      checkmate / stalemate / draw animations
+  47-fullscreen.css     compact chrome while in Full, so the board grows
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.

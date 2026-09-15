@@ -1,0 +1,29 @@
+/* ============================================
+   FULLSCREEN - the recording path
+   ============================================
+   Fullscreen is what the "Full" button is for: the board should fill a projector
+   or a screen capture. Nothing gets hidden here (every button has to stay
+   reachable while recording), the chrome is only compacted, and autoFitBoard()
+   then hands the freed rows to the board.
+*/
+:fullscreen .topbar {
+  padding: 3px 12px;
+}
+
+:fullscreen .layout,
+:fullscreen .layout[data-layout] {
+  padding: 4px;
+  gap: 4px;
+}
+
+:fullscreen .board-area {
+  padding: 2px;
+  border-radius: 0;
+}
+
+:fullscreen .board-meta-top,
+:fullscreen .board-meta-bottom {
+  min-height: 14px;
+  line-height: 14px;
+  font-size: 10px;
+}

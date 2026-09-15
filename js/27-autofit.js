@@ -104,3 +104,15 @@ function autoFitBoard() {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 })();
+
+// Entering or leaving fullscreen moves the free box by a whole row of chrome,
+// so re-fit on the event instead of waiting for the resize that usually follows.
+(function watchFullscreen() {
+  const onFsChange = () => {
+    autoFitBoard();
+    // some engines report the new viewport a frame late
+    if (window.requestAnimationFrame) requestAnimationFrame(autoFitBoard);
+  };
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+})();
