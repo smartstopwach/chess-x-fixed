@@ -56,13 +56,21 @@ document.addEventListener('keydown', (e) => {
     case 'z': case 'Z':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        prevMove();
+        if (state.currentTool !== 'select' && typeof undoAnnotation === 'function') {
+          undoAnnotation();
+        } else {
+          prevMove();
+        }
       }
       break;
     case 'y': case 'Y':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        nextMove();
+        if (state.currentTool !== 'select' && typeof redoAnnotation === 'function') {
+          redoAnnotation();
+        } else {
+          nextMove();
+        }
       }
       break;
   }

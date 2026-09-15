@@ -175,6 +175,10 @@
       <div class="panel-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
         Drawing Tools
+        <div class="anno-header-actions">
+          <button class="btn-mini anno-mini" id="btnAnnoUndo" title="Undo drawing (1 by 1)" disabled>↶ Undo</button>
+          <button class="btn-mini anno-mini" id="btnAnnoRedo" title="Redo drawing (1 by 1)" disabled>↷ Redo</button>
+        </div>
       </div>
       <div class="tool-grid">
         <button class="tool-btn active" data-tool="select" title="Select / Move Pieces (V)">
@@ -212,10 +216,14 @@
         <button class="color-dot" style="--c:#a855f7" data-color="#a855f7" title="Purple"></button>
         <button class="color-dot" style="--c:#ffffff" data-color="#ffffff" title="White"></button>
       </div>
-      <button class="btn-danger-full" id="btnClearAnnotations">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-        Clear Annotations
-      </button>
+      <div class="anno-bottom-row">
+        <button class="btn-mini anno-mini" id="btnAnnoUndoBottom" title="Undo drawing (1 by 1)" disabled>↶ Undo</button>
+        <button class="btn-mini anno-mini" id="btnAnnoRedoBottom" title="Redo drawing (1 by 1)" disabled>↷ Redo</button>
+        <button class="btn-danger-full anno-clear-btn" id="btnClearAnnotations">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          Clear
+        </button>
+      </div>
     </div>
 
     <div class="panel" id="yellowPositionSetupPanel">

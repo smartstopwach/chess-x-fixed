@@ -38,6 +38,11 @@ function bindEvents() {
   }));
   $('btnClearAnnotations').addEventListener('click', clearAllAnnotations);
 
+  const u1 = $('btnAnnoUndo'); if (u1) u1.addEventListener('click', undoAnnotation);
+  const u2 = $('btnAnnoUndoBottom'); if (u2) u2.addEventListener('click', undoAnnotation);
+  const r1 = $('btnAnnoRedo'); if (r1) r1.addEventListener('click', redoAnnotation);
+  const r2 = $('btnAnnoRedoBottom'); if (r2) r2.addEventListener('click', redoAnnotation);
+
   $('btnStartFromPosition').addEventListener('click', startFromPosition);
 
   // Position setup advanced controls

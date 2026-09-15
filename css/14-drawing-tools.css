@@ -100,5 +100,55 @@
   font-family: inherit;
 }
 
-.btn-danger-full:hover { background: rgba(248, 81, 73, 0.2); }
+.anno-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.anno-mini {
+  padding: 3px 8px;
+  font-size: 11px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.anno-mini:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+.anno-mini:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.anno-bottom-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.anno-bottom-row .anno-mini {
+  flex: 1;
+  padding: 8px 6px;
+  justify-content: center;
+}
+
+.anno-bottom-row .anno-clear-btn {
+  flex: 1.2;
+  margin-top: 0;
+  padding: 8px 6px;
+}
 
