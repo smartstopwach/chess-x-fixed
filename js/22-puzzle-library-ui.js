@@ -20,7 +20,13 @@ function renderLibrary(filter = '') {
     const isExpanded = chap.expanded !== false;
     const isActive = chap.id === lib.activeChapterId;
     const puzzleCount = chap.puzzles.length;
-    const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+    // Clamp first: a library imported from JSON can carry an Elo-style number,
+    // and '☆'.repeat(5 - 1200) throws - which used to take the rest of boot()
+    // with it, so no button on the page worked any more.
+    const stars = (n) => {
+      const d = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+      return '★'.repeat(d) + '☆'.repeat(5 - d);
+    };
 
     html += `<div class="library-chapter" data-chapter-id="${chap.id}">
       <div class="library-chapter-header ${isExpanded ? 'expanded' : ''} ${isActive ? 'active' : ''}" data-action="toggle-chapter" data-chapter-id="${chap.id}">

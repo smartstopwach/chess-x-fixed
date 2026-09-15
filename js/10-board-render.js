@@ -119,5 +119,10 @@ function highlightSquares() {
       });
     } catch (e) {}
   }
+
+  // Checkmate / stalemate: keep the mated king marked while the celebration
+  // runs. renderBoard() rewrites square classes, so this belongs here rather
+  // than only in the one-shot trigger.
+  try { if (typeof decorateMateKing === 'function') decorateMateKing(); } catch (e) {}
 }
 

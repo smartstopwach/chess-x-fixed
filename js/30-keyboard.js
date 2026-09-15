@@ -66,6 +66,9 @@ document.addEventListener('keydown', (e) => {
     case 'e': case 'E': setTool('eraser'); break;
     case 'v': case 'V': setTool('select'); break;
     case 'h': case 'H': setTool('highlight'); break;
+    // 'M' replays the checkmate/stalemate celebration for the position already
+    // on the board - handy when recording, no undo/redo juggling needed.
+    case 'm': case 'M': replayMateFx(); break;
     case 'z': case 'Z':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();

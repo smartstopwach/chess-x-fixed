@@ -1,0 +1,128 @@
+/* ============================================
+   CHECKMATE / STALEMATE CELEBRATION
+   ============================================
+   Same three hooks everywhere: a dimming vignette + banner over the board,
+   a red pulse on the mated king, and one short board shake. Mounted inside
+   #boardArea so it follows the board into every mode and stays visible while
+   the side panels are hidden for recording. */
+
+.mate-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 26;
+  display: grid;
+  place-items: center;
+  pointer-events: none;      /* the moment, never an obstacle: no square is blocked */
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.mate-fx.show { opacity: 1; }
+
+.mate-fx::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(4, 6, 10, 0.18) 0%, rgba(4, 6, 10, 0.62) 100%);
+}
+
+.mate-fx-panel {
+  position: relative;
+  text-align: center;
+  padding: 16px 34px 18px;
+  border-radius: var(--radius-lg);
+  background: rgba(10, 13, 20, 0.82);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 44px var(--accent-glow), var(--shadow-lg);
+  animation: mateRise 0.45s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+}
+
+.mate-fx-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(26px, 4.6vw, 54px);
+  font-weight: 700;
+  letter-spacing: 4px;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 0 18px var(--accent-glow);
+}
+
+.mate-fx-sub {
+  margin-top: 5px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* A stalemate is a result, not a win - flatter and grey. */
+.mate-fx.is-stale .mate-fx-panel {
+  border-color: var(--text-muted);
+  box-shadow: 0 0 26px rgba(255, 255, 255, 0.12), var(--shadow-lg);
+  animation: mateRiseSoft 0.4s ease both;
+}
+
+.mate-fx.is-stale .mate-fx-sub { color: var(--text-muted); }
+
+/* The mated king: red pulse behind the piece, a ring around the square, and a
+   shake of the piece itself. Mirrors .square.check, which paints the background. */
+.square.mate-king { animation: mateKingPulse 0.46s ease-in-out 5; }
+
+.square.mate-king::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 3px solid var(--danger);
+  border-radius: 4px;
+  box-shadow: 0 0 18px var(--danger), inset 0 0 14px rgba(248, 81, 73, 0.55);
+  animation: mateRing 0.46s ease-in-out 5;
+}
+
+.square.mate-king .piece { animation: mateKingShake 0.46s ease-in-out 4; }
+
+/* One short shake of the whole board, then it settles. */
+.board-container.mate-shake { animation: mateBoardShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) 2; }
+
+@keyframes mateRise {
+  from { opacity: 0; transform: translateY(14px) scale(0.86); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes mateRiseSoft {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mateKingPulse {
+  0%, 100% { background: rgba(248, 81, 73, 0); }
+  50% { background: rgba(248, 81, 73, 0.6); }
+}
+
+@keyframes mateRing {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.07); }
+}
+
+@keyframes mateKingShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2px, 1px) rotate(-5deg); }
+  75% { transform: translate(2px, -1px) rotate(5deg); }
+}
+
+@keyframes mateBoardShake {
+  10% { transform: translate(-3px, 1px); }
+  30% { transform: translate(4px, -2px); }
+  50% { transform: translate(-3px, 0) rotate(-0.25deg); }
+  70% { transform: translate(3px, 1px) rotate(0.25deg); }
+  90% { transform: translate(-1px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mate-fx { transition: none; }
+  .mate-fx-panel,
+  .mate-fx.is-stale .mate-fx-panel,
+  .square.mate-king,
+  .square.mate-king::after,
+  .square.mate-king .piece,
+  .board-container.mate-shake { animation: none !important; }
+}

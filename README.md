@@ -93,6 +93,34 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   leaves the position on the board
 - Perfect for YouTube "guess the move" segments
 
+### 🏁 Checkmate & stalemate animation (all three modes)
+One trigger, `celebrateMate()`, is called from `renderAll()` in
+`js/31-render-all.js`, and every path that can finish a game repaints through
+`renderAll()` — a click or drag move in Normal mode, a graded puzzle move, a
+piece dropped from either rack in Custom Setup, a FEN/PGN load, SAVE / ▶ Test,
+and stepping with `←` / `→`. So the same moment is celebrated everywhere
+without any mode owning the logic.
+
+What you get when the position is finished:
+- a **CHECKMATE** banner (with the winner) rises over the board on a dimmed,
+  vignette board — inside `#boardArea`, so it follows the board into every mode
+  and survives the panels being hidden while recording
+- the mated king **pulses red** and shakes in its square (kept alive across
+  repaints by `decorateMateKing()`, which is called from `highlightSquares()`)
+- the board **shakes twice**, and the toast reads `Checkmate — White wins`
+- a **stalemate** gets the flatter grey `STALEMATE / DRAW` card and no king
+  pulse (nothing is attacking the king), so a draw never looks like a win
+- it is **never in the way**: `pointer-events:none`, and it auto-clears after 3s
+  or the moment the position stops being a mate (undo, `←`, reset, new FEN)
+- **`M`** replays it for the position already on the board — re-cut the moment
+  while recording without undo/redo juggling
+
+Detection is defensive: `in_checkmate()` / `in_stalemate()` when the bundled
+`chess.min.js` offers them, otherwise "no legal moves for the side to move" plus
+`in_check()`, so it still works with the offline fallback engine. Reduced-motion
+users get the banner without the shake (`prefers-reduced-motion` guard in
+`css/46-checkmate.css`).
+
 ## ⚠️ Known issues found while refactoring (not yet fixed)
 
 1. **Dead keyboard cases** — `js/30-keyboard.js` has `case 'e'`/`case 'E'` and
@@ -108,6 +136,13 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
    section banner where `.modal-overlay {` belonged, so that block plus
    `.modal-content/-header/-actions` is commented out and the file carries two
    unmatched `}`. No modal exists in `index.html`/`app.js`, so nothing is lost.
+4. **"Recording Mode" and "Layout Presets" are documented above but not in this
+   copy** — there is no `setLayout`, no red RECORDING button, `js/19-layouts.js`
+   is an empty stub, and `state.uiHidden` is declared but never written. The
+   `css/12-layout.css` `[data-layout="focus"]` rules are therefore dead too.
+   For a clean capture, hide the panels yourself (devtools: `display:none` on
+   `.sidebar-left, .sidebar-right, #topbar`); the checkmate animation lives
+   inside `#boardArea`, so it stays with the board either way.
 
 ### ⏱️ Chess Clock
 - Blitz / Rapid / Classical presets
@@ -127,6 +162,7 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 | `H` | Highlight tool (or hide UI in recording mode) |
 | `N` / `P` | Next / Previous bookmark |
 | `Ctrl+Z` | Undo |
+| `M` | Replay the checkmate / stalemate animation |
 | `Esc` | Exit recording mode |
 
 ### 💾 Save / Load / Export
@@ -183,7 +219,7 @@ numbered to match it — so alphabetical order = load order.
 
 ```
 index.html            the only page: markup + the <link>/<script> list (edit here)
-css/                  32 files — was styles.css, one file per section banner
+css/                  33 files — was styles.css, one file per section banner
   00-base.css           tokens, reset, typography
   10..28-*.css          shared chrome: topbar, layout, board, panels, clock, notes…
   30..35-puzzle-*.css   puzzle library + editor styling
@@ -192,10 +228,11 @@ css/                  32 files — was styles.css, one file per section banner
   38-puzzle-editor-ui.css  editor controls (.pe-*)
   40-home-button.css 41-front-page.css
   45-mode-normal.css    Normal mode overrides
+  46-checkmate.css      checkmate / stalemate celebration
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.
-js/                   29 files — was app.js, one file per section banner
+js/                   30 files — was app.js, one file per section banner
   00-constants.js       PIECE_FONT
   01-state.js 02-dom.js 03-utils.js          shared core
   10..19-*.js           board render, interactions, annotations, tools, setup,
@@ -203,6 +240,7 @@ js/                   29 files — was app.js, one file per section banner
   20..25-puzzle-*.js    puzzle library, editor board, authoring mode
   26-engine.js 27-autofit.js 28-flip-reset.js 29-chess-clock.js 30-keyboard.js
   31-render-all.js 32-event-bindings.js 33-mode-picker.js
+  35-checkmate.js       checkmate / stalemate animation (hooked into renderAll)
   90-boot.js            init() — MUST stay the last script
 tools/verify_split.py   integrity check (see below)
 ```
