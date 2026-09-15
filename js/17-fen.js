@@ -14,6 +14,9 @@ function loadFen() {
     state.game.load(els.fenInput.value);
     state.history = [];           // reset history on FEN load (no PGN)
     state.historyIndex = -1;
+    if (typeof syncSetupControlsFromFen === 'function') {
+      syncSetupControlsFromFen(els.fenInput.value);
+    }
     renderAll();
     toast('FEN loaded', 'success');
   } catch (e) {

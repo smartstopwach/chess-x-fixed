@@ -2,7 +2,21 @@
 // KEYBOARD SHORTCUTS
 // ============================================
 document.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, textarea, select')) return;
+  if (e.target && typeof e.target.matches === 'function' && e.target.matches('input, textarea, select')) return;
+
+  if (state.pendingPromotion) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelPromotionDialog();
+      return;
+    }
+    const k = e.key.toLowerCase();
+    if (k === 'q' || k === '1') { e.preventDefault(); choosePromotion('q'); return; }
+    if (k === 'r' || k === '2') { e.preventDefault(); choosePromotion('r'); return; }
+    if (k === 'b' || k === '3') { e.preventDefault(); choosePromotion('b'); return; }
+    if (k === 'n' || k === 'k' || k === '4') { e.preventDefault(); choosePromotion('n'); return; }
+    return;
+  }
 
   if (e.key === 'Escape') {
     // During a puzzle test, Esc leaves the test (back to the editor) before
@@ -34,10 +48,6 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       setMode('setup');
       break;
-    case 'h': case 'H':
-      e.preventDefault();
-      showFrontPage();
-      break;
     case 'p': case 'P':
       // Toggle authoring mode. While a puzzle is being played, P must not
       // start a brand-new blank puzzle - it goes back to editing that one.
@@ -45,24 +55,15 @@ document.addEventListener('keydown', (e) => {
       else if (isAuthoringMode()) exitAuthoringMode();
       else enterAuthoringForNewPuzzle();
       break;
-    case 'e': case 'E':
-      // Toggle setup mode
-      state.setupMode = !state.setupMode;
-      if (!state.setupMode) {
-        state.heldPiece = null;
-        state.selectedRackPiece = null;
-        $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-        $$('.square').forEach(sq => sq.classList.remove('drop-target'));
-      }
-      toast(state.setupMode ? 'Setup Mode: ON — click/drag to edit position' : 'Setup Mode: OFF — play moves normally');
-      updateSetupHint();
-      break;
     case 'ArrowLeft': e.preventDefault(); prevMove(); break;
     case 'ArrowRight': e.preventDefault(); nextMove(); break;
     case 'f': case 'F': flipBoard(); break;
     case 'r': case 'R': if (!e.ctrlKey && !e.metaKey) resetBoard(); break;
     case 'a': case 'A': setTool('arrow'); break;
-    case 'c': case 'C': setTool('circle'); break;
+    case 'c': case 'C':
+      if (typeof cycleDrawingColor === 'function') cycleDrawingColor();
+      break;
+    case 'o': case 'O': setTool('circle'); break;
     case 'e': case 'E': setTool('eraser'); break;
     case 'v': case 'V': setTool('select'); break;
     case 'h': case 'H': setTool('highlight'); break;
@@ -72,15 +73,22 @@ document.addEventListener('keydown', (e) => {
     case 'z': case 'Z':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        prevMove();
+        if (state.currentTool !== 'select' && typeof undoAnnotation === 'function') {
+          undoAnnotation();
+        } else {
+          prevMove();
+        }
       }
       break;
     case 'y': case 'Y':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        nextMove();
+        if (state.currentTool !== 'select' && typeof redoAnnotation === 'function') {
+          redoAnnotation();
+        } else {
+          nextMove();
+        }
       }
       break;
   }
 });
-

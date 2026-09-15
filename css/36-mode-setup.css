@@ -1,13 +1,24 @@
 /* ============================================
-   SETUP MODE: HIDE puzzle editor, library, move list,
-   chess clock, engine analysis. Only show what's needed
-   for setting up a position: Position Setup + FEN.
+   SETUP MODE: HIDE puzzle editor, library, puzzle setup.
+   During position setup editing (data-setup-editing="true"),
+   hide analysis, move list, chess clock, drawing tools, themes.
+   After START FROM POSITION (data-setup-editing="false"),
+   show analysis, move list, chess clock, drawing tools, themes for playing/teaching.
    ============================================ */
 body[data-mode="setup"] #puzzleEditorPanel,
 body[data-mode="setup"] #libraryPanel,
-body[data-mode="setup"] #enginePanel,
-body[data-mode="setup"] #movePanel,
-body[data-mode="setup"] #clockPanel {
+body[data-mode="setup"] #puzzleLeftPanel {
   display: none !important;
 }
 
+body[data-mode="setup"][data-setup-editing="true"] #enginePanel,
+body[data-mode="setup"][data-setup-editing="true"] #movePanel,
+body[data-mode="setup"][data-setup-editing="true"] #clockPanel {
+  display: none !important;
+}
+
+body[data-mode="setup"][data-setup-editing="false"] #enginePanel,
+body[data-mode="setup"][data-setup-editing="false"] #movePanel,
+body[data-mode="setup"][data-setup-editing="false"] #clockPanel {
+  display: block !important;
+}

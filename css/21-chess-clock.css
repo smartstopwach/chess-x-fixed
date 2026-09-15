@@ -39,5 +39,29 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.clock#clockWhite .clock-name::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 2px;
+}
+
+.clock#clockBlack .clock-name::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #181a20;
+  border: 1px solid #4b5563;
+  border-radius: 2px;
 }
 

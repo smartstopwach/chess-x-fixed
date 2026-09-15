@@ -57,6 +57,7 @@ const state = {
   authoringMode: false,
   selectedRackPiece: null,
   deletingMode: false,
+  pendingPromotion: null,
   movesListData: [],
   engine: {
     stockfish: null,
@@ -71,4 +72,8 @@ const state = {
   },
   drag: { active: false, piece: null, from: null }
 };
+
+if (typeof window !== 'undefined') {
+  window.state = state;
+}
 

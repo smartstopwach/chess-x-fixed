@@ -7,16 +7,15 @@ function setAuthoringMode(on) {
     state.setupMode = true; // auto-enable setup mode
     toast('Authoring Mode ON — set up your puzzle position', 'success');
   } else {
-    // The part that used to be missing: setAuthoringMode(true) arms the piece
-    // editor (state.setupMode) but turning it off left that flag on - so after
-    // "exiting" the editor every click kept picking/placing pieces instead of
-    // playing a legal move, and no piece you touched was ever a real move.
+    // Exiting authoring mode: disarm piece setup and switch tool to arrow
     state.setupMode = false;
     state.heldPiece = null;
     state.selectedRackPiece = null;
+    state.drawingFrom = null;
     $$('.rack-piece, .pe-rack-piece').forEach(x => x.classList.remove('selected'));
     $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source'));
-    toast('Authoring Mode OFF', 'success');
+    if (typeof setTool === 'function') setTool('arrow');
+    toast('Authoring Mode OFF — left click to draw arrows', 'success');
   }
   updateSetupHint();
   // Show/hide authoring button
@@ -112,18 +111,19 @@ function exitAuthoringMode() {
   state.heldPiece = null;
   state.selectedRackPiece = null;
   state.selectedSquare = null;
+  state.drawingFrom = null;
   state.history = [];
   state.historyIndex = -1;
-  state.selectedSquare = null;
   clearAllAnnotations();
   // Clear any selected piece in puzzle rack
   puzzleState.heldPiece = null;
   puzzleState.selectedSquare = null;
   $$('.pe-rack-piece').forEach(x => x.classList.remove('selected'));
   peUpdateHint();
+  if (typeof setTool === 'function') setTool('arrow');
   renderAll();
   setTimeout(autoFitBoard, 50);
-  toast('Exited authoring mode', 'success');
+  toast('Exited authoring mode — left click to draw arrows', 'success');
 }
 
 function exportLibrary() {

@@ -72,6 +72,8 @@ function sessionPayload() {
   return {
     v: 1,
     mode: (typeof currentMode === 'string') ? currentMode : null,
+    setupMode: !!state.setupMode,
+    setupEditing: document.body.dataset.setupEditing === 'true',
     fen: fenOf(state.game),
     history: asArray(state.history).slice(0, 500),
     historyIndex: state.historyIndex,
@@ -210,7 +212,13 @@ function applySession(s) {
     state.flipped = !!s.flipped;
     document.body.dataset.flipped = state.flipped ? 'true' : 'false';
     if (s.theme && typeof setTheme === 'function' && s.theme !== state.boardTheme) setTheme(s.theme);
-    if (s.pieceStyle) { state.pieceStyle = s.pieceStyle; setFieldVal('pieceStyle', s.pieceStyle); renderBoard(); }
+    if (s.pieceStyle) {
+      state.pieceStyle = s.pieceStyle;
+      setFieldVal('pieceStyle', s.pieceStyle);
+      renderBoard();
+      if (typeof initPieceRack === 'function') initPieceRack();
+      if (typeof initPEPieceRack === 'function') initPEPieceRack();
+    }
     if (s.color) state.currentColor = s.color;
     // the drawing tool you left selected, so an F5 does not silently put you
     // back on 'select' mid-lesson
@@ -231,6 +239,15 @@ function applySession(s) {
       if (typeof s.clock.bTime === 'number') state.clock.bTime = s.clock.bTime;
       state.clock.running = false;                     // a timer is never resumed
       if (typeof updateClocks === 'function') updateClocks();
+    }
+    if (s.mode === 'setup') {
+      if (s.setupEditing === false || s.setupMode === false) {
+        state.setupMode = false;
+        document.body.dataset.setupEditing = 'false';
+      } else {
+        state.setupMode = true;
+        document.body.dataset.setupEditing = 'true';
+      }
     }
   } catch (e) {
     console.error('applySession failed', e);
@@ -295,6 +312,14 @@ function restoreSession() {
       }
     } catch (e) {}
     try { draftBack = restorePuzzleDraft(); } catch (e) {}
+  } else if (mode === 'setup') {
+    if (s.setupEditing === false || s.setupMode === false) {
+      state.setupMode = false;
+      document.body.dataset.setupEditing = 'false';
+    } else {
+      state.setupMode = true;
+      document.body.dataset.setupEditing = 'true';
+    }
   }
 
   applySession(s);

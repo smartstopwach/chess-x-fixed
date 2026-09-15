@@ -23,8 +23,8 @@ function bindEvents() {
 
   $('btnFlip').addEventListener('click', flipBoard);
   $('btnReset').addEventListener('click', resetBoard);
-  $('btnUndo').addEventListener('click', () => { prevMove(); });
-  $('btnRedo').addEventListener('click', () => { nextMove(); });
+  const bUndo = $('btnUndo'); if (bUndo) bUndo.addEventListener('click', () => { prevMove(); });
+  const bRedo = $('btnRedo'); if (bRedo) bRedo.addEventListener('click', () => { nextMove(); });
   $('btnFullscreen').addEventListener('click', () => {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
@@ -32,27 +32,19 @@ function bindEvents() {
 
   $$('.tool-btn').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $$('.color-dot').forEach(b => b.addEventListener('click', () => {
-    state.currentColor = b.dataset.color;
-    $$('.color-dot').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
+    if (typeof setDrawingColor === 'function') setDrawingColor(b.dataset.color);
+    else state.currentColor = b.dataset.color;
   }));
+  const cycleBtn = $('btnCycleColor');
+  if (cycleBtn) cycleBtn.addEventListener('click', cycleDrawingColor);
   $('btnClearAnnotations').addEventListener('click', clearAllAnnotations);
 
-  $('btnStartFromPosition').addEventListener('click', () => {
-    state.setupMode = false;
-    state.heldPiece = null;
-    state.selectedRackPiece = null;
-    $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-    $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source'));
-    updateSetupHint();
-    state.selectedRackPiece = null;
-    $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-    state.history = [];
-    state.historyIndex = -1;
-    renderAll();
-    requestEngineEval();
-    toast('Position set', 'success');
-  });
+  const u1 = $('btnAnnoUndo'); if (u1) u1.addEventListener('click', undoAnnotation);
+  const u2 = $('btnAnnoUndoBottom'); if (u2) u2.addEventListener('click', undoAnnotation);
+  const r1 = $('btnAnnoRedo'); if (r1) r1.addEventListener('click', redoAnnotation);
+  const r2 = $('btnAnnoRedoBottom'); if (r2) r2.addEventListener('click', redoAnnotation);
+
+  $('btnStartFromPosition').addEventListener('click', startFromPosition);
 
   // Position setup advanced controls
   $('btnSetupUndo').addEventListener('click', setupUndo);
@@ -100,7 +92,14 @@ function bindEvents() {
   $('engineMultiPV').addEventListener('change', (e) => setEngineMultiPV(e.target.value));
 
   $$('.theme-btn').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
-  $('pieceStyle').addEventListener('change', (e) => { state.pieceStyle = e.target.value; renderBoard(); });
+  $('pieceStyle').addEventListener('change', (e) => {
+    state.pieceStyle = e.target.value;
+    renderBoard();
+    if (typeof initPieceRack === 'function') initPieceRack();
+    if (typeof initPEPieceRack === 'function') initPEPieceRack();
+    const styleName = e.target.options[e.target.selectedIndex]?.text || e.target.value;
+    toast(`Piece style: ${styleName}`, 'success');
+  });
 
   $$('[data-clock]').forEach(b => b.addEventListener('click', () => {
     setClock(parseInt(b.dataset.time));
@@ -118,7 +117,6 @@ function bindEvents() {
   });
 
   // Zoom buttons removed — board auto-fits to available space
-
 
   window.addEventListener('resize', () => { autoFitBoard(); renderAnnotations(); });
   setTimeout(autoFitBoard, 200);
@@ -172,4 +170,3 @@ function bindEvents() {
     }
   });
 }
-

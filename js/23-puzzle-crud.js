@@ -66,6 +66,9 @@ function loadPuzzleToEditor(puzzleId) {
     } catch (e) {}
   }
 
+  if (isAuthoringMode()) setAuthoringMode(false);
+  if (typeof setTool === 'function') setTool('arrow');
+
   toast(`Loaded puzzle: ${puzzle.title}`);
 }
 
@@ -157,7 +160,14 @@ function saveCurrentPuzzle() {
   renderLibrary($('librarySearch')?.value || '');
   renderChapterSelect();
   updateFenDisplay(fen);
-  toast('✓ Saved: ' + title, 'success');
+
+  // After saving puzzle, exit authoring mode and set active tool to arrow
+  if (isAuthoringMode()) {
+    setAuthoringMode(false);
+  }
+  if (typeof setTool === 'function') setTool('arrow');
+
+  toast('✓ Saved: ' + title + ' — left click to draw arrows', 'success');
 
   // Visual feedback: flash the SAVE button green
   const saveBtn = $('btnSavePuzzle');
@@ -391,7 +401,16 @@ function onPuzzleMovePlayed(san) {
       renderAll();
     }
   } else {
-    toast(`✗ ${san} is not the solution — Ctrl+Z to undo and try again`, 'error');
+    // Revert the wrong move so student can immediately try again
+    try {
+      state.game.undo();
+      if (state.history.length > 0) {
+        state.history.pop();
+        state.historyIndex = state.history.length - 1;
+      }
+      renderAll();
+    } catch (e) {}
+    toast(`✗ ${san} is not the solution — try again`, 'error');
   }
 }
 
@@ -414,8 +433,9 @@ function endPuzzleTest(backToEditor) {
     setTimeout(autoFitBoard, 50);
     toast('Back to editing this puzzle', 'success');
   } else {
+    if (typeof setTool === 'function') setTool('arrow');
     renderAll();
-    toast('Finished', 'success');
+    toast('Finished — left click to draw arrows', 'success');
   }
 }
 

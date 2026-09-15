@@ -1,17 +1,21 @@
 // ============================================
 // BOARD INTERACTIONS
 // ============================================
-// One unified "press → release" model for mouse AND touch:
-//   • press + release on the SAME square  → CLICK  → select piece / make chess move
-//   • press on one square, release on another → DRAG → draw an arrow
-// A tiny hand wobble while clicking must NOT be mistaken for a drag, so the
-// release square only counts as a drag target once the pointer has actually
-// travelled more than DRAG_SLOP_PX.
+// Unified interaction model for mouse AND touch:
+//   • LEFT CLICK on piece/square: normal chess move / piece selection (or setup pick/place)
+//   • LEFT DRAG (sqA -> sqB):
+//       - in setup editing: moves piece from sqA to sqB (NO arrows/drawings)
+//       - in normal mode / after START FROM POSITION: ALWAYS draws an arrow
+//   • RIGHT CLICK / RIGHT DRAG:
+//       - in setup editing: erases piece at square (NO drawings)
+//       - in normal mode / after START FROM POSITION: uses selected drawing tool (circle, highlight, rect, eraser, arrow)
+//   • Drag threshold: DRAG_SLOP_PX (10px) to prevent accidental drags during clicks.
 const DRAG_SLOP_PX = 10;
 
 let pressSquare = null;    // square the pointer went down on
 let pressX = 0;
 let pressY = 0;
+let pressButton = 0;       // 0 = left, 2 = right
 let pressMoved = false;    // pointer travelled past the slop -> this is a real drag
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
@@ -34,8 +38,7 @@ function onSquareMouseDown(e) {
 
 function onSquareMouseMove(e) {
   if (pressSquare === null || pressMoved) return;
-  if (Math.abs(e.clientX - pressX) > DRAG_SLOP_PX ||
-      Math.abs(e.clientY - pressY) > DRAG_SLOP_PX) {
+  if (Math.hypot(e.clientX - pressX, e.clientY - pressY) > DRAG_SLOP_PX) {
     pressMoved = true;
   }
 }
@@ -51,28 +54,28 @@ function onTouchStart(e) {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   touchHandledPress = true;
-  beginSquarePress(document.elementFromPoint(t.clientX, t.clientY), t.clientX, t.clientY, 0);
+  const el = (typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
+  beginSquarePress(el ? el.closest('.square') : null, t.clientX, t.clientY, 0);
 }
 
 function onTouchMove(e) {
   if (!touchHandledPress || e.touches.length !== 1) return;
   const t = e.touches[0];
   if (pressSquare !== null && !pressMoved &&
-      (Math.abs(t.clientX - pressX) > DRAG_SLOP_PX ||
-       Math.abs(t.clientY - pressY) > DRAG_SLOP_PX)) {
+      Math.hypot(t.clientX - pressX, t.clientY - pressY) > DRAG_SLOP_PX) {
     pressMoved = true;
   }
   // Only claim the gesture once it really is a drag (arrow drawing), so the
   // page can still be scrolled with a plain swipe.
-  if (pressMoved) e.preventDefault();
+  if (pressMoved && e.preventDefault) e.preventDefault();
 }
 
 function onTouchEnd(e) {
   if (!touchHandledPress) return;
   touchHandledPress = false;
   const t = (e.changedTouches && e.changedTouches[0]) || null;
-  const target = t ? document.elementFromPoint(t.clientX, t.clientY) : null;
-  if (pressMoved) e.preventDefault();
+  const target = (t && typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
+  if (pressMoved && e.preventDefault) e.preventDefault();
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 
@@ -82,23 +85,32 @@ function beginSquarePress(sq, x, y, button) {
   if (!sq) return;
   const sqName = sq.dataset.square;
 
-  // Right-click never starts a drag/press gesture.
-  if (button === 2) {
-    pressConsumed = true;
-    if (state.setupMode) erasePieceAt(sqName);
-    return;
-  }
-
   pressSquare = sqName;
   pressX = x || 0;
   pressY = y || 0;
+  pressButton = (button !== undefined) ? button : 0;
   pressMoved = false;
 
-  // AUTHORING MODE (puzzle edit) acts on the PRESS, so the matching release
-  // must not be replayed as a second click (that used to deselect the piece
-  // the instant it was picked up).
-  //   rack piece held -> place it anywhere | board piece -> select / move it
-  //   freely | illegal target -> select the piece just clicked instead.
+  // RIGHT-CLICK:
+  if (pressButton === 2) {
+    // In setup mode, right-click erases piece immediately; no drawing
+    if (state.setupMode) {
+      pressConsumed = true;
+      erasePieceAt(sqName);
+      return;
+    }
+    // In puzzle authoring mode, right-click erases piece
+    if (isAuthoringMode()) {
+      pressConsumed = true;
+      if (typeof peErasePiece === 'function') peErasePiece(sqName);
+      return;
+    }
+    // In normal / played mode, right-click waits for release to distinguish click vs drag tool action
+    return;
+  }
+
+  // LEFT-CLICK:
+  // AUTHORING MODE (puzzle edit) acts on the PRESS
   if (isAuthoringMode()) {
     pressConsumed = true;
 
@@ -129,78 +141,172 @@ function beginSquarePress(sq, x, y, button) {
     return;
   }
 
-  // SETUP MODE - hold/place pieces; a click on a board piece picks it up.
+  // SETUP MODE (while editing position):
   if (state.setupMode) {
-    pressConsumed = true;
+    // If a piece is already held from the rack or board:
     if (state.heldPiece) {
+      pressConsumed = true;
       placePieceOnSetup(sqName, state.heldPiece.piece);
       return;
     }
-    if (getPieceAt(sqName)) pickPieceFromBoard(sqName);
+
+    // If square has a piece, pick it up (user may click target square or drag to target square)
+    const piece = getPieceAt(sqName);
+    if (piece) {
+      pickPieceFromBoard(sqName);
+      // Do not mark consumed immediately so drag-to-move can complete on mouseup
+      return;
+    }
+
+    // Empty square with no piece held: consume press, no-op
+    pressConsumed = true;
     return;
   }
 
-  // Click-only annotation tools act on the press too.
-  if (state.currentTool === 'circle')    { pressConsumed = true; addCircle(sqName); return; }
-  if (state.currentTool === 'highlight') { pressConsumed = true; addHighlight(sqName); return; }
-  if (state.currentTool === 'eraser')    { pressConsumed = true; eraseAnnotationAt(sqName); return; }
-
-  // Arrow / rectangle tools start a shape. The select tool just waits for the
-  // release to decide between "chess click" and "draw an arrow".
-  if (state.currentTool === 'arrow' || state.currentTool === 'rectangle') {
-    state.drawingFrom = sqName;
-    state.isDrawing = true;
-  }
+  // NORMAL MODE / PLAY MODE:
+  // Do not consume press; endSquarePress will handle click vs drag.
 }
 
 function endSquarePress(sq, x, y) {
-  // The release landed off the board (over a panel, the clock, a tooltip ...):
-  // drop the gesture so a stale press-square can't poison the next click.
+  // The release landed off the board: drop the gesture
   if (!sq) { cancelSquarePress(); return; }
 
   const sqName = sq.dataset.square;
   const from = pressSquare;
   const moved = pressMoved;
-  const tool = state.currentTool;
-  // Read the pending shape BEFORE the reset below clears it.
-  const beginDrawing = state.isDrawing ? state.drawingFrom : null;
+  const btn = pressButton;
   const consumed = pressConsumed;
 
   cancelSquarePress();
 
-  // Authoring / setup / circle / highlight / eraser already acted on the
-  // press - the release must not do anything else.
   if (consumed) return;
 
-  // A drag only counts once the pointer really travelled. Pressing one square
-  // and releasing on another *without* moving the mouse (a hand wobble, or two
-  // separate taps) stays a chess click.
   const isDrag = !!(moved && from && from !== sqName);
 
-  // Arrow / rectangle tool: a drag finishes the shape, a plain click still
-  // behaves like a normal chess click (select / move / deselect).
-  if (beginDrawing) {
-    if (isDrag) {
-      if (tool === 'arrow') addArrow(beginDrawing, sqName);
-      else if (tool === 'rectangle') addRectangle(beginDrawing, sqName);
-      renderAnnotations();
-      return;
+  // 1. SETUP MODE:
+  if (state.setupMode) {
+    if (isDrag && from && state.heldPiece) {
+      // Piece was dragged from `from` to `sqName`
+      placePieceOnSetup(sqName, state.heldPiece.piece);
+      state.heldPiece = null;
+      state.selectedRackPiece = null;
+      $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+      highlightDropSquares();
+      updateSetupHint();
     }
-  } else if (isDrag && tool === 'select') {
-    // Select tool + a real drag = draw an arrow (left-drag always draws).
-    addArrow(from, sqName);
-    renderAnnotations();
+    // Setup mode NEVER creates any annotations
     return;
   }
 
-  // Otherwise this was a CLICK -> chess move / piece selection.
+  // 2. RIGHT CLICK / RIGHT DRAG (Drawing Tools):
+  if (btn === 2) {
+    handleRightClickOrDrag(from, sqName, isDrag);
+    return;
+  }
+
+  // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
+  if (isDrag) {
+    if (state.currentTool === 'rectangle') {
+      addRectangle(from, sqName);
+    } else if (state.currentTool === 'eraser') {
+      eraseAnnotationAt(from);
+      eraseAnnotationAt(sqName);
+    } else {
+      // Left-drag ALWAYS draws an arrow!
+      addArrow(from, sqName);
+    }
+    return;
+  }
+
+  // 4. LEFT CLICK with active drawing tool:
+  if (state.currentTool === 'arrow') {
+    if (!state.drawingFrom) {
+      state.drawingFrom = sqName;
+      highlightSquares();
+    } else if (state.drawingFrom === sqName) {
+      state.drawingFrom = null;
+      highlightSquares();
+    } else {
+      addArrow(state.drawingFrom, sqName);
+      state.drawingFrom = null;
+      highlightSquares();
+    }
+    return;
+  }
+
+  if (state.currentTool === 'circle') {
+    addCircle(sqName);
+    return;
+  }
+
+  if (state.currentTool === 'highlight') {
+    addHighlight(sqName);
+    return;
+  }
+
+  if (state.currentTool === 'rectangle') {
+    if (!state.drawingFrom) {
+      state.drawingFrom = sqName;
+      highlightSquares();
+    } else if (state.drawingFrom === sqName) {
+      state.drawingFrom = null;
+      highlightSquares();
+    } else {
+      addRectangle(state.drawingFrom, sqName);
+      state.drawingFrom = null;
+      highlightSquares();
+    }
+    return;
+  }
+
+  if (state.currentTool === 'eraser') {
+    eraseAnnotationAt(sqName);
+    return;
+  }
+
+  // 5. LEFT CLICK with 'select' tool (Normal Chess Move / Piece Selection):
   handleSquareClick(sqName);
+}
+
+function handleRightClickOrDrag(from, to, isDrag) {
+  const tool = state.currentTool;
+
+  if (isDrag && from && to && from !== to) {
+    if (tool === 'rectangle') {
+      addRectangle(from, to);
+    } else if (tool === 'eraser') {
+      eraseAnnotationAt(from);
+      eraseAnnotationAt(to);
+    } else if (tool === 'circle') {
+      addCircle(to);
+    } else if (tool === 'highlight') {
+      addHighlight(to);
+    } else {
+      // Default / 'select' / 'arrow': right-drag draws an arrow
+      addArrow(from, to);
+    }
+  } else {
+    // Single square right-click
+    if (tool === 'circle') {
+      addCircle(to);
+    } else if (tool === 'highlight') {
+      addHighlight(to);
+    } else if (tool === 'eraser') {
+      eraseAnnotationAt(to);
+    } else if (tool === 'rectangle') {
+      addHighlight(to);
+    } else {
+      // Default / 'select' / 'arrow': right-click toggles circle
+      addCircle(to);
+    }
+  }
 }
 
 function cancelSquarePress() {
   pressSquare = null;
   pressMoved = false;
   pressConsumed = false;
+  pressButton = 0;
   if (state.isDrawing) {
     state.isDrawing = false;
     state.drawingFrom = null;
@@ -293,10 +399,117 @@ function rejectMove(from, to, piece) {
   }
 }
 
-function tryMakeMove(from, to) {
+function isPromotionMove(from, to) {
+  try {
+    const piece = state.game.get(from);
+    if (!piece || piece.type !== 'p') return false;
+    const isWhite = piece.color === 'w';
+    if ((isWhite && from[1] === '7' && to[1] === '8') || (!isWhite && from[1] === '2' && to[1] === '1')) {
+      const legal = state.game.moves({ verbose: true });
+      return legal.some(m => m.from === from && m.to === to && m.promotion);
+    }
+  } catch (e) {}
+  return false;
+}
+
+function showPromotionDialog(from, to, color) {
+  state.pendingPromotion = { from, to, color };
+  const overlay = $('promotionOverlay');
+  if (!overlay) return;
+
+  const piecesContainer = $('promotionPieces');
+  if (piecesContainer) {
+    piecesContainer.innerHTML = '';
+    const promoOptions = [
+      { type: 'q', name: 'Queen', key: 'Q / 1', fenChar: color === 'w' ? 'Q' : 'q' },
+      { type: 'r', name: 'Rook', key: 'R / 2', fenChar: color === 'w' ? 'R' : 'r' },
+      { type: 'b', name: 'Bishop', key: 'B / 3', fenChar: color === 'w' ? 'B' : 'b' },
+      { type: 'n', name: 'Knight', key: 'N / 4', fenChar: color === 'w' ? 'N' : 'n' },
+    ];
+
+    promoOptions.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'promotion-option';
+      btn.dataset.piece = opt.type;
+      btn.title = `${opt.name} (${opt.key})`;
+      btn.setAttribute('aria-label', opt.name);
+
+      const svg = typeof getPieceSvg === 'function' ? getPieceSvg(opt.fenChar, state.pieceStyle) : null;
+      if (svg) {
+        btn.innerHTML = svg;
+      } else {
+        btn.textContent = opt.name[0];
+      }
+
+      const keyLabel = document.createElement('span');
+      keyLabel.className = 'promotion-option-key';
+      keyLabel.textContent = opt.type.toUpperCase();
+      btn.appendChild(keyLabel);
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        choosePromotion(opt.type);
+      });
+
+      piecesContainer.appendChild(btn);
+    });
+  }
+
+  const cancelBtn = $('btnPromoCancel');
+  if (cancelBtn && !cancelBtn._promoBound) {
+    cancelBtn._promoBound = true;
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cancelPromotionDialog();
+    });
+  }
+
+  if (!overlay._promoBound) {
+    overlay._promoBound = true;
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cancelPromotionDialog();
+      }
+    });
+  }
+
+  overlay.style.display = 'flex';
+  void overlay.offsetWidth;
+  overlay.classList.add('show');
+}
+
+function choosePromotion(pieceType) {
+  if (!state.pendingPromotion) return;
+  const { from, to } = state.pendingPromotion;
+  cancelPromotionDialog();
+  tryMakeMove(from, to, pieceType);
+}
+
+function cancelPromotionDialog() {
+  state.pendingPromotion = null;
+  const overlay = $('promotionOverlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      if (!state.pendingPromotion) overlay.style.display = 'none';
+    }, 150);
+  }
+  state.selectedSquare = null;
+  highlightSquares();
+}
+
+function tryMakeMove(from, to, promotion = null) {
+  if (!promotion && isPromotionMove(from, to)) {
+    const piece = state.game.get(from);
+    const color = piece ? piece.color : state.game.turn();
+    showPromotionDialog(from, to, color);
+    return true;
+  }
+
+  const promoPiece = promotion || 'q';
   let result = null;
   try {
-    result = state.game.move({ from, to, promotion: 'q' });
+    result = state.game.move({ from, to, promotion: promoPiece });
   } catch (e) {
     return false;          // chess.js rejects the move object outright
   }
@@ -335,4 +548,3 @@ function safeScrollIntoView(el, opts) {
     if (p) p.scrollTop = Math.max(0, el.offsetTop - p.clientHeight / 2);
   } catch (e) {}
 }
-

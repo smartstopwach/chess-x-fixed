@@ -29,6 +29,7 @@ function doInit() {
   renderChapterSelect();
   loadPuzzleToEditor(null);
   pushSetupHistory(); // initial state
+  safeCall('initAnnoHistory', initAnnoHistory);
   updatePieceCount();
   updateSetupHint();
   // Library / Puzzle editor event listeners

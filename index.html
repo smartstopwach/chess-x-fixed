@@ -69,8 +69,6 @@
     <button class="btn-ghost" id="btnToggleLeftSidebar" title="Toggle Tools (T)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg><span>Tools</span></button>
     <button class="btn-ghost" id="btnFlip" title="Flip Board (F)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 12l4-4M3 12l4 4M21 12l-4-4M21 12l-4 4"/></svg><span>Flip</span></button>
     <button class="btn-ghost" id="btnReset" title="Reset (R)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Reset</span></button>
-    <button class="btn-ghost" id="btnUndo" title="Undo (Ctrl+Z)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 0 1 0 8h-4"/></svg><span>Undo</span></button>
-    <button class="btn-ghost" id="btnRedo" title="Redo (Ctrl+Y)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l4-4-4-4"/><path d="M19 10H8a4 4 0 0 0 0 8h4"/></svg><span>Redo</span></button>
     <button class="btn-ghost" id="btnFullscreen" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5"/></svg><span>Full</span></button>
   </nav>
 </header>
@@ -159,7 +157,8 @@
       <div class="pe-presets">
         <button class="pe-preset" data-preset="standard">Standard</button>
         <button class="pe-preset" data-preset="empty">Empty</button>
-        <button class="pe-preset" data-preset="kings">K vs K</button>
+        <button class="pe-preset" data-preset="pawns_kings">Pawns + Kings</button>
+        <button class="pe-preset" data-preset="rooks_pawns">Rooks + Pawns</button>
         <button class="pe-preset" data-preset="endgame_kq">K+Q vs K</button>
         <button class="pe-preset" data-preset="endgame_krk">K+R vs K</button>
         <button class="pe-preset" data-preset="castling_test">Castling</button>
@@ -174,6 +173,10 @@
       <div class="panel-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
         Drawing Tools
+        <div class="anno-header-actions">
+          <button class="btn-mini anno-mini" id="btnAnnoUndo" title="Undo drawing (1 by 1)" disabled>↶ Undo</button>
+          <button class="btn-mini anno-mini" id="btnAnnoRedo" title="Redo drawing (1 by 1)" disabled>↷ Redo</button>
+        </div>
       </div>
       <div class="tool-grid">
         <button class="tool-btn active" data-tool="select" title="Select / Move Pieces (V)">
@@ -202,19 +205,36 @@
         </button>
       </div>
       <div class="color-row">
-        <span class="color-label">Color</span>
-        <button class="color-dot active" style="--c:#ffaa00" data-color="#ffaa00" title="Amber (lichess arrows)"></button>
-        <button class="color-dot" style="--c:#ef4444" data-color="#ef4444" title="Red"></button>
-        <button class="color-dot" style="--c:#22c55e" data-color="#22c55e" title="Green"></button>
-        <button class="color-dot" style="--c:#3b82f6" data-color="#3b82f6" title="Blue"></button>
-        <button class="color-dot" style="--c:#f97316" data-color="#f97316" title="Orange"></button>
-        <button class="color-dot" style="--c:#a855f7" data-color="#a855f7" title="Purple"></button>
-        <button class="color-dot" style="--c:#ffffff" data-color="#ffffff" title="White"></button>
+        <div class="color-row-header">
+          <span class="color-label">Color</span>
+          <button class="btn-mini color-cycle-btn" id="btnCycleColor" title="Cycle Color (Press C)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Cycle <kbd class="kbd-badge">C</kbd>
+          </button>
+        </div>
+        <div class="color-dots-grid">
+          <button class="color-dot active" style="--c:#ffaa00" data-color="#ffaa00" title="Amber / Gold (Press C)"></button>
+          <button class="color-dot" style="--c:#ef4444" data-color="#ef4444" title="Red"></button>
+          <button class="color-dot" style="--c:#22c55e" data-color="#22c55e" title="Green"></button>
+          <button class="color-dot" style="--c:#06b6d4" data-color="#06b6d4" title="Cyan / Sky"></button>
+          <button class="color-dot" style="--c:#3b82f6" data-color="#3b82f6" title="Blue"></button>
+          <button class="color-dot" style="--c:#a855f7" data-color="#a855f7" title="Purple / Violet"></button>
+          <button class="color-dot" style="--c:#ec4899" data-color="#ec4899" title="Pink / Magenta"></button>
+          <button class="color-dot" style="--c:#f97316" data-color="#f97316" title="Orange"></button>
+          <button class="color-dot" style="--c:#84cc16" data-color="#84cc16" title="Lime"></button>
+          <button class="color-dot" style="--c:#14b8a6" data-color="#14b8a6" title="Teal"></button>
+          <button class="color-dot" style="--c:#f59e0b" data-color="#f59e0b" title="Warm Gold"></button>
+          <button class="color-dot" style="--c:#ffffff" data-color="#ffffff" title="White"></button>
+        </div>
       </div>
-      <button class="btn-danger-full" id="btnClearAnnotations">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-        Clear Annotations
-      </button>
+      <div class="anno-bottom-row">
+        <button class="btn-mini anno-mini" id="btnAnnoUndoBottom" title="Undo drawing (1 by 1)" disabled>↶ Undo</button>
+        <button class="btn-mini anno-mini" id="btnAnnoRedoBottom" title="Redo drawing (1 by 1)" disabled>↷ Redo</button>
+        <button class="btn-danger-full anno-clear-btn" id="btnClearAnnotations">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          Clear
+        </button>
+      </div>
     </div>
 
     <div class="panel" id="yellowPositionSetupPanel">
@@ -235,16 +255,25 @@
         <div class="preset-grid">
           <button class="preset-btn" data-preset="standard" title="Standard starting position">Standard</button>
           <button class="preset-btn" data-preset="empty" title="Empty board">Empty</button>
-          <button class="preset-btn" data-preset="kings" title="Just the two kings">K vs K</button>
-          <button class="preset-btn" data-preset="king_pawn" title="White king and pawn vs black king">K+P vs K</button>
-          <button class="preset-btn" data-preset="king_knight" title="White king and knight vs black king">K+N vs K</button>
-          <button class="preset-btn" data-preset="king_bishop" title="White king and bishop vs black king">K+B vs K</button>
-          <button class="preset-btn" data-preset="endgame_krk" title="White king and rook vs black king">K+R vs K</button>
-          <button class="preset-btn" data-preset="endgame_kq" title="White king and queen vs black king">K+Q vs K</button>
-          <button class="preset-btn" data-preset="two_pawns" title="White king and two pawns vs black king">K+2P vs K</button>
-          <button class="preset-btn" data-preset="two_knights" title="White king and two knights vs black king">K+2N vs K</button>
-          <button class="preset-btn" data-preset="two_bishops" title="White king and two bishops vs black king">K+2B vs K</button>
-          <button class="preset-btn" data-preset="two_rooks" title="White king and two rooks vs black king">K+2R vs K</button>
+          <button class="preset-btn" data-preset="pawns_kings" title="All 8 Pawns each + Kings">Pawns + Kings</button>
+          <button class="preset-btn" data-preset="rooks_pawns" title="All Rooks + All Pawns + Kings">Rooks + Pawns</button>
+          <button class="preset-btn" data-preset="single_rook_pawns" title="Rook + 3 Pawns vs Rook + 3 Pawns">R+3P vs R+3P</button>
+          <button class="preset-btn" data-preset="lucena" title="Lucena Position (Winning bridge technique)">Lucena Position</button>
+          <button class="preset-btn" data-preset="philidor" title="Philidor Position (3rd rank defense)">Philidor Position</button>
+          <button class="preset-btn" data-preset="queens_kings" title="Queen vs Queen + Kings">Queens + Kings</button>
+          <button class="preset-btn" data-preset="queens_pawns" title="Queens + Pawns + Kings">Queens + Pawns</button>
+          <button class="preset-btn" data-preset="queen_vs_rooks" title="Queen vs Two Rooks">Queen vs 2 Rooks</button>
+          <button class="preset-btn" data-preset="bishops_pawns" title="Bishops + Pawns + Kings">Bishops + Pawns</button>
+          <button class="preset-btn" data-preset="knights_pawns" title="Knights + Pawns + Kings">Knights + Pawns</button>
+          <button class="preset-btn" data-preset="rook_vs_minor" title="Rook vs Bishop + Knight">Rook vs Minor</button>
+          <button class="preset-btn" data-preset="pawn_race" title="Pawn Race (3 vs 3 breakthrough)">Pawn Race 3v3</button>
+          <button class="preset-btn" data-preset="king_pawn" title="King + Pawn vs King (Key squares)">K+P vs K</button>
+          <button class="preset-btn" data-preset="two_pawns" title="King + 2 Pawns vs King (Connected pawns)">K+2P vs K</button>
+          <button class="preset-btn" data-preset="endgame_kq" title="King + Queen vs King (Queen mate)">K+Q vs K</button>
+          <button class="preset-btn" data-preset="endgame_krk" title="King + Rook vs King (Rook mate)">K+R vs K</button>
+          <button class="preset-btn" data-preset="two_rooks" title="King + 2 Rooks vs King (Lawnmower mate)">K+2R vs K</button>
+          <button class="preset-btn" data-preset="two_bishops" title="King + 2 Bishops vs King (Two bishops mate)">K+2B vs K</button>
+          <button class="preset-btn" data-preset="bishop_knight_mate" title="King + Bishop + Knight vs King (B+N mate)">K+B+N vs K</button>
           <button class="preset-btn" data-preset="castling_test" title="Castling test position">Castling</button>
         </div>
         <div class="pos-controls">
@@ -366,7 +395,7 @@
     <div class="board-wrapper" id="boardWrapper">
       <div class="board-meta-top" id="boardMetaTop">
         <div class="player-info">
-          <div class="player-flag" id="playerTop"></div>
+          <div class="player-flag black" id="playerTop"></div>
           <div class="player-name" id="playerTopName">Black</div>
           <div class="captured" id="capturedTop"></div>
         </div>
@@ -375,11 +404,21 @@
       <div class="board-container" id="boardContainer">
         <div class="board" id="board"></div>
         <svg class="board-svg" id="boardSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="promotionOverlay" class="promotion-overlay" style="display: none;">
+          <div class="promotion-dialog" role="dialog" aria-modal="true" aria-label="Promote Pawn">
+            <div class="promotion-header">
+              <span class="promotion-title">Promote Pawn</span>
+              <button id="btnPromoCancel" class="promotion-cancel-btn" title="Cancel promotion (Esc)">✕</button>
+            </div>
+            <div class="promotion-pieces" id="promotionPieces"></div>
+            <div class="promotion-hint">Choose Queen, Rook, Bishop or Knight (or press Q, R, B, N)</div>
+          </div>
+        </div>
       </div>
 
       <div class="board-meta-bottom">
         <div class="player-info">
-          <div class="player-flag" id="playerBottom"></div>
+          <div class="player-flag white" id="playerBottom"></div>
           <div class="player-name" id="playerBottomName">White</div>
           <div class="captured" id="capturedBottom"></div>
         </div>
