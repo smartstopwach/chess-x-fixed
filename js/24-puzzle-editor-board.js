@@ -306,7 +306,11 @@ function peUseForPuzzle() {
   const fen = puzzleGame().fen();
   $('puzzleFen').value = fen;
   updateFenDisplay(fen);
-  toast('Position captured for puzzle ✓', 'success');
+  if (isAuthoringMode()) {
+    setAuthoringMode(false);
+  }
+  if (typeof setTool === 'function') setTool('arrow');
+  toast('Position captured for puzzle — left click to draw arrows ✓', 'success');
 }
 
 function peLoadToBoard() {

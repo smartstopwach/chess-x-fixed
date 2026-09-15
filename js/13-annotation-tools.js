@@ -38,6 +38,8 @@ function clearAllAnnotations() {
   state.circles = [];
   state.highlights = [];
   state.rectangles = [];
+  state.drawingFrom = null;
   renderAnnotations();
+  if (typeof highlightSquares === 'function') highlightSquares();
 }
 

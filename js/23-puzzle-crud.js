@@ -66,6 +66,9 @@ function loadPuzzleToEditor(puzzleId) {
     } catch (e) {}
   }
 
+  if (isAuthoringMode()) setAuthoringMode(false);
+  if (typeof setTool === 'function') setTool('arrow');
+
   toast(`Loaded puzzle: ${puzzle.title}`);
 }
 
@@ -157,7 +160,14 @@ function saveCurrentPuzzle() {
   renderLibrary($('librarySearch')?.value || '');
   renderChapterSelect();
   updateFenDisplay(fen);
-  toast('✓ Saved: ' + title, 'success');
+
+  // After saving puzzle, exit authoring mode and set active tool to arrow
+  if (isAuthoringMode()) {
+    setAuthoringMode(false);
+  }
+  if (typeof setTool === 'function') setTool('arrow');
+
+  toast('✓ Saved: ' + title + ' — left click to draw arrows', 'success');
 
   // Visual feedback: flash the SAVE button green
   const saveBtn = $('btnSavePuzzle');
@@ -414,8 +424,9 @@ function endPuzzleTest(backToEditor) {
     setTimeout(autoFitBoard, 50);
     toast('Back to editing this puzzle', 'success');
   } else {
+    if (typeof setTool === 'function') setTool('arrow');
     renderAll();
-    toast('Finished', 'success');
+    toast('Finished — left click to draw arrows', 'success');
   }
 }
 

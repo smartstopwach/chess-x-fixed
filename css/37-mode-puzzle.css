@@ -1,10 +1,10 @@
 /* When in puzzle mode, HIDE all panels that have no purpose in puzzle editing
-   (Drawing Tools, Themes, yellow Position Setup + yellow FEN — replaced by blue puzzle setup) */
+   (Themes, yellow Position Setup + yellow FEN — replaced by blue puzzle setup).
+   Drawing Tools panel REMAINS AVAILABLE in puzzle mode! */
 body[data-authoring="true"] #leftSidebar .position-editor,
 body[data-authoring="true"] #leftSidebar .pos-controls,
 body[data-authoring="true"] #yellowPositionSetupPanel,
 body[data-authoring="true"] #yellowFenPanel,
-body[data-authoring="true"] #drawingToolsPanel,
 body[data-authoring="true"] #themesPanel {
   display: none !important;
 }
@@ -17,16 +17,21 @@ body[data-testing="true"] #libraryPanel,
 body[data-testing="true"] #puzzleLeftPanel,
 body[data-testing="true"] #yellowPositionSetupPanel,
 body[data-testing="true"] #yellowFenPanel,
-body[data-testing="true"] #drawingToolsPanel,
 body[data-testing="true"] #themesPanel,
 body[data-testing="true"] .authoring-toolbar,
 body[data-mode="puzzle"] #yellowPositionSetupPanel,
 body[data-mode="puzzle"] #yellowFenPanel,
-body[data-mode="puzzle"] #drawingToolsPanel,
 body[data-mode="puzzle"] #themesPanel,
 body[data-mode="puzzle"] #leftSidebar .position-editor,
 body[data-mode="puzzle"] #leftSidebar .pos-controls {
   display: none !important;
+}
+
+/* Ensure drawing tools panel is visible in puzzle mode */
+body[data-mode="puzzle"] #drawingToolsPanel,
+body[data-authoring="true"] #drawingToolsPanel,
+body[data-testing="true"] #drawingToolsPanel {
+  display: block !important;
 }
 
 /* Puzzle mode: HIDE Stockfish Analysis + Chess Clock cards.

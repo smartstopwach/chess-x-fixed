@@ -20,18 +20,22 @@
 .layout[data-layout="focus"] .board-area { grid-column: 1; }
 .layout[data-layout="focus"] .sidebar-right { grid-column: 2; }
 
-/* PUZZLE MODE: Show BOTH sidebars (left for puzzle setup, right for puzzle editor) */
-body[data-authoring="true"] .layout[data-layout="focus"] {
+/* PUZZLE MODE: Show BOTH sidebars (left for puzzle setup / drawing tools, right for puzzle editor) */
+body[data-authoring="true"] .layout[data-layout="focus"],
+body[data-mode="puzzle"] .layout[data-layout="focus"] {
   grid-template-columns: 280px 1fr 280px;
 }
-body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-left {
+body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-left,
+body[data-mode="puzzle"] .layout[data-layout="focus"] .sidebar-left {
   display: flex;
   grid-column: 1;
 }
-body[data-authoring="true"] .layout[data-layout="focus"] .board-area {
+body[data-authoring="true"] .layout[data-layout="focus"] .board-area,
+body[data-mode="puzzle"] .layout[data-layout="focus"] .board-area {
   grid-column: 2;
 }
-body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-right {
+body[data-authoring="true"] .layout[data-layout="focus"] .sidebar-right,
+body[data-mode="puzzle"] .layout[data-layout="focus"] .sidebar-right {
   grid-column: 3;
 }
 

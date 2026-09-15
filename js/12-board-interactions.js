@@ -205,12 +205,67 @@ function endSquarePress(sq, x, y) {
 
   // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
   if (isDrag) {
-    // Left-drag ALWAYS draws an arrow!
-    addArrow(from, sqName);
+  // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
+  if (isDrag) {
+    if (state.currentTool === 'rectangle') {
+      addRectangle(from, sqName);
+    } else if (state.currentTool === 'eraser') {
+      eraseAnnotationAt(from);
+      eraseAnnotationAt(sqName);
+    } else {
+      // Left-drag ALWAYS draws an arrow!
+      addArrow(from, sqName);
+    }
     return;
   }
 
-  // 4. LEFT CLICK (Normal Chess Move / Piece Selection):
+  // 4. LEFT CLICK with active drawing tool:
+  if (state.currentTool === 'arrow') {
+    if (!state.drawingFrom) {
+      state.drawingFrom = sqName;
+      highlightSquares();
+    } else if (state.drawingFrom === sqName) {
+      state.drawingFrom = null;
+      highlightSquares();
+    } else {
+      addArrow(state.drawingFrom, sqName);
+      state.drawingFrom = null;
+      highlightSquares();
+    }
+    return;
+  }
+
+  if (state.currentTool === 'circle') {
+    addCircle(sqName);
+    return;
+  }
+
+  if (state.currentTool === 'highlight') {
+    addHighlight(sqName);
+    return;
+  }
+
+  if (state.currentTool === 'rectangle') {
+    if (!state.drawingFrom) {
+      state.drawingFrom = sqName;
+      highlightSquares();
+    } else if (state.drawingFrom === sqName) {
+      state.drawingFrom = null;
+      highlightSquares();
+    } else {
+      addRectangle(state.drawingFrom, sqName);
+      state.drawingFrom = null;
+      highlightSquares();
+    }
+    return;
+  }
+
+  if (state.currentTool === 'eraser') {
+    eraseAnnotationAt(sqName);
+    return;
+  }
+
+  // 5. LEFT CLICK with 'select' tool (Normal Chess Move / Piece Selection):
   handleSquareClick(sqName);
 }
 
