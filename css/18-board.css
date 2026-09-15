@@ -50,25 +50,57 @@
 }
 
 .player-flag {
-  width: 16px;
-  height: 16px;
-  background: var(--bg-tertiary);
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.player-flag.white,
+.player-flag.player-flag-white {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.player-flag.black,
+.player-flag.player-flag-black {
+  background: #181a20 !important;
+  border-color: #4b5563 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .player-name {
   font-weight: 700;
   color: var(--text-primary);
+  font-size: 11px;
 }
 
 .captured {
   display: flex;
-  gap: 1px;
+  align-items: center;
+  gap: 2px;
   flex-wrap: wrap;
   font-size: 12px;
   line-height: 16px;
   color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.captured-piece {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.captured-piece svg {
+  width: 100%;
+  height: 100%;
 }
 
 .board-container {

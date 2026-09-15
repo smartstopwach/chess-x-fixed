@@ -54,6 +54,87 @@ function renderBoard() {
       els.board.appendChild(sq);
     }
   }
+
+  try {
+    renderPlayerInfo();
+  } catch (e) {
+    console.error('renderPlayerInfo failed:', e);
+  }
+}
+
+function renderPlayerInfo() {
+  const topFlag = $('playerTop');
+  const topName = $('playerTopName');
+  const bottomFlag = $('playerBottom');
+  const bottomName = $('playerBottomName');
+  const capturedTop = $('capturedTop');
+  const capturedBottom = $('capturedBottom');
+
+  const isFlipped = !!(typeof state !== 'undefined' && state.flipped);
+
+  // When not flipped: Top is Black, Bottom is White
+  // When flipped: Top is White, Bottom is Black
+  const topColor = isFlipped ? 'w' : 'b';
+  const bottomColor = isFlipped ? 'b' : 'w';
+
+  if (topName) topName.textContent = topColor === 'w' ? 'White' : 'Black';
+  if (bottomName) bottomName.textContent = bottomColor === 'w' ? 'White' : 'Black';
+
+  if (topFlag) {
+    topFlag.className = 'player-flag ' + (topColor === 'w' ? 'white' : 'black');
+  }
+  if (bottomFlag) {
+    bottomFlag.className = 'player-flag ' + (bottomColor === 'w' ? 'white' : 'black');
+  }
+
+  // Calculate and render captured pieces
+  if (capturedTop && capturedBottom && typeof state !== 'undefined' && state.game) {
+    const initialWhite = { P: 8, N: 2, B: 2, R: 2, Q: 1 };
+    const initialBlack = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+
+    let board = null;
+    try {
+      board = state.game.board();
+    } catch (e) {}
+
+    const currentCounts = {};
+    if (board) {
+      board.forEach(row => {
+        row.forEach(p => {
+          if (p) {
+            const k = p.color === 'w' ? p.type.toUpperCase() : p.type.toLowerCase();
+            currentCounts[k] = (currentCounts[k] || 0) + 1;
+          }
+        });
+      });
+    }
+
+    const whiteCaptured = [];
+    ['P', 'N', 'B', 'R', 'Q'].forEach(k => {
+      const missing = Math.max(0, (initialWhite[k] || 0) - (currentCounts[k] || 0));
+      for (let i = 0; i < missing; i++) whiteCaptured.push(k);
+    });
+
+    const blackCaptured = [];
+    ['p', 'n', 'b', 'r', 'q'].forEach(k => {
+      const missing = Math.max(0, (initialBlack[k] || 0) - (currentCounts[k] || 0));
+      for (let i = 0; i < missing; i++) blackCaptured.push(k);
+    });
+
+    // Top player displays opponent pieces captured
+    const topPieces = topColor === 'b' ? whiteCaptured : blackCaptured;
+    const bottomPieces = bottomColor === 'b' ? whiteCaptured : blackCaptured;
+
+    capturedTop.innerHTML = topPieces.map(k => {
+      const svg = typeof getPieceSvg === 'function' ? getPieceSvg(k, state.pieceStyle) : '';
+      return svg ? `<span class="captured-piece" title="${k}">${svg}</span>` : '';
+    }).join('');
+
+    capturedBottom.innerHTML = bottomPieces.map(k => {
+      const svg = typeof getPieceSvg === 'function' ? getPieceSvg(k, state.pieceStyle) : '';
+      return svg ? `<span class="captured-piece" title="${k}">${svg}</span>` : '';
+    }).join('');
+  }
 }
 
 function highlightSquares() {
