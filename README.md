@@ -93,32 +93,43 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   leaves the position on the board
 - Perfect for YouTube "guess the move" segments
 
-### 🏁 Checkmate & stalemate animation (all three modes)
+### 🏁 Checkmate, stalemate & draw animations (all three modes)
 One trigger, `celebrateMate()`, is called from `renderAll()` in
-`js/31-render-all.js`, and every path that can finish a game repaints through
-`renderAll()` — a click or drag move in Normal mode, a graded puzzle move, a
+`js/31-render-all.js`, and every path that can end a game repaints through
+`renderAll()`: a click or drag move in Normal mode, a graded puzzle move, a
 piece dropped from either rack in Custom Setup, a FEN/PGN load, SAVE / ▶ Test,
-and stepping with `←` / `→`. So the same moment is celebrated everywhere
-without any mode owning the logic.
+and stepping with `←` / `→`. That includes a position that is simply *dead*
+(K vs K, K+bishop vs K), so a draw is announced as soon as it is true. All three
+modes animate without any of them owning the logic.
 
-What you get when the position is finished:
-- a **CHECKMATE** banner (with the winner) rises over the board on a dimmed,
-  vignette board — inside `#boardArea`, so it follows the board into every mode
+Three results, three looks, so a draw never reads like a win:
+
+| result | banner | motion |
+|---|---|---|
+| **checkmate** | gold `CHECKMATE` + `White wins` / `Black wins` | mated king **pulses red** and shakes in its square, board **shakes twice** |
+| **stalemate** | grey `STALEMATE` + `Draw — no legal move` | one slow **ripple** ring over the board, colour drains out of the position, no king pulse |
+| **draw** | steel-blue `DRAW` + the rule: `by the fifty-move rule`, `by threefold repetition`, `insufficient material` | **two light sweeps** cross the board in opposite directions and meet, colour drains out |
+
+- all of it sits inside `#boardArea`, so it follows the board into every mode
   and survives the panels being hidden while recording
-- the mated king **pulses red** and shakes in its square (kept alive across
-  repaints by `decorateMateKing()`, which is called from `highlightSquares()`)
-- the board **shakes twice**, and the toast reads `Checkmate — White wins`
-- a **stalemate** gets the flatter grey `STALEMATE / DRAW` card and no king
-  pulse (nothing is attacking the king), so a draw never looks like a win
+- the king marking is kept alive across repaints by `decorateMateKing()`, which
+  is called from `highlightSquares()`
+- the reason comes from the engine where it can (`in_draw()` in the bundled
+  `chess.min.js` is `half_moves >= 100 || in_stalemate() ||
+  insufficient_material() || in_threefold_repetition()`), with a FEN-level
+  fallback for the halfmove clock and material, so the offline stub still labels
+  the position correctly
 - it is **never in the way**: `pointer-events:none`, and it auto-clears after 3s
-  or the moment the position stops being a mate (undo, `←`, reset, new FEN)
-- **`M`** replays it for the position already on the board — re-cut the moment
-  while recording without undo/redo juggling
+  or the moment the position stops being finished (undo, `←`, reset, new FEN,
+  another piece placed)
+- **`M`** replays it for the position already on the board — any of the three
+  kinds — re-cut the moment while recording without undo/redo juggling
 
-Detection is defensive: `in_checkmate()` / `in_stalemate()` when the bundled
-`chess.min.js` offers them, otherwise "no legal moves for the side to move" plus
-`in_check()`, so it still works with the offline fallback engine. Reduced-motion
-users get the banner without the shake (`prefers-reduced-motion` guard in
+Detection is defensive: `in_checkmate()` / `in_stalemate()` / `in_draw()` when
+the bundled `chess.min.js` offers them, otherwise "no legal moves for the side to
+move" plus `in_check()`, so it still works with the offline fallback engine.
+`M` replays the current result. Reduced-motion users get the banner and the
+labels without the shake, ripple or sweeps (`prefers-reduced-motion` guard in
 `css/46-checkmate.css`).
 
 ## ⚠️ Known issues found while refactoring (not yet fixed)
@@ -162,7 +173,7 @@ users get the banner without the shake (`prefers-reduced-motion` guard in
 | `H` | Highlight tool (or hide UI in recording mode) |
 | `N` / `P` | Next / Previous bookmark |
 | `Ctrl+Z` | Undo |
-| `M` | Replay the checkmate / stalemate animation |
+| `M` | Replay the checkmate / stalemate / draw animation |
 | `Esc` | Exit recording mode |
 
 ### 💾 Save / Load / Export
@@ -228,7 +239,7 @@ css/                  33 files — was styles.css, one file per section banner
   38-puzzle-editor-ui.css  editor controls (.pe-*)
   40-home-button.css 41-front-page.css
   45-mode-normal.css    Normal mode overrides
-  46-checkmate.css      checkmate / stalemate celebration
+  46-checkmate.css      checkmate / stalemate / draw animations
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.
@@ -240,7 +251,7 @@ js/                   30 files — was app.js, one file per section banner
   20..25-puzzle-*.js    puzzle library, editor board, authoring mode
   26-engine.js 27-autofit.js 28-flip-reset.js 29-chess-clock.js 30-keyboard.js
   31-render-all.js 32-event-bindings.js 33-mode-picker.js
-  35-checkmate.js       checkmate / stalemate animation (hooked into renderAll)
+  35-checkmate.js       checkmate / stalemate / draw animation (hooked into renderAll)
   90-boot.js            init() — MUST stay the last script
 tools/verify_split.py   integrity check (see below)
 ```

@@ -1,10 +1,11 @@
 /* ============================================
-   CHECKMATE / STALEMATE CELEBRATION
+   CHECKMATE / STALEMATE / DRAW CELEBRATION
    ============================================
-   Same three hooks everywhere: a dimming vignette + banner over the board,
-   a red pulse on the mated king, and one short board shake. Mounted inside
-   #boardArea so it follows the board into every mode and stays visible while
-   the side panels are hidden for recording. */
+   Mounted inside #boardArea so it follows the board into every mode and stays
+   visible while the side panels are hidden for recording. Three results, three
+   treatments: a win pops and shakes, a stalemate ripples, a draw crosses the
+   board with two calm light sweeps and drains the colour out of the position.
+   Everything here is pointer-events:none, so no square is ever blocked. */
 
 .mate-fx {
   position: absolute;
@@ -55,14 +56,78 @@
   color: var(--accent);
 }
 
-/* A stalemate is a result, not a win - flatter and grey. */
+/* --- stalemate: grey, slower, one ripple instead of a punch --- */
 .mate-fx.is-stale .mate-fx-panel {
   border-color: var(--text-muted);
   box-shadow: 0 0 26px rgba(255, 255, 255, 0.12), var(--shadow-lg);
-  animation: mateRiseSoft 0.4s ease both;
+  animation: mateRiseSoft 0.55s ease both;
 }
 
 .mate-fx.is-stale .mate-fx-sub { color: var(--text-muted); }
+
+.fx-ripple {
+  /* scoped to .is-stale below, so a draw never inherits the ripple */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26vmin;
+  height: 26vmin;
+  margin: -13vmin 0 0 -13vmin;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.mate-fx.is-stale .fx-ripple { animation: fxRipple 1.5s ease-out 0.05s 2; }
+
+/* --- draw: steel blue, labelled with the rule, two sweeps meeting mid-board --- */
+.mate-fx.is-draw .mate-fx-panel {
+  border-color: #7ea9c9;
+  box-shadow: 0 0 40px rgba(126, 169, 201, 0.35), var(--shadow-lg);
+  animation: mateRiseSoft 0.55s ease both;
+}
+
+.mate-fx.is-draw .mate-fx-title { text-shadow: 0 0 18px rgba(126, 169, 201, 0.5); }
+
+.mate-fx.is-draw .mate-fx-sub { color: #a8c8de; }
+
+.fx-sweep {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(170, 205, 235, 0.26) 50%, transparent 65%);
+  background-size: 300% 100%;
+}
+
+.mate-fx.is-draw .fx-sweep-a { animation: fxSweepL 1.3s ease-out 0.05s both; }
+.mate-fx.is-draw .fx-sweep-b { animation: fxSweepR 1.3s ease-out 0.3s both; }
+
+/* Draws drain the colour out of the position for a beat, instead of shaking it. */
+.board-container.fx-dim { animation: fxDim 1.4s ease both; }
+
+@keyframes fxRipple {
+  0% { opacity: 0; transform: scale(0.5); }
+  25% { opacity: 0.7; }
+  100% { opacity: 0; transform: scale(2.1); }
+}
+
+@keyframes fxSweepL {
+  0% { opacity: 0; background-position: 0% 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; background-position: 100% 0; }
+}
+
+@keyframes fxSweepR {
+  0% { opacity: 0; background-position: 100% 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; background-position: 0% 0; }
+}
+
+@keyframes fxDim {
+  0%, 100% { filter: none; }
+  40% { filter: grayscale(0.85) brightness(0.8); }
+  70% { filter: grayscale(0.35) brightness(0.92); }
+}
 
 /* The mated king: red pulse behind the piece, a ring around the square, and a
    shake of the piece itself. Mirrors .square.check, which paints the background. */
@@ -120,9 +185,12 @@
 @media (prefers-reduced-motion: reduce) {
   .mate-fx { transition: none; }
   .mate-fx-panel,
-  .mate-fx.is-stale .mate-fx-panel,
   .square.mate-king,
   .square.mate-king::after,
   .square.mate-king .piece,
-  .board-container.mate-shake { animation: none !important; }
+  .fx-ripple,
+  .fx-sweep,
+  .board-container.mate-shake,
+  .board-container.fx-dim { animation: none !important; }
+  .fx-sweep { opacity: 0.35; }         /* the banner still says what happened */
 }
