@@ -267,12 +267,34 @@ function loadPreset(name) {
     empty: '8/8/8/8/8/8/8/8 w - - 0 1',
     kings: '4k3/8/8/8/8/8/8/4K3 w - - 0 1',
     kk: '4k3/8/8/8/8/8/8/3K4 w - - 0 1',
+    king_pawn: '4k3/8/8/8/8/8/4P3/4K3 w - - 0 1',
+    king_knight: '4k3/8/8/8/8/8/8/2N1K3 w - - 0 1',
+    king_bishop: '4k3/8/8/8/8/8/8/2B1K3 w - - 0 1',
     endgame_kq: '4k3/8/8/8/8/8/8/3QK3 w - - 0 1',
     endgame_krk: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1',
+    two_pawns: '4k3/8/8/8/8/8/3PP3/4K3 w - - 0 1',
+    two_knights: '4k3/8/8/8/8/8/8/1NN1K3 w - - 0 1',
+    two_bishops: '4k3/8/8/8/8/8/8/1BB1K3 w - - 0 1',
+    two_rooks: '4k3/8/8/8/8/8/8/R2RK3 w - - 0 1',
     promotion: '4k3/P7/8/8/8/8/8/4K3 w - - 0 1',
     middlegame: 'r1bqkbnr/pp2pppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 4',
     castling_test: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
     scholars: 'rnbqkb1r/pppp1ppp/4p3/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+  };
+  const presetLabels = {
+    standard: 'standard starting position',
+    empty: 'empty board',
+    kings: 'king vs king',
+    king_pawn: 'king + pawn vs king',
+    king_knight: 'king + knight vs king',
+    king_bishop: 'king + bishop vs king',
+    endgame_kq: 'king + queen vs king',
+    endgame_krk: 'king + rook vs king',
+    two_pawns: 'king + two pawns vs king',
+    two_knights: 'king + two knights vs king',
+    two_bishops: 'king + two bishops vs king',
+    two_rooks: 'king + two rooks vs king',
+    castling_test: 'castling test position',
   };
   const fen = presets[name];
   if (!fen) return;
@@ -283,7 +305,7 @@ function loadPreset(name) {
     pushSetupHistory();
     renderAll();
     updatePieceCount();
-    toast(`Loaded preset: ${name.replace(/_/g, ' ')}`);
+    toast(`Loaded preset: ${presetLabels[name] || name.replace(/_/g, ' ')}`);
   } catch (e) {
     toast('Invalid preset', 'error');
   }
