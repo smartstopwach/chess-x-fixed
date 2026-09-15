@@ -10,10 +10,10 @@
 // the piece actually travels - a straight diagonal line over a knight is the
 // thing that makes an explanation hard to read.
 const ARROW_STYLE = {
-  band: 0.22,        // stroke width, as a fraction of one square
-  headLen: 0.31,     // tip -> base
-  headWide: 0.47,    // base width
-  opacity: 0.8,
+  band: 0.20,        // stroke width, as a fraction of one square
+  headLen: 0.38,     // tip -> base (longer head makes it sharp and pointy)
+  headWide: 0.44,    // base width
+  opacity: 0.85,
   minBand: 5         // never thinner than this, so it is visible on small boards
 };
 
@@ -134,9 +134,9 @@ function renderAnnotations() {
     if (len === 0) return;                    // same square: nothing to draw
     vx /= len; vy /= len;
 
-    // the band must not poke out of the triangle
-    const endX = last.x - vx * headLen * 0.45;
-    const endY = last.y - vy * headLen * 0.45;
+    // the band enters the wide base of the triangle without poking out of the pointy tip
+    const endX = last.x - vx * headLen * 0.85;
+    const endY = last.y - vy * headLen * 0.85;
     const d = pts.length === 3
       ? `M ${from.x} ${from.y} L ${pts[1].x} ${pts[1].y} L ${endX} ${endY}`
       : `M ${from.x} ${from.y} L ${endX} ${endY}`;
