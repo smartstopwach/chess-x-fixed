@@ -102,8 +102,10 @@ function doInit() {
 
   safeCall('updateClocks', updateClocks);
 
-  // Show front page on first load
-  showFrontPage();
+  // Front page on first load - but if the user was mid-work when the page was
+  // reloaded (or closed), put them back where they were instead of wiping it.
+  if (typeof restoreSession === 'function') safeCall('restoreSession', restoreSession);
+  else showFrontPage();
 
   console.log('ChessX initialized successfully');
 }

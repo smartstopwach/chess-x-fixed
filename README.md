@@ -93,6 +93,34 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   leaves the position on the board
 - Perfect for YouTube "guess the move" segments
 
+### 💾 Nothing is lost on reload (session + draft autosave)
+`js/36-persist.js` keeps a snapshot of the working session in `localStorage`
+(`chessx-session-v1`) and puts you back exactly where you were:
+
+- the mode you were in (Normal / Puzzle / Custom Setup) — the app no longer
+  drops you on the mode picker after a reload
+- the position, the full move list and where in it you were standing
+- every drawing: arrows, circles, highlights, rectangles, the active tool and colour
+- board theme, piece style, flip, clock remaining (a running clock is **not**
+  resumed — the timer never restarts mid-count)
+- which puzzle was open, and it is re-selected in the library, so pressing SAVE
+  after a reload still updates that puzzle instead of creating a duplicate
+- the position-setup options (castling rights, halfmove / fullmove counters)
+- the **unsaved** puzzle form: if you typed a title / solution and never hit
+  SAVE, the fields and the editor position come back and the toast says
+  `unsaved puzzle draft restored`
+
+Writes happen on every repaint, every 1.5s while the tab is visible, and on
+`pagehide` / `visibilitychange` (which is what a reload fires), and only when
+the snapshot actually changed — so it is not a save loop. Every storage call is
+wrapped, so `file://` and private-mode windows cannot break boot; on `file://`
+it still works (Chromium keeps a per-origin store).
+
+Deliberately unchanged: clicking a **mode card** still starts that mode clean
+(`setMode()` resets the board and the drawings) — that is the app's existing
+"fresh slate per mode" behaviour, and Home → pick a mode is also how you clear a
+saved session. To wipe it by hand: `localStorage.removeItem('chessx-session-v1')`.
+
 ### 🏁 Checkmate, stalemate & draw animations (all three modes)
 One trigger, `celebrateMate()`, is called from `renderAll()` in
 `js/31-render-all.js`, and every path that can end a game repaints through
@@ -243,7 +271,7 @@ css/                  33 files — was styles.css, one file per section banner
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.
-js/                   30 files — was app.js, one file per section banner
+js/                   31 files — was app.js, one file per section banner
   00-constants.js       PIECE_FONT
   01-state.js 02-dom.js 03-utils.js          shared core
   10..19-*.js           board render, interactions, annotations, tools, setup,
@@ -252,6 +280,7 @@ js/                   30 files — was app.js, one file per section banner
   26-engine.js 27-autofit.js 28-flip-reset.js 29-chess-clock.js 30-keyboard.js
   31-render-all.js 32-event-bindings.js 33-mode-picker.js
   35-checkmate.js       checkmate / stalemate / draw animation (hooked into renderAll)
+  36-persist.js         session + unsaved-draft autosave (restores after a reload)
   90-boot.js            init() — MUST stay the last script
 tools/verify_split.py   integrity check (see below)
 ```

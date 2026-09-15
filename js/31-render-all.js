@@ -17,5 +17,11 @@ function renderAll() {
   try {
     if (typeof celebrateMate === 'function') celebrateMate();
   } catch (e) { console.error('celebrateMate failed', e); }
+  // Persist the session here too: renderAll() is what every change funnels
+  // through, so this single line covers moves, setups, FEN loads, drawings,
+  // flip/theme changes and puzzle actions without touching their logic.
+  try {
+    if (typeof queueSessionSave === 'function') queueSessionSave();
+  } catch (e) { console.error('queueSessionSave failed', e); }
 }
 
