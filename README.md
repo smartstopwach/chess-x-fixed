@@ -22,7 +22,7 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - Square highlights
 - Rectangle highlight areas
 - Eraser (per-square)
-- 8 colors, default amber `#ffaa00`
+- 7 colors, default amber `#ffaa00` (the one from the reference shots)
 - "Clear all annotations" button
 
 ### 🏹 Arrows that read on a recording (`js/11-annotations-render.js`)
