@@ -23,8 +23,8 @@ function bindEvents() {
 
   $('btnFlip').addEventListener('click', flipBoard);
   $('btnReset').addEventListener('click', resetBoard);
-  $('btnUndo').addEventListener('click', () => { prevMove(); });
-  $('btnRedo').addEventListener('click', () => { nextMove(); });
+  const bUndo = $('btnUndo'); if (bUndo) bUndo.addEventListener('click', () => { prevMove(); });
+  const bRedo = $('btnRedo'); if (bRedo) bRedo.addEventListener('click', () => { nextMove(); });
   $('btnFullscreen').addEventListener('click', () => {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
