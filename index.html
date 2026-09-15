@@ -159,7 +159,8 @@
       <div class="pe-presets">
         <button class="pe-preset" data-preset="standard">Standard</button>
         <button class="pe-preset" data-preset="empty">Empty</button>
-        <button class="pe-preset" data-preset="kings">K vs K</button>
+        <button class="pe-preset" data-preset="pawns_kings">Pawns + Kings</button>
+        <button class="pe-preset" data-preset="rooks_pawns">Rooks + Pawns</button>
         <button class="pe-preset" data-preset="endgame_kq">K+Q vs K</button>
         <button class="pe-preset" data-preset="endgame_krk">K+R vs K</button>
         <button class="pe-preset" data-preset="castling_test">Castling</button>
@@ -235,16 +236,25 @@
         <div class="preset-grid">
           <button class="preset-btn" data-preset="standard" title="Standard starting position">Standard</button>
           <button class="preset-btn" data-preset="empty" title="Empty board">Empty</button>
-          <button class="preset-btn" data-preset="kings" title="Just the two kings">K vs K</button>
-          <button class="preset-btn" data-preset="king_pawn" title="White king and pawn vs black king">K+P vs K</button>
-          <button class="preset-btn" data-preset="king_knight" title="White king and knight vs black king">K+N vs K</button>
-          <button class="preset-btn" data-preset="king_bishop" title="White king and bishop vs black king">K+B vs K</button>
-          <button class="preset-btn" data-preset="endgame_krk" title="White king and rook vs black king">K+R vs K</button>
-          <button class="preset-btn" data-preset="endgame_kq" title="White king and queen vs black king">K+Q vs K</button>
-          <button class="preset-btn" data-preset="two_pawns" title="White king and two pawns vs black king">K+2P vs K</button>
-          <button class="preset-btn" data-preset="two_knights" title="White king and two knights vs black king">K+2N vs K</button>
-          <button class="preset-btn" data-preset="two_bishops" title="White king and two bishops vs black king">K+2B vs K</button>
-          <button class="preset-btn" data-preset="two_rooks" title="White king and two rooks vs black king">K+2R vs K</button>
+          <button class="preset-btn" data-preset="pawns_kings" title="All 8 Pawns each + Kings">Pawns + Kings</button>
+          <button class="preset-btn" data-preset="rooks_pawns" title="All Rooks + All Pawns + Kings">Rooks + Pawns</button>
+          <button class="preset-btn" data-preset="single_rook_pawns" title="Rook + 3 Pawns vs Rook + 3 Pawns">R+3P vs R+3P</button>
+          <button class="preset-btn" data-preset="lucena" title="Lucena Position (Winning bridge technique)">Lucena Position</button>
+          <button class="preset-btn" data-preset="philidor" title="Philidor Position (3rd rank defense)">Philidor Position</button>
+          <button class="preset-btn" data-preset="queens_kings" title="Queen vs Queen + Kings">Queens + Kings</button>
+          <button class="preset-btn" data-preset="queens_pawns" title="Queens + Pawns + Kings">Queens + Pawns</button>
+          <button class="preset-btn" data-preset="queen_vs_rooks" title="Queen vs Two Rooks">Queen vs 2 Rooks</button>
+          <button class="preset-btn" data-preset="bishops_pawns" title="Bishops + Pawns + Kings">Bishops + Pawns</button>
+          <button class="preset-btn" data-preset="knights_pawns" title="Knights + Pawns + Kings">Knights + Pawns</button>
+          <button class="preset-btn" data-preset="rook_vs_minor" title="Rook vs Bishop + Knight">Rook vs Minor</button>
+          <button class="preset-btn" data-preset="pawn_race" title="Pawn Race (3 vs 3 breakthrough)">Pawn Race 3v3</button>
+          <button class="preset-btn" data-preset="king_pawn" title="King + Pawn vs King (Key squares)">K+P vs K</button>
+          <button class="preset-btn" data-preset="two_pawns" title="King + 2 Pawns vs King (Connected pawns)">K+2P vs K</button>
+          <button class="preset-btn" data-preset="endgame_kq" title="King + Queen vs King (Queen mate)">K+Q vs K</button>
+          <button class="preset-btn" data-preset="endgame_krk" title="King + Rook vs King (Rook mate)">K+R vs K</button>
+          <button class="preset-btn" data-preset="two_rooks" title="King + 2 Rooks vs King (Lawnmower mate)">K+2R vs K</button>
+          <button class="preset-btn" data-preset="two_bishops" title="King + 2 Bishops vs King (Two bishops mate)">K+2B vs K</button>
+          <button class="preset-btn" data-preset="bishop_knight_mate" title="King + Bishop + Knight vs King (B+N mate)">K+B+N vs K</button>
           <button class="preset-btn" data-preset="castling_test" title="Castling test position">Castling</button>
         </div>
         <div class="pos-controls">

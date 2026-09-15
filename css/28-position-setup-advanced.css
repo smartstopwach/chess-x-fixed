@@ -102,14 +102,10 @@
   opacity: 0.5;
 }
 
-/* Position editor scrollable when many panels */
+/* Position editor in sidebar */
 .position-editor {
-  max-height: 380px;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow-y: visible;
+  padding-right: 2px;
 }
-.position-editor::-webkit-scrollbar { width: 6px; }
-.position-editor::-webkit-scrollbar-track { background: transparent; }
-.position-editor::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 

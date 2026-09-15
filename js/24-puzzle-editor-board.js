@@ -52,7 +52,8 @@ function peLoadPreset(name) {
   const presets = {
     standard: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     empty: '8/8/8/8/8/8/8/8 w - - 0 1',
-    kings: '4k3/8/8/8/8/8/8/4K3 w - - 0 1',
+    pawns_kings: '4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1',
+    rooks_pawns: 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
     endgame_kq: '4k3/8/8/8/8/8/8/3QK3 w - - 0 1',
     endgame_krk: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1',
     castling_test: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
