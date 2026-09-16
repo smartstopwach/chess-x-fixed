@@ -479,14 +479,14 @@ body[data-flipped="true"] .board .coord {
 /* ============================================
    INLINE MESSAGE PILL
    ============================================
-   Replaces the disabled pop-up toasts. Sits over the bottom of the board,
-   absolutely positioned so the board's free box (and therefore its size) is
-   exactly the same whether or not a message is showing. */
+   Replaces the disabled pop-up toasts. Sits at the bottom-right edge of the
+   board, absolutely positioned so the board's free box (and therefore its
+   size) is exactly the same whether or not a message is showing. */
 .board-msg {
   position: absolute;
-  left: 50%;
+  right: 8px;
   bottom: 6px;
-  transform: translateX(-50%);
+  transform: none;
   z-index: 40;
   display: none;
   max-width: 92%;
@@ -497,7 +497,7 @@ body[data-flipped="true"] .board .coord {
   color: #e8ecf4;
   font-size: 12.5px;
   line-height: 1.35;
-  text-align: center;
+  text-align: left;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
