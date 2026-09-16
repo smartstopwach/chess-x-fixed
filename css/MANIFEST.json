@@ -2,7 +2,7 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "73aabbbc1a9147466ef88bcde81ed6ae628da75c4ac792d71e5cbdee1bb039f8",
+  "concat_sha256": "819e320f37e1cff3a61adf210ec53ccec7b7c5398ebdc5f00bb9a15301c51a84",
   "byte_identical": true,
   "files": 35,
   "parts": [
@@ -13,8 +13,8 @@
     },
     {
       "file": "css/10-topbar.css",
-      "lines": 88,
-      "bytes": 1614
+      "lines": 89,
+      "bytes": 1632
     },
     {
       "file": "css/11-lesson-header.css",
@@ -159,7 +159,7 @@
     {
       "file": "css/41-front-page.css",
       "lines": 157,
-      "bytes": 3307
+      "bytes": 3305
     },
     {
       "file": "css/45-mode-normal.css",
