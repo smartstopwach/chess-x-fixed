@@ -150,13 +150,6 @@ function beginSquarePress(sq, x, y, button, detail) {
   }
 
   // LEFT-CLICK:
-  // Eraser tool: left click erases instantly without hold or drag
-  if (pressButton === 0 && state.currentTool === 'eraser' && !isEditingPosition()) {
-    pressConsumed = true;
-    eraseAnnotationAt(sqName);
-    return;
-  }
-
   // AUTHORING MODE (puzzle edit) acts on the PRESS
   if (isAuthoringMode()) {
     pressConsumed = true;
@@ -302,7 +295,7 @@ function endSquarePress(sq, x, y) {
     __lastPlaced = null;  // ...and the take-back context goes with it
     if (state.drawingFrom) { state.drawingFrom = null; highlightSquares(); }
     if (state.currentTool === 'rectangle') {
-      addRectangle(sqName, sqName);
+      addRectangle(from, sqName);
     } else if (state.currentTool === 'eraser') {
       eraseAnnotationAt(from);
       eraseAnnotationAt(sqName);
@@ -426,7 +419,7 @@ function placeWithTool(sq) {
   if (!sq) return false;
   const tool = state.currentTool;
 
-  if (tool === 'arrow') {
+  if (tool === 'arrow' || tool === 'rectangle') {
     if (!state.drawingFrom) {             // first click: mark the origin square
       state.drawingFrom = sq;
       highlightSquares();
@@ -435,19 +428,11 @@ function placeWithTool(sq) {
     const from = state.drawingFrom;
     state.drawingFrom = null;
     if (from === sq) { highlightSquares(); return false; }   // clicked origin again: cancel
-    const before = state.arrows.length;
-    addArrow(from, sq);
+    const list = (tool === 'arrow') ? state.arrows : state.rectangles;
+    const before = list.length;
+    if (tool === 'arrow') addArrow(from, sq); else addRectangle(from, sq);
     highlightSquares();
-    if (state.arrows.length > before) { notePlaced(sq); return true; }
-    __lastPlaced = null;
-    return false;
-  }
-
-  if (tool === 'rectangle') {
-    const before = state.rectangles.length;
-    addRectangle(sq, sq);
-    highlightSquares();
-    if (state.rectangles.length > before) { notePlaced(sq); return true; }
+    if (list.length > before) { notePlaced(sq); return true; }
     __lastPlaced = null;
     return false;
   }
@@ -741,7 +726,6 @@ function tryMakeMove(from, to, promotion = null) {
   } catch (e) {}
 
   renderAll();            // fail-safe: never throws out of a single panel
-  try { playMoveSound(result); } catch (e) {}
   // Puzzle play mode: grade the move the user just made.
   try { if (state.puzzle) onPuzzleMovePlayed(result.san); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}

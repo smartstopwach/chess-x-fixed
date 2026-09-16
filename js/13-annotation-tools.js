@@ -169,8 +169,7 @@ function addHexagon(sq) { return addShapeOnce('hexagons', sq); }
 // each other (they are invisible, and each one would need its own undo step).
 // c3-f6 and f6-c3 describe one box, so the pair is compared sorted.
 function addRectangle(from, to) {
-  if (!from) return false;
-  if (!to) to = from;
+  if (!from || !to) return false;
   const key = [from, to].sort().join('|');
   const dup = state.rectangles.some(r => [r.from, r.to].sort().join('|') === key && r.color === state.currentColor);
   if (dup) return false;
@@ -180,51 +179,12 @@ function addRectangle(from, to) {
   return true;
 }
 
-function pointOnSegment(p1, p2, p) {
-  const minR = Math.min(p1.r, p2.r);
-  const maxR = Math.max(p1.r, p2.r);
-  const minC = Math.min(p1.c, p2.c);
-  const maxC = Math.max(p1.c, p2.c);
-  if (p.r < minR || p.r > maxR || p.c < minC || p.c > maxC) return false;
-  const cross = (p.c - p1.c) * (p2.r - p1.r) - (p.r - p1.r) * (p2.c - p1.c);
-  return cross === 0;
-}
-
-function arrowTouchesSquare(arrow, sq) {
-  if (arrow.from === sq || arrow.to === sq) return true;
-  const a = squareRC(arrow.from);
-  const b = squareRC(arrow.to);
-  const t = squareRC(sq);
-  const dr = b.r - a.r;
-  const dc = b.c - a.c;
-
-  if (typeof arrowIsKnightMove === 'function' && arrowIsKnightMove(arrow.from, Math.abs(dr), Math.abs(dc))) {
-    const elbow = Math.abs(dr) >= Math.abs(dc) ? { r: b.r, c: a.c } : { r: a.r, c: b.c };
-    if (pointOnSegment(a, elbow, t) || pointOnSegment(elbow, b, t)) return true;
-    return false;
-  }
-
-  return pointOnSegment(a, b, t);
-}
-
-function squareInRectangle(rect, sq) {
-  if (rect.from === sq || rect.to === sq) return true;
-  const a = squareRC(rect.from);
-  const b = squareRC(rect.to);
-  const target = squareRC(sq);
-  const minR = Math.min(a.r, b.r);
-  const maxR = Math.max(a.r, b.r);
-  const minC = Math.min(a.c, b.c);
-  const maxC = Math.max(a.c, b.c);
-  return target.r >= minR && target.r <= maxR && target.c >= minC && target.c <= maxC;
-}
-
 function eraseAnnotationAt(sq) {
   const prevCount = annoTotal();
-  state.arrows = state.arrows.filter(a => !arrowTouchesSquare(a, sq));
+  state.arrows = state.arrows.filter(a => a.from !== sq && a.to !== sq);
   state.circles = state.circles.filter(c => c.square !== sq);
   state.highlights = state.highlights.filter(h => h.square !== sq);
-  state.rectangles = state.rectangles.filter(r => !squareInRectangle(r, sq));
+  state.rectangles = state.rectangles.filter(r => r.from !== sq && r.to !== sq);
   state.triangles = (state.triangles || []).filter(t => t.square !== sq);
   state.hexagons = (state.hexagons || []).filter(h => h.square !== sq);
   const removed = annoTotal() !== prevCount;

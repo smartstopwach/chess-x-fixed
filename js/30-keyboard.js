@@ -75,7 +75,6 @@ document.addEventListener('keydown', (e) => {
       if (typeof cycleDrawingColor === 'function') cycleDrawingColor();
       break;
     case 'o': case 'O': setTool('circle'); break;
-    case 's': case 'S': setTool('rectangle'); break;
     case 'e': case 'E': setTool('eraser'); break;
     case 'v': case 'V': setTool('select'); break;
     case 'h': case 'H': setTool('highlight'); break;
