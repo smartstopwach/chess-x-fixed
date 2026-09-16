@@ -32,6 +32,18 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   = cancel). `handleRightClickOrDrag()` owns this and nothing else
 - Left-drag keeps its old jobs (rectangle tool = rectangle, eraser = erase both
   squares, anything else = arrow)
+- The right-button arrow works in **every mode while teaching**, and never
+  while **editing a position** (`isEditingPosition()` /
+  `rightButtonIsArrow()` in `js/12-board-interactions.js`):
+
+  | state | right drag / right click |
+  |---|---|
+  | Normal — playing / explaining | arrow |
+  | Custom Setup — editing the position | erase piece (no drawing) |
+  | Custom Setup — after START FROM POSITION | arrow |
+  | Puzzle — authoring (new puzzle / ✎ Edit position) | erase piece (no drawing) |
+  | Puzzle — saved or selected puzzle, explaining | arrow |
+  | Puzzle — ▶ Test (student solving) | arrow |
 - 12 colors, default amber `#ffaa00` (the one from the reference shots)
 - "Clear all annotations" button, plus 1-by-1 undo/redo for every marking
 

@@ -515,6 +515,33 @@ async function runMasterSuite() {
   });
 
   // ----------------------------------------------------
+  // GROUP 11b: RIGHT-BUTTON MATRIX (arrow while teaching, erase while editing)
+  // ----------------------------------------------------
+  test('RIGHT-BUTTON', 'right button is the arrow only outside position editing', () => {
+    window.state.setupMode = false;
+    window.state.authoringMode = false;
+    assert(window.rightButtonIsArrow() === true);
+    assert(window.isEditingPosition() === false);
+
+    window.state.setupMode = true;                      // Custom Setup editing
+    assert(window.rightButtonIsArrow() === false);
+    window.state.setupMode = false;
+
+    window.state.authoringMode = true;                  // puzzle authoring
+    assert(window.rightButtonIsArrow() === false);
+    window.state.authoringMode = false;
+
+    const before = window.state.arrows.length;
+    window.handleRightClickOrDrag('a1', 'a5', true);    // teaching: drag = arrow
+    assert(window.state.arrows.length === before + 1);
+    window.handleRightClickOrDrag('b1', 'b1', false);   // origin mark
+    assert(window.state.rightArrowFrom === 'b1');
+    window.handleRightClickOrDrag('b5', 'b5', false);   // finish it
+    assert(window.state.arrows.length === before + 2);
+    assert(window.state.rightArrowFrom === null);
+  });
+
+  // ----------------------------------------------------
   // GROUP 12: UTILITIES
   // ----------------------------------------------------
   test('UTILS', 'uniqueId uniqueness, escapeHtml, autoName, toast silencing', () => {

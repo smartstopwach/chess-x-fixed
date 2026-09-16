@@ -80,6 +80,19 @@ function onTouchEnd(e) {
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 
+// The right button owns the arrow ONLY while teaching / playing. During any
+// kind of position editing - Custom Setup editing, or puzzle authoring - the
+// right button keeps its building job (erase the piece under the cursor),
+// because that is what setting up a position needs. Same rule in every mode.
+function isEditingPosition() {
+  return state.setupMode === true ||
+         (typeof isAuthoringMode === 'function' && isAuthoringMode() === true);
+}
+
+function rightButtonIsArrow() {
+  return !isEditingPosition();
+}
+
 function beginSquarePress(sq, x, y, button, detail) {
   pressConsumed = false;
   pressDetail = (detail >= 2) ? 2 : 1;
@@ -95,19 +108,16 @@ function beginSquarePress(sq, x, y, button, detail) {
 
   // RIGHT-CLICK:
   if (pressButton === 2) {
-    // In setup mode, right-click erases piece immediately; no drawing
-    if (state.setupMode) {
+    // Editing a position (setup editing OR puzzle authoring): the right
+    // button erases the piece immediately - no drawing, no arrow.
+    if (isEditingPosition()) {
       pressConsumed = true;
-      erasePieceAt(sqName);
+      if (state.setupMode) erasePieceAt(sqName);
+      else if (typeof peErasePiece === 'function') peErasePiece(sqName);
       return;
     }
-    // In puzzle authoring mode, right-click erases piece
-    if (isAuthoringMode()) {
-      pressConsumed = true;
-      if (typeof peErasePiece === 'function') peErasePiece(sqName);
-      return;
-    }
-    // In normal / played mode, right-click waits for release to distinguish click vs drag tool action
+    // Teaching / playing (Normal, Setup after START FROM POSITION, Puzzle
+    // saved/selected or under test): the release becomes an arrow gesture.
     return;
   }
 
@@ -201,9 +211,14 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 2. RIGHT CLICK / RIGHT DRAG: the right button is ALWAYS the arrow in play
-  //    modes, whether or not the arrow tool is selected in the palette.
+  // 2. RIGHT CLICK / RIGHT DRAG: the right button is ALWAYS the arrow while
+  //    teaching / playing - in Normal, in Custom Setup after START FROM
+  //    POSITION, and in Puzzle mode once you are out of authoring - whether or
+  //    not the arrow tool is selected in the palette. While editing a position
+  //    the press already erased a piece and was consumed, so nothing reaches
+  //    here; the guard is a belt-and-braces second lock.
   if (btn === 2) {
+    if (!rightButtonIsArrow()) return;
     handleRightClickOrDrag(from, sqName, isDrag);
     return;
   }
