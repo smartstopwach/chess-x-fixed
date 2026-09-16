@@ -718,7 +718,11 @@ function tryMakeMove(from, to, promotion = null) {
   // A real move was made: hand the clock over (it used to switch on any board
   // click, so drawing an arrow also flipped whose time was running).
   try {
-    if (state.clock && state.clock.running && typeof switchClockSide === 'function') switchClockSide();
+    if (state.clock && state.clock.running) {
+      // a move that ends the game stops the clock instead of switching it
+      const ended = typeof stopClockIfGameIsOver === 'function' && stopClockIfGameIsOver();
+      if (!ended && typeof switchClockSide === 'function') switchClockSide();
+    }
   } catch (e) {}
 
   renderAll();            // fail-safe: never throws out of a single panel

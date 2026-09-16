@@ -61,3 +61,21 @@ function switchClockSide() {
   state.clock.activeColor = state.clock.activeColor === 'w' ? 'b' : 'w';
   paintClockSide();
 }
+
+// A move that ends the game (checkmate, stalemate, any draw) has to stop the
+// clock too - it used to keep burning the loser's time next to a mated king
+// until "Time expired!" appeared on top of the finished game.
+function stopClockIfGameIsOver() {
+  if (!state.clock || !state.clock.running) return false;
+  let over = false;
+  try { over = typeof state.game.game_over === 'function' ? !!state.game.game_over() : false; } catch (e) { over = false; }
+  if (!over && typeof mateStatus === 'function') { try { over = mateStatus(state.game) !== null; } catch (e) {} }
+  if (!over) return false;
+  clearInterval(state.clock.interval);
+  state.clock.running = false;
+  const btn = $('btnClockToggle');
+  if (btn) btn.textContent = 'Start Clock';
+  paintClockSide();
+  updateClocks();
+  return true;
+}
