@@ -4,11 +4,8 @@
 // Arrow geometry is measured from the reference the teacher supplied (a
 // 73.25px square): band 16px -> 0.22 sq, head tip sits exactly on the target
 // square centre, head 23px long -> 0.31 sq and 34px wide -> 0.47 sq, and the
-// fill is #ffaa00 at 0.8 alpha (the same band reads #fbb72a over a light square
-// and #e3a610 over a dark one, which solves to exactly that colour/opacity).
-// Knight-shaped moves are drawn as an L, long leg first, because that is how
-// the piece actually travels - a straight diagonal line over a knight is the
-// thing that makes an explanation hard to read.
+// fill is #ffaa00 at 0.8 alpha.
+// Knight-shaped moves are drawn as an L, long leg first.
 const ARROW_STYLE = {
   band: 0.20,        // stroke width, as a fraction of one square
   headLen: 0.38,     // tip -> base (longer head makes it sharp and pointy)
@@ -30,12 +27,25 @@ function arrowIsKnightMove(from, dr, dc) {
     const p = state.game.get ? state.game.get(from) : null;
     if (p && p.type) return p.type === 'n';
   } catch (e) {}
-  // the piece is already gone (the move was played, or a setup position the
-  // engine does not know about) - the L shape itself is the signal then
   return true;
 }
 
-function sqPos(name, sqSize = 80) {
+function currentSquareSize() {
+  try {
+    const el = (typeof els !== 'undefined' && els.board) ||
+               (typeof els !== 'undefined' && els.boardContainer) ||
+               document.getElementById('board') ||
+               document.getElementById('boardContainer');
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0) return rect.width / 8;
+    }
+  } catch (e) {}
+  return 80;
+}
+
+function sqPos(name, sqSize) {
+  if (typeof sqSize !== 'number' || sqSize <= 0) sqSize = currentSquareSize();
   const { r, c } = squareRC(name);
   return {
     x: (c + 0.5) * sqSize,
@@ -43,16 +53,20 @@ function sqPos(name, sqSize = 80) {
   };
 }
 
-function sqTopLeft(name, sqSize = 80) {
+function sqTopLeft(name, sqSize) {
+  if (typeof sqSize !== 'number' || sqSize <= 0) sqSize = currentSquareSize();
   const { r, c } = squareRC(name);
   return { x: c * sqSize, y: r * sqSize };
 }
 
 function renderAnnotations() {
   const svg = els.boardSvg;
+  if (!svg) return;
   svg.innerHTML = '';
 
-  const rect = els.boardContainer.getBoundingClientRect();
+  const boardEl = els.board || els.boardContainer;
+  if (!boardEl) return;
+  const rect = boardEl.getBoundingClientRect();
   if (rect.width === 0) return;
   const sqSize = rect.width / 8;
   svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
@@ -65,7 +79,7 @@ function renderAnnotations() {
 
   // Highlights
   state.highlights.forEach(h => {
-    const p = sqTopLeft(h.square);
+    const p = sqTopLeft(h.square, sqSize);
     const r = svgEl('rect', {
       x: p.x, y: p.y, width: sqSize, height: sqSize,
       fill: h.color, class: 'highlight-sq'
@@ -75,63 +89,68 @@ function renderAnnotations() {
     svg.appendChild(r);
   });
 
-  // Rectangles
+  // Rectangles / Squares - inset stroke so it stays strictly inside the square box
   state.rectangles.forEach(rc => {
-    const a = sqTopLeft(rc.from);
-    const b = sqTopLeft(rc.to);
+    const a = sqTopLeft(rc.from, sqSize);
+    const b = sqTopLeft(rc.to, sqSize);
     const x = Math.min(a.x, b.x);
     const y = Math.min(a.y, b.y);
     const w = Math.abs(a.x - b.x) + sqSize;
     const h2 = Math.abs(a.y - b.y) + sqSize;
+    const strokeW = Math.max(2, sqSize * 0.05);
+    const halfStroke = strokeW / 2;
     const r = svgEl('rect', {
-      x: x, y: y, width: w, height: h2,
+      x: x + halfStroke, y: y + halfStroke,
+      width: Math.max(1, w - strokeW), height: Math.max(1, h2 - strokeW),
       fill: rc.color, 'fill-opacity': '0.3', stroke: rc.color,
-      'stroke-width': Math.max(2, sqSize * 0.05), rx: Math.max(2, sqSize * 0.06)
+      'stroke-width': strokeW, rx: Math.max(2, sqSize * 0.06)
     });
     r.dataset.type = 'rectangle';
+    r.dataset.square = rc.from;
     svg.appendChild(r);
   });
 
-  // Circles
+  // Circles - comfortably inside the box, centered on piece
   state.circles.forEach(c => {
-    const p = sqPos(c.square);
+    const p = sqPos(c.square, sqSize);
+    const strokeW = Math.max(2.5, sqSize * 0.05);
     const circle = svgEl('circle', {
-      cx: p.x, cy: p.y, r: sqSize * 0.42, fill: 'none',
-      stroke: c.color, 'stroke-width': Math.max(3, sqSize * 0.06)
+      cx: p.x, cy: p.y, r: sqSize * 0.38, fill: 'none',
+      stroke: c.color, 'stroke-width': strokeW
     });
     circle.dataset.type = 'circle';
     circle.dataset.square = c.square;
     svg.appendChild(circle);
   });
 
-  // Triangles - equilateral, point up, centred on the square like the circle
+  // Triangles - equilateral, point up, comfortably inside square, centered on piece
   (state.triangles || []).forEach(t => {
-    const p = sqPos(t.square);
-    const r = sqSize * 0.42;
+    const p = sqPos(t.square, sqSize);
+    const r = sqSize * 0.38;
     const pts = [-90, 30, 150].map(deg => {
       const a = deg * Math.PI / 180;
       return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
     }).join(' ');
     const el = svgEl('polygon', {
       points: pts, fill: 'none', stroke: t.color,
-      'stroke-width': Math.max(3, sqSize * 0.06), 'stroke-linejoin': 'round'
+      'stroke-width': Math.max(2.5, sqSize * 0.05), 'stroke-linejoin': 'round'
     });
     el.dataset.type = 'triangle';
     el.dataset.square = t.square;
     svg.appendChild(el);
   });
 
-  // Hexagons - regular, flat-top, same footprint as the circle
+  // Hexagons - regular, flat-top, comfortably inside square, centered on piece
   (state.hexagons || []).forEach(h => {
-    const p = sqPos(h.square);
-    const r = sqSize * 0.42;
+    const p = sqPos(h.square, sqSize);
+    const r = sqSize * 0.38;
     const pts = [0, 60, 120, 180, 240, 300].map(deg => {
       const a = deg * Math.PI / 180;
       return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
     }).join(' ');
     const el = svgEl('polygon', {
       points: pts, fill: 'none', stroke: h.color,
-      'stroke-width': Math.max(3, sqSize * 0.06), 'stroke-linejoin': 'round'
+      'stroke-width': Math.max(2.5, sqSize * 0.05), 'stroke-linejoin': 'round'
     });
     el.dataset.type = 'hexagon';
     el.dataset.square = h.square;
@@ -144,8 +163,8 @@ function renderAnnotations() {
   const headHalf = sqSize * ARROW_STYLE.headWide / 2;
 
   state.arrows.forEach(a => {
-    const from = sqPos(a.from);
-    const to = sqPos(a.to);
+    const from = sqPos(a.from, sqSize);
+    const to = sqPos(a.to, sqSize);
     const rc1 = squareRC(a.from);
     const rc2 = squareRC(a.to);
     const dr = Math.abs(rc1.r - rc2.r);

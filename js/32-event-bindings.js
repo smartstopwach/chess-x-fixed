@@ -29,6 +29,8 @@ function bindEvents() {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   });
+  const bSound = $('btnSound');
+  if (bSound) bSound.addEventListener('click', toggleSound);
 
   $$('.tool-btn').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $$('.color-dot').forEach(b => b.addEventListener('click', () => {
