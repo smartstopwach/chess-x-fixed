@@ -19,6 +19,7 @@
 }
 
 .board-wrapper {
+  position: relative;            /* anchor for the .board-msg pill */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -104,6 +105,19 @@
   color: var(--text-muted);
   margin-left: 4px;
 }
+
+.material-adv {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  opacity: .95;
+}
+
+.material-adv:empty { display: none; }
 
 .captured-piece {
   display: inline-flex;
@@ -459,3 +473,33 @@ body[data-flipped="true"] .board .coord {
   text-align: center;
 }
 
+
+/* ============================================
+   INLINE MESSAGE PILL
+   ============================================
+   Replaces the disabled pop-up toasts. Sits over the bottom of the board,
+   absolutely positioned so the board's free box (and therefore its size) is
+   exactly the same whether or not a message is showing. */
+.board-msg {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: none;
+  max-width: 92%;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 14, 20, 0.92);
+  color: #e8ecf4;
+  font-size: 12.5px;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.board-msg.show { display: block; }
+.board-msg.error { border-color: rgba(255, 99, 99, 0.55); color: #ffd9d9; }
+.board-msg.success, .board-msg.ok { border-color: rgba(94, 231, 145, 0.45); color: #d8ffe4; }
+.board-msg.warn { border-color: rgba(255, 199, 92, 0.5); color: #fff0cf; }

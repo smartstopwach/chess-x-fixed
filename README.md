@@ -139,10 +139,28 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 
 ### 🧩 Position Setup
 - Visual piece rack to add/remove pieces
-- Castling rights toggles
-- Side-to-move selector
+- Castling rights toggles (kept in step with whatever FEN you load)
+- Side-to-move selector, en-passant square, halfmove / fullmove counters
 - FEN input + paste + copy
 - "Start from position" button
+- **Placing and moving pieces** (`js/12-board-interactions.js`): a rack piece
+  stays in your hand so you can stamp out several of them. Click an empty
+  square to place it. On a square that already holds a piece the gesture
+  decides — **drag** moves that piece somewhere else, a plain **click** replaces
+  it with the piece in hand. Right-click always erases while editing, and
+  Undo/Redo step through every edit.
+- **Impossible positions are refused** (`validatePosition()` in
+  `js/15-position-setup.js`): START FROM POSITION and the FEN box both check the
+  position before it becomes the lesson — exactly one king per side, no pawns on
+  the first/last rank, at most 8 pawns and 16 pieces per side, extra
+  queens/rooks/bishops/knights only up to the number of pawns you removed,
+  castling letters only while the king and that rook are still on their home
+  squares, an en-passant square that matches the side to move (rank 6 for White,
+  rank 3 for Black, empty, with the pawn that just stepped past it present),
+  numeric move counters, and the side that just moved may not be left in check.
+  A refusal says **why** and leaves you in the editor with your work intact;
+  saving a puzzle on such a position still saves, but the warning rides along in
+  the same message so it cannot be missed.
 
 ### 📜 Move List
 - Clean SAN notation
@@ -155,12 +173,22 @@ to numbered grid columns, which left a phone with a 56px-wide board.
   of teleporting to the standard opening. Every fresh move list records its
   base (`resetMoveHistory()` in `js/16-move-list.js`) and the session snapshot
   carries it, so it survives F5 too
-- Variation support
+- **Variations you can actually use**: `+ Variation` snapshots the position you
+  are looking at as a chip under the move list (`#variationList`), labelled with
+  the move that led to it (`1.e4`, `1...e5`, or `start`). Click a chip to put
+  that position back on the board — it becomes the base position, so the moves
+  you play next are recorded from there — or ✕ to drop it. The last 20 are part
+  of the session snapshot, so they survive F5.
 - Compact panel that doesn't distract during recording
 
 ### 🤖 Stockfish Analysis
 - Real evaluation, best move, PV
-- Configurable depth (10/15/20/25)
+- Configurable depth (10/15/20/25). The depth you pick (`state.engine.depth`)
+  and the depth the engine has actually reached (`state.engine.searchDepth`,
+  shown in the panel) are two different numbers — the engine's progress reports
+  no longer overwrite your setting, and switching analysis off ignores the
+  messages from the search it was told to abandon, so the panel cannot come back
+  to life on its own
 - Multi-PV (1/2/3/4)
 - Eval bar visualization
 - **"Hide Engine"** button — critical for clean recording
@@ -310,6 +338,30 @@ browser, or this repository). Nothing client-side changes that.
 14 headless-Chromium checks cover the shortcuts, the menu, the board
 right-click, the lock screen and the escape hatch — all passing.
 
+### ⚖️ Material points (`js/00-constants.js` + `js/10-board-render.js`)
+Standard counting, live on the board:
+
+| Piece | Pawn | Knight | Bishop | Rook | Queen | King |
+|---|---|---|---|---|---|---|
+| Value | 1 | 3 | 3 | 5 | 9 | 0 (never counted) |
+
+- Each player row shows their **total material** and the running **difference**
+  (`+3`, `−5`), with the point value of every captured piece in the capture
+  strip
+- The numbers follow the position on screen: undo/redo, ←/→, a move-list click,
+  a variation chip, flipping the board, loading a FEN or a puzzle all repaint
+  them, and a promotion adds the new queen's 9 points for the right colour
+- While you are **building** a position (Custom Setup editing or puzzle
+  authoring) the score stays silent — an unfinished board has no meaningful
+  material — and it comes back the moment you press START FROM POSITION or save
+  and test the puzzle
+
+### 💬 Messages without pop-ups
+Toast pop-ups are switched off, but refusals and confirmations still have to be
+seen: `toast()` writes to a slim pill over the bottom of the board
+(`#boardMsg`, `js/03-utils.js`). It is absolutely positioned, so a message can
+never change the size of the board, and it clears itself after six seconds.
+
 ## ⚠️ Known issues found while refactoring (not yet fixed)
 
 1. **`test.html` DOM checks always fail** — that page loads the scripts but has
@@ -332,6 +384,13 @@ right-click, the lock screen and the escape hatch — all passing.
 - Blitz / Rapid / Classical presets
 - Custom time
 - Hide/show toggle
+- The side that is on move is highlighted **from the moment you press Start**,
+  not only after the first move
+- Only a **legal move** hands the clock over — drawing an arrow, marking a
+  square or an illegal attempt leaves it where it was (in Puzzle mode the
+  auto-reply switches it too)
+- When a flag falls the clock stops itself, the button reads *Start Clock*
+  again and the message strip says *Time expired!*
 
 ### ⌨️ Keyboard Shortcuts
 (ignored while a text field has focus; `js/30-keyboard.js` is the source of truth)
@@ -379,8 +438,18 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - Classic, Tournament, Wooden, Dark, Minimal, Green
 
 ### 📱 Responsive Design
-- Optimized for Windows, Mac, iPad (landscape), Android tablets
-- Rearranges panels on small screens
+- Optimized for Windows, Mac, iPad (landscape), Android tablets and phones
+- Rearranges panels on small screens (one column below 900px, board first)
+- The board is re-measured against **the room actually left in the window**, so
+  it can never be clipped by the sidebars: a 1024×768 window gets a ~700px
+  board, a 390×844 phone a ~365px one, and every rank stays reachable
+  (`js/27-autofit.js`). The space watcher is rate-limited instead of
+  "three refits and stop", so it keeps working for the whole session.
+- **Finger input**: a tap is one gesture, never two. Chrome replays a tap as
+  synthetic mouse events, and handling both made a tap select-then-deselect a
+  piece and turn a drawing tap into a double click that undid itself — drawing
+  tools now work with a finger exactly as they do with a mouse (tap-tap for a
+  click-click arrow, swipe for a drag arrow)
 
 ## 🚀 Usage
 

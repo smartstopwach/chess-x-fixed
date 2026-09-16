@@ -26,8 +26,23 @@ let pressDetail = 1;       // mousedown detail: 2 = second click of a double cli
 let pressMoved = false;    // pointer travelled past the slop -> this is a real drag
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
+let lastTouchAt = 0;       // when the last real touch gesture was seen
+let setupDeferredRack = null;  // rack piece waiting to see if the press is a click or a drag
+const TOUCH_SUPPRESS_MS = 800;
+
+// A tap on a phone makes Chrome replay the gesture as synthetic
+// mousedown/mousemove/mouseup/click right after touchend. Handled twice, a tap
+// on a piece selected it and then deselected it, and a tap with a drawing tool
+// looked like a double click and reversed whatever the first pass had drawn -
+// so on touch devices the tools appeared to do nothing at all. Every mouse
+// handler therefore refuses a gesture that came from a finger.
+function pressCameFromTouch(e) {
+  if (e && e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents === true) return true;
+  return (Date.now() - lastTouchAt) < TOUCH_SUPPRESS_MS;
+}
 
 function onSquareMouseDown(e) {
+  if (pressCameFromTouch(e)) return;
   // Stop the browser from starting a native image/text drag or a text
   // selection — either one silently swallows the matching mouseup and the
   // move never happens.
@@ -44,6 +59,7 @@ function onSquareMouseDown(e) {
 }
 
 function onSquareMouseMove(e) {
+  if (pressCameFromTouch(e)) return;
   if (pressSquare === null || pressMoved) return;
   if (Math.hypot(e.clientX - pressX, e.clientY - pressY) > DRAG_SLOP_PX) {
     pressMoved = true;
@@ -51,6 +67,7 @@ function onSquareMouseMove(e) {
 }
 
 function onSquareMouseUp(e) {
+  if (pressCameFromTouch(e)) return;
   endSquarePress(e.target.closest('.square'), e.clientX, e.clientY);
 }
 
@@ -61,12 +78,14 @@ function onTouchStart(e) {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   touchHandledPress = true;
+  lastTouchAt = Date.now();
   const el = (typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
   beginSquarePress(el ? el.closest('.square') : null, t.clientX, t.clientY, 0);
 }
 
 function onTouchMove(e) {
   if (!touchHandledPress || e.touches.length !== 1) return;
+  lastTouchAt = Date.now();
   const t = e.touches[0];
   if (pressSquare !== null && !pressMoved &&
       Math.hypot(t.clientX - pressX, t.clientY - pressY) > DRAG_SLOP_PX) {
@@ -80,9 +99,12 @@ function onTouchMove(e) {
 function onTouchEnd(e) {
   if (!touchHandledPress) return;
   touchHandledPress = false;
+  lastTouchAt = Date.now();
   const t = (e.changedTouches && e.changedTouches[0]) || null;
   const target = (t && typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
-  if (pressMoved && e.preventDefault) e.preventDefault();
+  // The gesture is fully handled here, so the emulated mouse pair (and the
+  // click that follows it) must never reach the board - a tap is not two taps.
+  if (e.cancelable && e.preventDefault) e.preventDefault();
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 
@@ -163,6 +185,21 @@ function beginSquarePress(sq, x, y, button, detail) {
   if (state.setupMode) {
     // If a piece is already held from the rack or board:
     if (state.heldPiece) {
+      const occupant = (typeof getPieceAt === 'function') ? getPieceAt(sqName) : null;
+      // A rack piece stays held so several of them can be stamped out, but that
+      // used to make every press on an OCCUPIED square place a copy - so the
+      // piece already on the board could not be dragged anywhere ("drag pieces
+      // too" simply did nothing after picking something from the rack). Let the
+      // gesture decide instead: a drag moves the board piece, a plain click
+      // still replaces it with the held rack piece.
+      if (occupant && state.heldPiece.source === 'rack') {
+        setupDeferredRack = state.heldPiece.piece;
+        state.heldPiece = null;
+        state.selectedRackPiece = null;
+        $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+        pickPieceFromBoard(sqName);
+        return;                    // not consumed - the release decides
+      }
       pressConsumed = true;
       placePieceOnSetup(sqName, state.heldPiece.piece);
       return;
@@ -195,8 +232,9 @@ function endSquarePress(sq, x, y) {
   const btn = pressButton;
   const dbl = pressDetail === 2;
   const consumed = pressConsumed;
+  const deferredRack = setupDeferredRack;   // read before the press state is cleared
 
-  cancelSquarePress();
+  cancelSquarePress(true);                  // this release completes a gesture
 
   if (consumed) return;
 
@@ -210,6 +248,27 @@ function endSquarePress(sq, x, y) {
       state.heldPiece = null;
       state.selectedRackPiece = null;
       $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+      // If a rack piece was in hand when the drag started, hand it back: moving
+      // a piece out of the way must not cost the teacher the piece they were
+      // about to stamp down.
+      if (deferredRack) {
+        state.heldPiece = { piece: deferredRack, source: 'rack' };
+        state.selectedRackPiece = deferredRack;
+        const rackEl = document.querySelector(`.rack-piece[data-piece="${deferredRack}"]`);
+        if (rackEl) rackEl.classList.add('selected');
+      }
+      highlightDropSquares();
+      updateSetupHint();
+    } else if (deferredRack && from) {
+      // The press on an occupied square turned out to be a click, not a drag:
+      // the held rack piece replaces what was there, and stays held.
+      const held = deferredRack;
+      state.heldPiece = { piece: held, source: 'rack' };
+      placePieceOnSetup(sqName, held);
+      state.heldPiece = { piece: held, source: 'rack' };
+      state.selectedRackPiece = held;
+      const rackEl = document.querySelector(`.rack-piece[data-piece="${held}"]`);
+      if (rackEl) rackEl.classList.add('selected');
       highlightDropSquares();
       updateSetupHint();
     }
@@ -415,12 +474,29 @@ function handleRightClickOrDrag(from, to, isDrag) {
   highlightSquares();
 }
 
-function cancelSquarePress() {
+function cancelSquarePress(fromRelease) {
   pressSquare = null;
   pressMoved = false;
   pressConsumed = false;
   pressButton = 0;
   pressDetail = 1;
+  // A gesture that was DROPPED (Esc, release off the board, lost focus) must
+  // hand the teacher their rack piece back instead of leaving them holding the
+  // piece that happened to be under the cursor. A release that is completing
+  // the gesture (fromRelease) decides for itself in endSquarePress.
+  if (setupDeferredRack) {
+    const held = setupDeferredRack;
+    setupDeferredRack = null;
+    if (state.setupMode && !fromRelease) {
+      // the temporary pick-up of the board piece is over: hand back the rack
+      // piece the teacher was actually holding
+      state.heldPiece = { piece: held, source: 'rack' };
+      state.selectedRackPiece = held;
+      const rackEl = document.querySelector(`.rack-piece[data-piece="${held}"]`);
+      if (rackEl) rackEl.classList.add('selected');
+      if (typeof updateSetupHint === 'function') updateSetupHint();
+    }
+  }
   if (state.isDrawing) {
     state.isDrawing = false;
     state.drawingFrom = null;
@@ -638,6 +714,12 @@ function tryMakeMove(from, to, promotion = null) {
   state.history = state.history.slice(0, state.historyIndex + 1);
   state.history.push(result.san);
   state.historyIndex = state.history.length - 1;
+
+  // A real move was made: hand the clock over (it used to switch on any board
+  // click, so drawing an arrow also flipped whose time was running).
+  try {
+    if (state.clock && state.clock.running && typeof switchClockSide === 'function') switchClockSide();
+  } catch (e) {}
 
   renderAll();            // fail-safe: never throws out of a single panel
   // Puzzle play mode: grade the move the user just made.

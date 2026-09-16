@@ -62,6 +62,51 @@ function renderBoard() {
   }
 }
 
+// ---- material points (P1 N3 B3 R5 Q9) ------------------------------------
+function pieceValue(ch) {
+  if (!ch) return 0;
+  const v = PIECE_VALUES[String(ch).toLowerCase()];
+  return (typeof v === 'number') ? v : 0;
+}
+
+// Everything one colour ('w' / 'b') has on the board right now, in points.
+function materialPoints(color) {
+  let total = 0;
+  try {
+    const board = state.game.board();
+    (board || []).forEach(row => (row || []).forEach(p => {
+      if (p && p.color === color) total += pieceValue(p.type);
+    }));
+  } catch (e) {}
+  return total;
+}
+
+// White minus black, plus both totals - the "+3" badge is drawn from this.
+function materialBalance() {
+  const white = materialPoints('w');
+  const black = materialPoints('b');
+  return { white: white, black: black, diff: white - black };
+}
+
+// A pawn that promoted is NOT a captured pawn, so the '=' moves already played
+// are subtracted from that side's pawn losses. Who moved first comes from the
+// base position, because a custom position can start with Black to move.
+function promotionCounts(uptoIndex) {
+  const out = { w: 0, b: 0 };
+  let whiteToMove = true;
+  try {
+    const base = (typeof baseFen === 'function') ? baseFen() : (state.baseFen || START_FEN);
+    whiteToMove = String(base).split(' ')[1] !== 'b';
+  } catch (e) {}
+  const hist = state.history || [];
+  const end = (typeof uptoIndex === 'number' && uptoIndex >= 0) ? uptoIndex : hist.length - 1;
+  hist.slice(0, end + 1).forEach(san => {
+    if (String(san).indexOf('=') >= 0) { if (whiteToMove) out.w++; else out.b++; }
+    whiteToMove = !whiteToMove;
+  });
+  return out;
+}
+
 function renderPlayerInfo() {
   const topFlag = $('playerTop');
   const topName = $('playerTopName');
@@ -89,8 +134,21 @@ function renderPlayerInfo() {
 
   // Calculate and render captured pieces
   if (capturedTop && capturedBottom && typeof state !== 'undefined' && state.game) {
-    const initialWhite = { P: 8, N: 2, B: 2, R: 2, Q: 1 };
-    const initialBlack = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    // Captured = what THIS game started with minus what is on the board now.
+    // The fixed 8/2/2/2/1 army made every custom position, puzzle or endgame
+    // advertise captures that never happened.
+    const initialWhite = {};
+    const initialBlack = {};
+    let placement = START_FEN.split(' ')[0];
+    try {
+      const base = (typeof baseFen === 'function') ? baseFen() : (state.baseFen || START_FEN);
+      placement = String(base).split(' ')[0];
+    } catch (e) {}
+    for (const ch of placement) {
+      if (ch >= 'A' && ch <= 'Z') initialWhite[ch] = (initialWhite[ch] || 0) + 1;
+      else if (ch >= 'a' && ch <= 'z') initialBlack[ch] = (initialBlack[ch] || 0) + 1;
+    }
+    const promos = promotionCounts(state.historyIndex);
 
     let board = null;
     try {
@@ -111,13 +169,15 @@ function renderPlayerInfo() {
 
     const whiteCaptured = [];
     ['P', 'N', 'B', 'R', 'Q'].forEach(k => {
-      const missing = Math.max(0, (initialWhite[k] || 0) - (currentCounts[k] || 0));
+      let missing = Math.max(0, (initialWhite[k] || 0) - (currentCounts[k] || 0));
+      if (k === 'P') missing = Math.max(0, missing - promos.w);   // promoted, not captured
       for (let i = 0; i < missing; i++) whiteCaptured.push(k);
     });
 
     const blackCaptured = [];
     ['p', 'n', 'b', 'r', 'q'].forEach(k => {
-      const missing = Math.max(0, (initialBlack[k] || 0) - (currentCounts[k] || 0));
+      let missing = Math.max(0, (initialBlack[k] || 0) - (currentCounts[k] || 0));
+      if (k === 'p') missing = Math.max(0, missing - promos.b);
       for (let i = 0; i < missing; i++) blackCaptured.push(k);
     });
 
@@ -134,6 +194,26 @@ function renderPlayerInfo() {
       const svg = typeof getPieceSvg === 'function' ? getPieceSvg(k, state.pieceStyle) : '';
       return svg ? `<span class="captured-piece" title="${k}">${svg}</span>` : '';
     }).join('');
+  }
+
+  // Material advantage badge ("+3"), the way a playing site shows it: only for
+  // the side that is ahead, and not while a position is being edited (a
+  // half-built board has no meaningful balance yet).
+  const matTop = $('materialTop');
+  const matBottom = $('materialBottom');
+  if (matTop || matBottom) {
+    const editing = (typeof state !== 'undefined') && (state.setupMode === true ||
+      (typeof isAuthoringMode === 'function' && isAuthoringMode() === true));
+    const bal = materialBalance();
+    const label = `Material — White ${bal.white} · Black ${bal.black} (pawn 1, knight 3, bishop 3, rook 5, queen 9)`;
+    [[matTop, topColor], [matBottom, bottomColor]].forEach(pair => {
+      const el = pair[0], color = pair[1];
+      if (!el) return;
+      if (editing) { el.textContent = ''; el.removeAttribute('title'); return; }
+      const adv = (color === 'w') ? bal.diff : -bal.diff;
+      el.textContent = adv > 0 ? '+' + adv : '';
+      el.title = label;
+    });
   }
 }
 

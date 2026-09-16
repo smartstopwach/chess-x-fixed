@@ -659,7 +659,7 @@ async function runMasterSuite() {
   });
 
   test('BASE-FEN', 'every fresh move list remembers where it started', () => {
-    const KRK = '4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1';
+    const KRK = '4k3/8/8/8/8/8/8/R3K3 w - - 0 1';
     window.state.game.load(KRK);
     window.resetMoveHistory();            // no argument = take the board as it is
     assert(window.state.baseFen === KRK, 'got ' + window.state.baseFen);
@@ -754,6 +754,183 @@ async function runMasterSuite() {
     window.flushLeftAction();                             // pending click was dropped
     assert(window.state.circles.length === 0, 'nothing was placed after Esc');
     window.setTool('select');
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11g: POSITION VALIDATION (impossible positions must be refused)
+  // ----------------------------------------------------
+  test('VALIDATE', 'legal positions pass', () => {
+    const good = [
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+      '4k3/8/8/8/8/8/8/R3K3 w - - 0 1',
+      '4k3/P7/8/8/8/8/8/4K3 w - - 0 1',
+      'r1bqkb1r/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1'
+    ];
+    good.forEach(f => {
+      const r = window.validatePosition(f);
+      assert(r.ok === true, 'should be legal: ' + f + ' -> ' + r.reason);
+    });
+  });
+
+  test('VALIDATE', 'impossible positions are refused with a reason', () => {
+    const bad = {
+      '8/8/8/8/8/8/8/8 w - - 0 1': 'king',
+      '3k3k/8/8/8/8/8/8/K6K w - - 0 1': 'two kings',
+      'K6k/8/8/8/8/8/8/7k w - - 0 1': 'king',
+      'P6k/8/8/8/8/8/8/K7 w - - 0 1': 'last rank',
+      '7k/8/8/8/8/8/8/PK6 w - - 0 1': 'first rank',
+      '4k3/ppppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1': '9 pawns',
+      '4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1': 'castling',
+      '4k3/8/8/8/8/8/8/4R1K1 w - - 0 1': 'own king in check',
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e3 0 1': 'en-passant',
+      '4k3/8/8/8/8/8/8/3QQK2 w - - 0 1': 'promoted',
+      'nonsense': 'incomplete',
+      '4k3/8/8/8 w - - 0 1': '8 ranks'
+    };
+    Object.keys(bad).forEach(f => {
+      const r = window.validatePosition(f);
+      assert(r.ok === false, 'should be refused: ' + f);
+      assert(typeof r.reason === 'string' && r.reason.length > 3, 'needs a reason: ' + f);
+    });
+  });
+
+  test('VALIDATE', 'START FROM POSITION refuses an impossible board and stays editing', () => {
+    window.setMode('setup');
+    window.state.game.load('8/8/8/8/8/8/8/8 w - - 0 1');      // no kings at all
+    window.syncSetupControlsFromFen('8/8/8/8/8/8/8/8 w - - 0 1');
+    window.startFromPosition();
+    assert(window.state.setupMode === true, 'still editing');
+    assert(window.document.body.dataset.setupEditing === 'true');
+    assert(window.state.history.length === 0);
+
+    window.state.game.load('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+    window.syncSetupControlsFromFen('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+    window.startFromPosition();
+    assert(window.state.setupMode === false, 'a legal position starts');
+    assert(window.state.baseFen === '4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+  });
+
+  test('VALIDATE', 'the FEN box refuses an impossible position and keeps the board', () => {
+    const before = window.state.game.fen();
+    window.document.getElementById('fenInput').value = '8/8/8/8/8/8/8/8 w - - 0 1';
+    window.loadFen();
+    assert(window.state.game.fen() === before, 'board untouched');
+    window.document.getElementById('fenInput').value = '';
+    window.loadFen();
+    assert(window.state.game.fen() === before, 'empty input is refused too');
+  });
+
+  test('VARIATIONS', 'saved positions are stored as labelled objects and can be jumped to', () => {
+    window.setMode('normal');
+    window.state.game.reset(); window.resetMoveHistory(); window.state.variations = [];
+    window.handleSquareClick('e2'); window.handleSquareClick('e4');
+    window.saveVariation();
+    assert(window.state.variations.length === 1, 'one saved position');
+    const v = window.state.variations[0];
+    assert(typeof v === 'object' && v.fen && v.label === '1.e4', JSON.stringify(v));
+    window.saveVariation();
+    assert(window.state.variations.length === 1, 'the same position is not saved twice');
+    assert(window.document.getElementById('variationList').children.length === 1, 'chip is rendered');
+
+    window.handleSquareClick('e7'); window.handleSquareClick('e5');
+    assert(window.state.history.length === 2);
+    window.goToVariation(0);
+    assert(window.state.history.length === 0 && window.state.game.fen() === v.fen, 'jumped back to the saved line');
+    assert(window.state.baseFen === v.fen, 'the saved position became the new base');
+    window.removeVariation(0);
+    assert(window.state.variations.length === 0, 'chip removed');
+    assert(window.document.getElementById('variationList').children.length === 0);
+  });
+
+  test('ENGINE-DEPTH', 'the configured depth survives the engine reporting its own', () => {
+    window.setEngineDepth(20);
+    assert(window.state.engine.depth === 20, 'setEngineDepth stores the number, got ' + window.state.engine.depth);
+    assert(window.document.getElementById('engineDepth').value === '20', 'the control shows it too');
+    window.state.engine.enabled = true;
+    window.handleEngineMessage('info depth 7 seldepth 9 multipv 1 score cp 21 nodes 12345 pv g1f3 g8f6');
+    assert(window.state.engine.depth === 20, 'user setting must not be overwritten, got ' + window.state.engine.depth);
+    assert(window.state.engine.searchDepth === 7, 'reached depth is tracked separately');
+    assert(window.document.getElementById('depth').textContent === '7', 'display shows the reached depth');
+    window.setEngineDepth('nonsense');
+    assert(window.state.engine.depth === 20, 'garbage input is ignored');
+    window.setEngineMultiPV('x');
+    assert(window.state.engine.multipv === 1, 'garbage multiPV falls back to 1');
+  });
+
+  test('ENGINE-OFF', 'a search abandoned by STOP cannot repaint the panel', () => {
+    window.state.engine.enabled = true;
+    window.handleEngineMessage('info depth 12 seldepth 14 multipv 1 score cp 33 nodes 999 pv d2d4 d7d5');
+    assert(window.state.engine.bestMove === 'd2d4', 'best move recorded while analysing');
+    window.state.engine.enabled = false;                 // what toggleEngine() does
+    window.document.getElementById('engineStatus').textContent = 'Idle';
+    window.handleEngineMessage('info depth 14 seldepth 18 multipv 1 score cp 41 nodes 5000 pv e2e4 e7e5');
+    window.handleEngineMessage('bestmove e2e4 ponder e7e5');
+    assert(window.document.getElementById('engineStatus').textContent === 'Idle', 'status stays Idle, got ' + window.document.getElementById('engineStatus').textContent);
+    assert(window.state.engine.bestMove === 'd2d4', 'a cancelled search must not replace the best move');
+    assert(window.state.engine.searchDepth === 12, 'reached depth is not updated while off');
+  });
+
+  test('CLOCK-PAINT', 'starting the clock marks the side that is on move', () => {
+    window.state.clock.activeColor = 'w';
+    window.state.clock.running = false;
+    window.paintClockSide();
+    assert(!window.document.getElementById('clockWhite').classList.contains('active'), 'nothing is highlighted while paused');
+    window.state.clock.running = true;
+    window.paintClockSide();
+    assert(window.document.getElementById('clockWhite').classList.contains('active'), 'white is on move');
+    assert(!window.document.getElementById('clockBlack').classList.contains('active'));
+    window.switchClockSide();
+    assert(window.state.clock.activeColor === 'b' &&
+      window.document.getElementById('clockBlack').classList.contains('active') &&
+      !window.document.getElementById('clockWhite').classList.contains('active'), 'a move hands the highlight over');
+    window.state.clock.running = false;
+    window.paintClockSide();
+    assert(!window.document.getElementById('clockBlack').classList.contains('active'), 'pausing clears it');
+  });
+
+  test('SETUP-DRAG', 'a held rack piece no longer blocks dragging a board piece', () => {
+    // The full press -> travel -> release drag is exercised with real mouse
+    // events in the browser suite (ui_test2 T9); here the observable state
+    // machine around it is checked.
+    window.setMode('setup');
+    const FEN = '4k3/8/8/8/8/8/8/R3K3 w - - 0 1';
+    window.state.game.load(FEN);
+    window.syncSetupControlsFromFen(FEN);
+    window.state.setupMode = true;
+    window.document.body.dataset.setupEditing = 'true';
+    window.state.heldPiece = { piece: 'Q', source: 'rack' };   // rack pieces stay held
+    window.state.selectedRackPiece = 'Q';
+    const sqOf = name => ({ dataset: { square: name } });
+    const placement = () => window.state.game.fen().split(' ')[0];
+
+    // Pressing an OCCUPIED square picks the board piece up (so the gesture can
+    // still become a drag) instead of stamping the held queen over it.
+    window.beginSquarePress(sqOf('a1'), 10, 10, 0, 1);
+    assert(window.state.heldPiece && window.state.heldPiece.source === 'a1' && window.state.heldPiece.piece === 'R',
+      'the rook was picked up, got ' + JSON.stringify(window.state.heldPiece));
+    assert(placement() === '4k3/8/8/8/8/8/8/R3K3', 'nothing was placed on the press, got ' + placement());
+
+    // Releasing on the same square is a click: the held queen replaces the rook
+    // and stays in hand for the next one.
+    window.endSquarePress(sqOf('a1'), 12, 12);
+    assert(placement() === '4k3/8/8/8/8/8/8/Q3K3', 'the click placed the queen, got ' + placement());
+    assert(window.state.heldPiece && window.state.heldPiece.piece === 'Q' && window.state.heldPiece.source === 'rack',
+      'the rack piece is still in hand, got ' + JSON.stringify(window.state.heldPiece));
+
+    // A dropped gesture (Esc, release off the board, lost focus) hands the rack
+    // piece back instead of leaving the teacher holding the piece under it.
+    window.beginSquarePress(sqOf('e1'), 10, 10, 0, 1);
+    assert(window.state.heldPiece && window.state.heldPiece.source === 'e1', 'the king was picked up');
+    window.cancelSquarePress();
+    assert(window.state.heldPiece && window.state.heldPiece.piece === 'Q' && window.state.heldPiece.source === 'rack',
+      'cancelling returns the queen to hand, got ' + JSON.stringify(window.state.heldPiece));
+    assert(placement() === '4k3/8/8/8/8/8/8/Q3K3', 'and nothing was placed, got ' + placement());
+
+    // Pressing an EMPTY square with a rack piece still places at once
+    window.beginSquarePress(sqOf('h5'), 10, 10, 0, 1);
+    assert(placement() === '4k3/8/8/7Q/8/8/8/Q3K3', 'an empty square is stamped immediately, got ' + placement());
   });
 
   // ----------------------------------------------------

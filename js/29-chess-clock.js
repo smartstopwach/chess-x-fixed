@@ -22,6 +22,16 @@ function updateClocks() {
   $('clockBlack').classList.toggle('low-time', state.clock.bTime < 30);
 }
 
+// Whose clock is ticking has to be visible the moment it starts. The highlight
+// used to be painted only by switchClockSide(), so after pressing START neither
+// side was marked until the first move was played.
+function paintClockSide() {
+  const w = $('clockWhite'), b = $('clockBlack');
+  const on = !!state.clock.running;
+  if (w) w.classList.toggle('active', on && state.clock.activeColor === 'w');
+  if (b) b.classList.toggle('active', on && state.clock.activeColor === 'b');
+}
+
 function toggleClock() {
   state.clock.running = !state.clock.running;
   const btn = $('btnClockToggle');
@@ -35,6 +45,7 @@ function toggleClock() {
         clearInterval(state.clock.interval);
         state.clock.running = false;
         btn.textContent = 'Start Clock';
+        paintClockSide();
         toast('Time expired!', 'error');
       }
       updateClocks();
@@ -42,11 +53,11 @@ function toggleClock() {
   } else {
     clearInterval(state.clock.interval);
   }
+  paintClockSide();
   updateClocks();
 }
 
 function switchClockSide() {
   state.clock.activeColor = state.clock.activeColor === 'w' ? 'b' : 'w';
-  $('clockWhite').classList.toggle('active', state.clock.activeColor === 'w' && state.clock.running);
-  $('clockBlack').classList.toggle('active', state.clock.activeColor === 'b' && state.clock.running);
+  paintClockSide();
 }

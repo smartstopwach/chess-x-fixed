@@ -269,7 +269,20 @@ function updatePieceCount() {
   }
   const wCount = counts.P + counts.N + counts.B + counts.R + counts.Q + counts.K;
   const bCount = counts.p + counts.n + counts.b + counts.r + counts.q + counts.k;
-  el.innerHTML = `<span class="count-w">${wCount}</span><span class="count-sep">·</span><span class="count-b">${bCount}</span>`;
+  el.innerHTML = `<span class="count-w">${wCount}</span><span class="count-sep">·</span><span class="count-b">${bCount}</span>` +
+    materialCountHtml(counts);
+}
+
+// "39–36 (+3 W)" in the piece counters: material points with the standard
+// values, so a teacher can see the imbalance while building a position.
+function materialCountHtml(counts) {
+  const V = (typeof PIECE_VALUES !== 'undefined') ? PIECE_VALUES : { p:1, n:3, b:3, r:5, q:9, k:0 };
+  const c = counts || {};
+  const w = V.p*(c.P||0) + V.n*(c.N||0) + V.b*(c.B||0) + V.r*(c.R||0) + V.q*(c.Q||0);
+  const b = V.p*(c.p||0) + V.n*(c.n||0) + V.b*(c.b||0) + V.r*(c.r||0) + V.q*(c.q||0);
+  const d = w - b;
+  const adv = d > 0 ? ` (+${d} W)` : (d < 0 ? ` (+${-d} B)` : '');
+  return `<span class="count-pts" title="Material points — pawn 1, knight 3, bishop 3, rook 5, queen 9">⚖ ${w}–${b}${adv}</span>`;
 }
 
 function syncSetupControlsFromFen(fen) {
@@ -400,6 +413,109 @@ function clearBoard() {
   toast('Board cleared');
 }
 
+// A teaching studio must never hand out an impossible position. chess.js loads
+// anything at all - no kings, two kings, pawns on the back rank, nine pawns, a
+// side that just moved into check - and from such a board the check/mate
+// detection, the clock and every lesson recorded on top of it are wrong.
+// Returns { ok:true } or { ok:false, reason:'...' }.
+function validatePosition(fen) {
+  const parts = String(fen || '').trim().split(/\s+/);
+  if (parts.length < 4) return { ok: false, reason: 'the FEN is incomplete' };
+
+  const rows = parts[0].split('/');
+  if (rows.length !== 8) return { ok: false, reason: 'the position must describe 8 ranks' };
+
+  const grid = [];
+  const cnt = { w: { K:0, Q:0, R:0, B:0, N:0, P:0 }, b: { K:0, Q:0, R:0, B:0, N:0, P:0 } };
+  let whiteKing = null, blackKing = null;
+
+  for (let r = 0; r < 8; r++) {
+    const row = [];
+    let c = 0;
+    for (const ch of rows[r]) {
+      if (ch >= '1' && ch <= '8') {
+        c += parseInt(ch, 10);
+        for (let k = 0; k < parseInt(ch, 10); k++) row.push(null);
+        continue;
+      }
+      if (!/[prnbqkPRNBQK]/.test(ch)) return { ok: false, reason: '"' + ch + '" is not a chess piece' };
+      if (c > 7) return { ok: false, reason: 'rank ' + (8 - r) + ' holds more than 8 squares' };
+      const white = (ch === ch.toUpperCase());
+      const t = ch.toUpperCase();
+      cnt[white ? 'w' : 'b'][t]++;
+      if (t === 'P' && (r === 0 || r === 7)) return { ok: false, reason: 'a pawn cannot stand on the first or the last rank' };
+      if (t === 'K') {
+        const name = String.fromCharCode(97 + c) + (8 - r);
+        if (white) { if (whiteKing) return { ok: false, reason: 'White has two kings' }; whiteKing = name; }
+        else { if (blackKing) return { ok: false, reason: 'Black has two kings' }; blackKing = name; }
+      }
+      row.push(ch);
+      c++;
+    }
+    if (c !== 8) return { ok: false, reason: 'rank ' + (8 - r) + ' does not cover 8 squares' };
+    grid.push(row);
+  }
+
+  if (!whiteKing || !blackKing) return { ok: false, reason: 'each side needs exactly one king' };
+
+  for (const side of ['w', 'b']) {
+    const n = cnt[side], who = (side === 'w') ? 'White' : 'Black';
+    const total = n.K + n.Q + n.R + n.B + n.N + n.P;
+    if (n.P > 8) return { ok: false, reason: who + ' cannot have more than 8 pawns' };
+    if (total > 16) return { ok: false, reason: who + ' cannot have more than 16 pieces' };
+    // every extra queen / rook / bishop / knight must come from a promoted pawn
+    const extras = Math.max(0, n.Q - 1) + Math.max(0, n.R - 2) + Math.max(0, n.B - 2) + Math.max(0, n.N - 2);
+    if (extras > 8 - n.P) return { ok: false, reason: who + ' has more promoted pieces than the missing pawns allow' };
+  }
+
+  const turn = parts[1];
+  if (turn !== 'w' && turn !== 'b') return { ok: false, reason: 'the side to move must be w or b' };
+
+  const rights = parts[2] || '-';
+  if (rights !== '-') {
+    const home = { K: ['e1', 'h1', 7, 7], Q: ['e1', 'a1', 7, 0], k: ['e8', 'h8', 0, 7], q: ['e8', 'a8', 0, 0] };
+    for (const ch of rights) {
+      const need = home[ch];
+      if (!need) return { ok: false, reason: '"' + ch + '" is not a castling right' };
+      const kingAt = (ch === ch.toUpperCase()) ? whiteKing : blackKing;
+      const rookChar = (ch === ch.toUpperCase()) ? 'R' : 'r';
+      if (kingAt !== need[0]) return { ok: false, reason: 'castling "' + ch + '" needs the king on ' + need[0] };
+      if (grid[need[2]][need[3]] !== rookChar) return { ok: false, reason: 'castling "' + ch + '" needs a rook on ' + need[1] };
+    }
+  }
+
+  const ep = parts[3] || '-';
+  if (ep !== '-') {
+    if (!/^[a-h][36]$/.test(ep)) return { ok: false, reason: 'the en-passant square must be on rank 3 or 6' };
+    const epRank = parseInt(ep[1], 10);
+    if ((turn === 'w' && epRank !== 6) || (turn === 'b' && epRank !== 3)) return { ok: false, reason: 'that en-passant square does not match the side to move' };
+    const fc = ep.charCodeAt(0) - 97;
+    const epRow = 8 - epRank;
+    if (grid[epRow][fc] !== null) return { ok: false, reason: 'the en-passant square must be empty' };
+    const pawnRow = (turn === 'w') ? epRow + 1 : epRow - 1;
+    const pawnChar = (turn === 'w') ? 'p' : 'P';
+    if (grid[pawnRow][fc] !== pawnChar) return { ok: false, reason: 'no pawn just made the double step to that en-passant square' };
+  }
+
+  if (parts[4] !== undefined && !/^\d+$/.test(parts[4])) return { ok: false, reason: 'the halfmove clock must be a number' };
+  if (parts[5] !== undefined && (!/^\d+$/.test(parts[5]) || parseInt(parts[5], 10) < 1)) return { ok: false, reason: 'the fullmove number must be 1 or more' };
+
+  // The side that just moved may not have left its OWN king in check: ask the
+  // engine by handing the same position to the other side to move.
+  try {
+    if (typeof Chess !== 'undefined') {
+      const g = new Chess();
+      const swapped = [parts[0], (turn === 'w' ? 'b' : 'w'), rights, '-', parts[4] || '0', parts[5] || '1'].join(' ');
+      const loaded = g.load(swapped);
+      if (loaded !== false && typeof g.in_check === 'function' && g.in_check()) {
+        return { ok: false, reason: 'the side that just moved left its own king in check' };
+      }
+    }
+  } catch (e) {}
+
+  return { ok: true };
+}
+
 function startFromPosition() {
   try {
     const placement = state.game.fen().split(' ')[0];
@@ -415,9 +531,20 @@ function startFromPosition() {
     const fullmove = ($('optFullmove') && parseInt($('optFullmove').value)) || 1;
 
     const fullFen = `${placement} ${side} ${castling} ${ep} ${halfmove} ${fullmove}`;
+    // Refuse impossible positions instead of quietly starting a game that can
+    // never be checked, mated or recorded correctly. Editing stays armed so the
+    // teacher can fix the position.
+    const check = validatePosition(fullFen);
+    if (!check.ok) {
+      toast('Cannot start from this position: ' + check.reason, 'error');
+      updateSetupHint();
+      return;
+    }
     state.game.load(fullFen);
   } catch (e) {
     console.warn('Could not load constructed FEN, keeping current board position:', e);
+    toast('Cannot start from this position: ' + (e && e.message ? e.message : 'the FEN is not valid'), 'error');
+    return;
   }
 
   // Finish setup editing mode

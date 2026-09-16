@@ -62,11 +62,7 @@ function bindEvents() {
   $('btnPrevMove').addEventListener('click', prevMove);
   $('btnNextMove').addEventListener('click', nextMove);
   $('btnDeleteMove').addEventListener('click', deleteMove);
-  $('btnAddVariation').addEventListener('click', () => {
-    const fen = state.game.fen();
-    if (!state.variations.includes(fen)) state.variations.push(fen);
-    toast('Variation saved', 'success');
-  });
+  $('btnAddVariation').addEventListener('click', saveVariation);
 
   $('btnEngineToggle').addEventListener('click', toggleEngine);
   // Toggle left sidebar (Tools) visibility
@@ -121,9 +117,9 @@ function bindEvents() {
   window.addEventListener('resize', () => { autoFitBoard(); renderAnnotations(); });
   setTimeout(autoFitBoard, 200);
 
-  els.board.addEventListener('click', () => {
-    if (state.clock.running) setTimeout(switchClockSide, 100);
-  });
+  // NOTE: the clock used to switch on ANY board click - including clicks that
+  // only drew an arrow, selected a piece or were rejected as illegal. It now
+  // switches inside tryMakeMove(), i.e. only when a move really happened.
 
   // Prevent right-click menu on board AND erase piece in setup mode
   els.board.addEventListener('contextmenu', (e) => {

@@ -9,6 +9,10 @@
 // standard opening instead of the position on screen.
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+// Material values - the standard teaching scale: pawn 1, knight 3, bishop 3,
+// rook 5, queen 9. The king is priceless (it can never be captured), so 0.
+const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+
 // Use high-quality unicode chess pieces (for fallback)
 const PIECE_FONT = {
   'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔',

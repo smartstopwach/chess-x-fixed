@@ -42,6 +42,79 @@ function renderMovesList() {
 
   const current = els.movesList.querySelector('.current');
   safeScrollIntoView(current, { block: 'nearest', behavior: 'smooth' });
+  renderVariations();
+}
+
+// ---- saved positions ("+ Variation") ---------------------------------------
+// The button used to push a FEN into an array nobody ever looked at again and
+// then claimed "Variation saved". The saved positions are now chips under the
+// move list: click one to put that position back on the board and start a new
+// line from it, click its × to throw it away. They survive a reload.
+function variationFen(v) { return (typeof v === 'string') ? v : (v && v.fen) || ''; }
+
+function variationLabel(v, i) {
+  if (v && typeof v === 'object' && v.label) return v.label;
+  return 'Position ' + (i + 1);
+}
+
+function renderVariations() {
+  const box = $('variationList');
+  if (!box) return;
+  const list = state.variations || [];
+  box.innerHTML = '';
+  if (!list.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  list.forEach((v, i) => {
+    const fen = variationFen(v);
+    if (!fen) return;
+    const chip = document.createElement('span');
+    chip.className = 'variation-chip';
+    chip.title = fen;
+
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'variation-go';
+    go.textContent = '\u27F2 ' + variationLabel(v, i);
+    go.title = 'Put this position back on the board';
+    go.addEventListener('click', () => goToVariation(i));
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'variation-del';
+    del.textContent = '\u00D7';
+    del.title = 'Remove this saved position';
+    del.addEventListener('click', () => removeVariation(i));
+
+    chip.appendChild(go);
+    chip.appendChild(del);
+    box.appendChild(chip);
+  });
+}
+
+function saveVariation() {
+  const fen = state.game.fen();
+  const idx = (typeof state.historyIndex === 'number') ? state.historyIndex : -1;
+  const ply = idx + 1;                       // 0 would be falsy - never use || here
+  const san = (idx >= 0) ? state.history[idx] : null;
+  const label = san ? (Math.ceil(ply / 2) + (ply % 2 === 1 ? '.' : '...') + san) : 'start';
+  if (!(state.variations || []).some(v => variationFen(v) === fen)) {
+    state.variations.push({ fen: fen, label: label, ply: ply });
+  }
+  renderVariations();
+  toast(`Position saved below the move list (${state.variations.length})`, 'success');
+}
+
+function goToVariation(i) {
+  const fen = variationFen((state.variations || [])[i]);
+  if (!fen) return;
+  if (typeof loadFENToBoard === 'function') loadFENToBoard(fen);
+  else { try { state.game.load(fen); resetMoveHistory(fen); renderAll(); } catch (e) {} }
+}
+
+function removeVariation(i) {
+  (state.variations || []).splice(i, 1);
+  renderVariations();
+  toast('Saved position removed', 'info');
 }
 
 function goToMove(idx) {

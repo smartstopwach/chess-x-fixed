@@ -67,7 +67,8 @@ const state = {
     stockfish: null,
     enabled: false,
     evaluating: false,
-    depth: 15,
+    depth: 15,          // what the teacher asked for (the Depth select)
+    searchDepth: 0,     // what Stockfish has actually reached so far
     multipv: 1,
     eval: 0,
     bestMove: '',

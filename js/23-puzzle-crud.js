@@ -164,13 +164,26 @@ function saveCurrentPuzzle() {
   renderChapterSelect();
   updateFenDisplay(fen);
 
+  // A puzzle built on an impossible position can never be solved or checked -
+  // warn loudly (the save still happens, the teacher may be mid-edit). The
+  // warning has to ride along in the FINAL message: sent on its own it was
+  // overwritten a moment later by the "Saved" confirmation, so a teacher could
+  // save an impossible puzzle and never be told.
+  let legalWarning = '';
+  if (typeof validatePosition === 'function') {
+    const vCheck = validatePosition(fen);
+    if (!vCheck.ok) legalWarning = ' — heads-up, this position is not legal: ' + vCheck.reason;
+  }
+
   // After saving puzzle, exit authoring mode and set active tool to arrow
   if (isAuthoringMode()) {
     setAuthoringMode(false);
   }
   if (typeof setTool === 'function') setTool('arrow');
 
-  toast('✓ Saved: ' + title + ' — left click to draw arrows', 'success');
+  toast(legalWarning
+    ? '✓ Saved: ' + title + legalWarning
+    : '✓ Saved: ' + title + ' — left click to draw arrows', legalWarning ? 'warn' : 'success');
 
   // Visual feedback: flash the SAVE button green
   const saveBtn = $('btnSavePuzzle');
@@ -402,6 +415,8 @@ function onPuzzleMovePlayed(san) {
         state.history.push(res.san);
         state.historyIndex = state.history.length - 1;
         pz.progress++;
+        // the opponent's automatic answer also hands the clock back
+        try { if (state.clock && state.clock.running) switchClockSide(); } catch (e) {}
       }
       pz.revealing = false;
       if (pz.progress >= pz.moves.length) { pz.solved = true; showPuzzleAnswer(true); }

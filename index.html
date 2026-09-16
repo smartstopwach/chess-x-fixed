@@ -417,6 +417,13 @@
         </div>
       </div>
 
+      <!-- Transient user messages (errors, confirmations). The pop-up toasts
+           were switched off, but a refusal with no feedback looks like a dead
+           button, so messages land here instead. It is absolutely positioned:
+           boardFreeBox() ignores absolute children, so showing a message can
+           never resize the board. -->
+      <div class="board-msg" id="boardMsg" role="status" aria-live="polite"></div>
+
       <!-- Both player rows share ONE slim strip *under* the board: nothing may
            sit above the board, so its top edge lands flush on the topbar and
            autoFitBoard() hands every freed pixel to the squares. -->
@@ -426,6 +433,7 @@
             <div class="player-flag black" id="playerTop"></div>
             <div class="player-name" id="playerTopName">Black</div>
             <div class="captured" id="capturedTop"></div>
+            <div class="material-adv" id="materialTop" aria-live="off"></div>
           </div>
         </div>
         <div class="board-meta-bottom">
@@ -433,6 +441,7 @@
             <div class="player-flag white" id="playerBottom"></div>
             <div class="player-name" id="playerBottomName">White</div>
             <div class="captured" id="capturedBottom"></div>
+            <div class="material-adv" id="materialBottom" aria-live="off"></div>
           </div>
         </div>
       </div>
@@ -544,6 +553,8 @@
       <div class="moves-wrapper">
         <div class="moves-list" id="movesList"></div>
       </div>
+      <!-- positions saved with "+ Variation" - click to put one back on the board -->
+      <div class="variation-list" id="variationList" style="display:none"></div>
       <div class="row">
         <button class="btn-ghost-full" id="btnPrevMove" title="Previous (←)">← Prev</button>
         <button class="btn-ghost-full" id="btnNextMove" title="Next (→)">Next →</button>

@@ -13,6 +13,48 @@
 .moves-wrapper::-webkit-scrollbar { width: 6px; }
 .moves-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+.variation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.variation-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.variation-go {
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  padding: 5px 4px 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.variation-go:hover { color: var(--accent, #ffaa00); }
+
+.variation-del {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+
+.variation-del:hover { color: #ef4444; }
+
 .moves-list {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
