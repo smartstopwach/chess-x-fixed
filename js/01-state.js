@@ -52,7 +52,6 @@ const state = {
   variations: [],
   currentVariation: 'main',
   puzzle: null,
-  soundEnabled: true,
   clock: { wTime: 600, bTime: 600, running: false, activeColor: 'w', interval: null },
   layout: 'focus',
   uiHidden: false,

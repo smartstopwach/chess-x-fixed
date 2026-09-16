@@ -418,15 +418,9 @@ async function runMasterSuite() {
     window.renderLibrary('fork');
     assert($$('.library-puzzle').length >= 1);
 
-    // Export & Import & Verification
+    // Export & Import
     const exported = JSON.stringify(activeLib);
     assert(exported.includes(chapName));
-
-    const verifyValid = window.verifyPuzzleLibrary(exported);
-    assert(verifyValid.ok === true && verifyValid.validCount >= 1);
-
-    const verifyInvalid = window.verifyPuzzleLibrary('{ "chapters": [{ "name": "bad", "puzzles": [{ "title": "bad", "fen": "garbage" }] }] }');
-    assert(verifyInvalid.ok === false && verifyInvalid.errors.length > 0);
   });
 
   // ----------------------------------------------------

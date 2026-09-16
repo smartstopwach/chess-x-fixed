@@ -415,7 +415,6 @@ function onPuzzleMovePlayed(san) {
         state.history.push(res.san);
         state.historyIndex = state.history.length - 1;
         pz.progress++;
-        try { playMoveSound(res); } catch (e) {}
         // the opponent's automatic answer also hands the clock back
         try {
           if (state.clock && state.clock.running) {

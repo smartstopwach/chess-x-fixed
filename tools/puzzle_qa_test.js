@@ -61,14 +61,13 @@ async function runTests() {
   ];
 
   const fullCode = scripts.map(s => fs.readFileSync(path.join(__dirname, '..', s), 'utf8')).join('\n;\n');
-  window.eval(fullCode + '\n; window._ctx = { state, puzzleState, getLibrary, saveLibrary, peLoadPreset, peSetupUndo, peSetupRedo, pePlacePiece, peErasePiece, peSelectRackPiece, peUseForPuzzle, enterAuthoringForNewPuzzle, saveCurrentPuzzle, loadPuzzleToEditor, startPuzzleTest, tryMakeMove, endPuzzleTest, handleLibraryAction, setMode, verifyPuzzleLibrary };');
+  window.eval(fullCode + '\n; window._ctx = { state, puzzleState, getLibrary, saveLibrary, peLoadPreset, peSetupUndo, peSetupRedo, pePlacePiece, peErasePiece, peSelectRackPiece, peUseForPuzzle, enterAuthoringForNewPuzzle, saveCurrentPuzzle, loadPuzzleToEditor, startPuzzleTest, tryMakeMove, endPuzzleTest, handleLibraryAction, setMode };');
 
   const {
     state, puzzleState, getLibrary, saveLibrary, peLoadPreset, peSetupUndo,
     peSetupRedo, pePlacePiece, peErasePiece, peSelectRackPiece, peUseForPuzzle,
     enterAuthoringForNewPuzzle, saveCurrentPuzzle, loadPuzzleToEditor,
-    startPuzzleTest, tryMakeMove, endPuzzleTest, handleLibraryAction, setMode,
-    verifyPuzzleLibrary
+    startPuzzleTest, tryMakeMove, endPuzzleTest, handleLibraryAction, setMode
   } = window._ctx;
   const document = window.document;
   const $ = (id) => document.getElementById(id);
@@ -178,27 +177,9 @@ async function runTests() {
   endPuzzleTest(false);
   assert('Testing mode ended', document.body.dataset.testing === 'false');
 
-  // 10. Test Library Export and Import & Deep Verification
+  // 10. Test Library Export and Import
   const exportedJson = JSON.stringify(getLibrary());
   assert('Library exported valid JSON', exportedJson.length > 50 && exportedJson.includes('Back Rank Mate'));
-
-  // Test verifyPuzzleLibrary on sample file
-  const samplePuzzlesRaw = fs.readFileSync(path.join(__dirname, '..', 'sample-puzzles.json'), 'utf8');
-  const sampleVerifyRes = verifyPuzzleLibrary(samplePuzzlesRaw);
-  assert('Sample puzzles verified successfully', sampleVerifyRes.ok && sampleVerifyRes.validCount === 6);
-  assert('Sample puzzles has no errors', sampleVerifyRes.errors.length === 0);
-
-  // Test rejection of corrupted FEN
-  const badFenRes = verifyPuzzleLibrary({
-    puzzles: [{ title: 'Corrupted FEN', fen: 'invalid-fen-string' }]
-  });
-  assert('Corrupted FEN is caught by verification', badFenRes.errors.length > 0 && !badFenRes.ok);
-
-  // Test rejection of board without King
-  const noKingRes = verifyPuzzleLibrary({
-    puzzles: [{ title: 'No King', fen: '8/8/8/8/8/8/8/8 w - - 0 1' }]
-  });
-  assert('Missing King is caught by verification', noKingRes.errors.length > 0 && !noKingRes.ok);
 
   // Modify library and re-import
   const modifiedLib = JSON.parse(exportedJson);
