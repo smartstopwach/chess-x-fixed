@@ -380,6 +380,7 @@ function revealPuzzleAnswer() {
     let res = null;
     try { res = state.game.move(mv); } catch (e) { res = null; }
     if (!res) break;
+    playPieceMoveSound(res, played * 0.08);
     state.history.push(res.san);
     state.historyIndex = state.history.length - 1;
     played++;
@@ -412,6 +413,7 @@ function onPuzzleMovePlayed(san) {
       let res = null;
       if (nxt) { try { res = state.game.move(nxt); } catch (e) { res = null; } }
       if (res) {
+        playPieceMoveSound(res);
         state.history.push(res.san);
         state.historyIndex = state.history.length - 1;
         pz.progress++;

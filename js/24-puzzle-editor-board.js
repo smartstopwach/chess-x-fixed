@@ -151,6 +151,7 @@ function pePlacePiece(sq, piece) {
     rows[r] = s;
     parts[0] = rows.join('/');
     state.game.load(parts.join(' '));
+    playPieceMoveSound();
     // Sync puzzle editor state
     if (puzzleGame()) puzzleGame().load(state.game.fen());
     peSetupPushHistory();
@@ -170,6 +171,7 @@ function peMakeMove(from, to) {
   try {
     const result = state.game.move({ from, to, promotion: 'q' });
     if (result) {
+      playPieceMoveSound(result);
       state.selectedSquare = null;
       state.history = [];
       state.historyIndex = -1;

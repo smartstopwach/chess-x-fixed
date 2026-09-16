@@ -28,6 +28,45 @@ function toast(message, type = '') {
   showBoardMessage(message, kind);
 }
 
+// A tiny Web Audio move cue keeps every board mode feeling responsive without
+// shipping an audio asset. It is created lazily from the user's move gesture,
+// so it also satisfies browser autoplay rules. In browsers without Web Audio
+// (or in the DOM test harness) it simply becomes a no-op.
+let moveAudioContext = null;
+
+function playPieceMoveSound(move, delay = 0) {
+  try {
+    if (typeof window === 'undefined') return;
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return;
+    if (!moveAudioContext || moveAudioContext.state === 'closed') {
+      moveAudioContext = new AudioCtor();
+    }
+    if (moveAudioContext.state === 'suspended' && typeof moveAudioContext.resume === 'function') {
+      const resumeResult = moveAudioContext.resume();
+      if (resumeResult && typeof resumeResult.catch === 'function') resumeResult.catch(() => {});
+    }
+
+    const ctx = moveAudioContext;
+    const start = ctx.currentTime + Math.max(0, Number(delay) || 0);
+    const captured = !!(move && (move.captured || (move.flags && String(move.flags).includes('c'))));
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(captured ? 150 : 205, start);
+    oscillator.frequency.exponentialRampToValueAtTime(captured ? 105 : 135, start + 0.12);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(captured ? 0.16 : 0.12, start + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.15);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.16);
+  } catch (e) {
+    // Sound must never be able to break a legal move or a setup placement.
+  }
+}
+
 function squareName(r, c) {
   return String.fromCharCode(97 + c) + (8 - r);
 }

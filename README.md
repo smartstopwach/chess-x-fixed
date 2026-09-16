@@ -13,6 +13,7 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - Legal move highlighting, last-move highlighting, check indication
 - Board coordinates, flip, reset, undo
 - Fullscreen and zoom controls
+- A short, subtle move cue after successful moves and piece placements in every mode
 - 6 board themes (Classic, Tournament, Wooden, Dark, Minimal, Green)
 - 3 piece styles (Alpha, Merida, Classic)
 
