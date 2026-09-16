@@ -2,7 +2,7 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "fad7378f22746708d4e85ec1aa943d21e0913d82530a0e159f0680ba166d85e3",
+  "concat_sha256": "2342fb63ff880be99b18278e19420e9f9035831ff650116cf743e1fa00308d32",
   "byte_identical": true,
   "files": 35,
   "parts": [
@@ -53,8 +53,8 @@
     },
     {
       "file": "css/18-board.css",
-      "lines": 505,
-      "bytes": 11186
+      "lines": 507,
+      "bytes": 11295
     },
     {
       "file": "css/19-puzzle-overlay.css",

@@ -127,9 +127,13 @@ function renderPlayerInfo() {
 
   if (topFlag) {
     topFlag.className = 'player-flag ' + (topColor === 'w' ? 'white' : 'black');
+    topFlag.dataset.color = topColor;
+    topFlag.setAttribute('aria-label', topColor === 'w' ? 'White player' : 'Black player');
   }
   if (bottomFlag) {
     bottomFlag.className = 'player-flag ' + (bottomColor === 'w' ? 'white' : 'black');
+    bottomFlag.dataset.color = bottomColor;
+    bottomFlag.setAttribute('aria-label', bottomColor === 'w' ? 'White player' : 'Black player');
   }
 
   // Calculate and render captured pieces

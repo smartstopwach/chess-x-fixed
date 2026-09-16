@@ -190,15 +190,19 @@ async function runMasterSuite() {
     window.renderBoard();
     assert($('playerTopName').textContent === 'Black');
     assert($('playerTop').className.includes('black'));
+    assert($('playerTop').dataset.color === 'b');
     assert($('playerBottomName').textContent === 'White');
     assert($('playerBottom').className.includes('white'));
+    assert($('playerBottom').dataset.color === 'w');
 
     window.flipBoard();
     assert(window.state.flipped === true);
     assert($('playerTopName').textContent === 'White');
     assert($('playerTop').className.includes('white'));
+    assert($('playerTop').dataset.color === 'w');
     assert($('playerBottomName').textContent === 'Black');
     assert($('playerBottom').className.includes('black'));
+    assert($('playerBottom').dataset.color === 'b');
 
     window.flipBoard(); // flip back
     assert(window.state.flipped === false);
