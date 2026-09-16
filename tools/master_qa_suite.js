@@ -639,6 +639,47 @@ async function runMasterSuite() {
     assert(window.state.rectangles.length === 1);
   });
 
+  test('ANNO-FIX', 'triangle and hexagon grow slightly but stay inside their square', () => {
+    const board = $('board');
+    const svg = $('boardSvg');
+    const container = $('boardContainer');
+    const box = { left: 0, top: 0, width: 800, height: 800 };
+    const targets = [board, svg, container];
+    const previous = targets.map(el => el.getBoundingClientRect);
+    targets.forEach(el => Object.defineProperty(el, 'getBoundingClientRect', {
+      configurable: true, value: () => ({ ...box })
+    }));
+    try {
+      window.clearAllAnnotations(false);
+      window.state.triangles = [{ square: 'd4', color: '#06b6d4' }];
+      window.state.hexagons = [{ square: 'e5', color: '#06b6d4' }];
+      window.renderAnnotations();
+      const polygons = Array.from(svg.querySelectorAll('polygon[data-type]'));
+      assert(polygons.length === 2, 'both polygon annotations rendered');
+      polygons.forEach(poly => {
+        const values = poly.getAttribute('points').trim().split(/[, ]+/).map(Number);
+        const points = [];
+        for (let i = 0; i < values.length; i += 2) points.push({ x: values[i], y: values[i + 1] });
+        const square = poly.dataset.square;
+        const rc = window.squareRC(square);
+        const left = rc.c * 100, top = rc.r * 100;
+        const right = left + 100, bottom = top + 100;
+        assert(points.every(p => p.x > left + 2 && p.x < right - 2 && p.y > top + 2 && p.y < bottom - 2),
+          `${poly.dataset.type} crossed its square boundary`);
+        const spanX = Math.max(...points.map(p => p.x)) - Math.min(...points.map(p => p.x));
+        const spanY = Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y));
+        // The equilateral triangle's vertical span is 0.63 squares at the
+        // larger radius; the flat-top hexagon spans 0.84 horizontally.
+        assert(Math.max(spanX, spanY) > 60, `${poly.dataset.type} was not enlarged enough`);
+      });
+    } finally {
+      targets.forEach((el, i) => Object.defineProperty(el, 'getBoundingClientRect', {
+        configurable: true, value: previous[i]
+      }));
+      window.clearAllAnnotations(false);
+    }
+  });
+
   test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {
     window.clearAllAnnotations(false); window.initAnnoHistory();
     assert(window.addShapeOnce('circles', 'd4') === true);

@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "de5a98a22856f1d1fa613329641200130d84448c0177ce7c8ea5fa3b94bb384a",
+  "concat_sha256": "43e0961bc168340961715532bfdbf2c4a38b68b8fcc8d300a51a753386e49c45",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -33,13 +33,13 @@
     },
     {
       "file": "js/10-board-render.js",
-      "lines": 304,
-      "bytes": 11081
+      "lines": 308,
+      "bytes": 11353
     },
     {
       "file": "js/11-annotations-render.js",
-      "lines": 226,
-      "bytes": 9223
+      "lines": 230,
+      "bytes": 9501
     },
     {
       "file": "js/12-board-interactions.js",

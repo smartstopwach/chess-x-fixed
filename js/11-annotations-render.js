@@ -22,7 +22,8 @@ const ARROW_STYLE = {
 // The outline marks deliberately stay inside one square. The radius includes
 // the centre of the stroke; its half-width is still comfortably inside the
 // square, including on the outermost rank/file.
-const SHAPE_RADIUS = 0.38;
+const SHAPE_RADIUS = 0.38;       // circles
+const POLYGON_RADIUS = 0.42;     // slightly larger triangle/hexagon, still contained
 const SHAPE_STROKE = 0.055;
 
 function svgEl(name, attrs) {
@@ -132,10 +133,12 @@ function renderAnnotations() {
     svg.appendChild(circle);
   });
 
-  // Triangles - centred on one square, with all three vertices inside it.
+  // Triangles - slightly larger for visibility, but centred on one square.
+  // The radius plus half the outline is still below half a square, so no
+  // vertex or stroke can cross into a neighbouring square.
   (state.triangles || []).forEach(t => {
     const p = sqPos(t.square, sqSize, offsetX, offsetY);
-    const r = sqSize * SHAPE_RADIUS;
+    const r = sqSize * POLYGON_RADIUS;
     const pts = [-90, 30, 150].map(deg => {
       const a = deg * Math.PI / 180;
       return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
@@ -149,10 +152,11 @@ function renderAnnotations() {
     svg.appendChild(el);
   });
 
-  // Hexagons - regular, flat-top, with the same centred footprint.
+  // Hexagons - regular, flat-top, with the same slightly larger contained
+  // footprint as triangles.
   (state.hexagons || []).forEach(h => {
     const p = sqPos(h.square, sqSize, offsetX, offsetY);
-    const r = sqSize * SHAPE_RADIUS;
+    const r = sqSize * POLYGON_RADIUS;
     const pts = [0, 60, 120, 180, 240, 300].map(deg => {
       const a = deg * Math.PI / 180;
       return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
