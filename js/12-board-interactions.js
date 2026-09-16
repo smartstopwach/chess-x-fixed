@@ -5,10 +5,16 @@
 //   • LEFT CLICK on piece/square: normal chess move / piece selection (or setup pick/place)
 //   • LEFT DRAG (sqA -> sqB):
 //       - in setup editing: moves piece from sqA to sqB (NO arrows/drawings)
-//       - in normal mode / after START FROM POSITION: ALWAYS draws an arrow
+//       - in normal mode / after START FROM POSITION: rectangle tool = box,
+//         eraser = wipe both squares, every other tool = arrow
+//   • LEFT CLICK: the selected tool does its job (select = chess), through a
+//       short double-click window; a DOUBLE left click takes back what the
+//       first click of that pair put down - and never anything older
 //   • RIGHT CLICK / RIGHT DRAG:
-//       - in setup editing: erases piece at square (NO drawings)
-//       - in normal mode / after START FROM POSITION: uses selected drawing tool (circle, highlight, rect, eraser, arrow)
+//       - while editing a position (setup editing OR puzzle authoring): erases
+//         the piece at square (NO drawings)
+//       - while teaching / playing in ANY mode: always the ARROW (drag, or
+//         click the origin square then the target square)
 //   • Drag threshold: DRAG_SLOP_PX (10px) to prevent accidental drags during clicks.
 const DRAG_SLOP_PX = 10;
 
@@ -219,6 +225,7 @@ function endSquarePress(sq, x, y) {
   //    here; the guard is a belt-and-braces second lock.
   if (btn === 2) {
     if (!rightButtonIsArrow()) return;
+    __lastPlaced = null;
     handleRightClickOrDrag(from, sqName, isDrag);
     return;
   }
@@ -226,6 +233,8 @@ function endSquarePress(sq, x, y) {
   // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
   if (isDrag) {
     cancelLeftAction();   // a drag is not a click: drop any pending place
+    __lastPlaced = null;  // ...and the take-back context goes with it
+    if (state.drawingFrom) { state.drawingFrom = null; highlightSquares(); }
     if (state.currentTool === 'rectangle') {
       addRectangle(from, sqName);
     } else if (state.currentTool === 'eraser') {
@@ -251,16 +260,24 @@ function endSquarePress(sq, x, y) {
   //    once; anything else goes through the short double-click window.
   if (dbl) {
     cancelLeftAction();
-    eraseAnnotationAt(sqName);
+    // Second click of a real double click: if the first one only marked an
+    // arrow/rectangle origin, drop that mark; if it actually drew something,
+    // take that something back. Drawings that were already on the board stay.
+    if (state.drawingFrom === sqName) { state.drawingFrom = null; highlightSquares(); return; }
+    if (takeBackMatches(sqName)) takeBack(sqName);
     return;
   }
   scheduleLeftAction(sqName);
 }
 
-// ---- left click: single = place, double = reverse -------------------------
+// ---- left click: single = place, double = take back -----------------------
 let __leftTimer = null;
 let __leftSq = null;
-const LEFT_DBL_MS = 260;
+let __lastPlaced = null;       // { sq, tool, color, at } of the last real placement
+let __suppressSq = null;       // square whose next click is swallowed ...
+let __suppressUntil = 0;       // ... because it was the 2nd click of a take-back
+const LEFT_DBL_MS = 260;       // window in which a second click is a double click
+const LEFT_TAKEBACK_MS = 900;  // window in which a repeat click takes it back
 
 function cancelLeftAction() {
   if (__leftTimer) { clearTimeout(__leftTimer); __leftTimer = null; }
@@ -276,13 +293,57 @@ function flushLeftAction() {
   placeWithTool(sq);
 }
 
+// A repeat click may only take back what THIS click sequence put on the board:
+// same square, same tool, same colour, and just now. Anything older - a shape
+// from a minute ago, an arrow drawn with the right button - is left untouched,
+// so a double click can never destroy work that was already there.
+function takeBackMatches(sq) {
+  return !!__lastPlaced &&
+         __lastPlaced.sq === sq &&
+         __lastPlaced.tool === state.currentTool &&
+         __lastPlaced.color === state.currentColor &&
+         (Date.now() - __lastPlaced.at) <= LEFT_TAKEBACK_MS;
+}
+
+function notePlaced(sq) {
+  __lastPlaced = { sq: sq, tool: state.currentTool, color: state.currentColor, at: Date.now() };
+}
+
+// A take-back is usually the first half of a double click. Swallowing the click
+// that follows it keeps the pair a pair - otherwise the second click would put
+// the shape straight back and the board would only flicker.
+function suppressNextClick(sq) {
+  __suppressSq = sq;
+  __suppressUntil = Date.now() + LEFT_DBL_MS;
+}
+
+function clickSuppressed(sq) {
+  if (__suppressSq === sq && Date.now() <= __suppressUntil) {
+    __suppressSq = null; __suppressUntil = 0;
+    return true;
+  }
+  return false;
+}
+
+function takeBack(sq) {
+  __lastPlaced = null;
+  eraseAnnotationAt(sq);
+  suppressNextClick(sq);
+}
+
 function scheduleLeftAction(sq) {
-  if (__leftTimer && __leftSq === sq) {   // second click on the same square
-    cancelLeftAction();
-    eraseAnnotationAt(sq);                // ...takes back what was placed here
+  if (__leftTimer && __leftSq === sq) {   // second click inside the window ...
+    cancelLeftAction();                   // ...the first one placed nothing yet
+    if (state.drawingFrom === sq) { state.drawingFrom = null; highlightSquares(); return; }
+    if (takeBackMatches(sq)) takeBack(sq);
     return;
   }
   flushLeftAction();                      // a pending place on another square
+  if (clickSuppressed(sq)) return;        // 2nd click of a take-back pair
+  if (takeBackMatches(sq)) {              // slower second click: take it back
+    takeBack(sq);
+    return;
+  }
   __leftSq = sq;
   __leftTimer = setTimeout(() => {
     __leftTimer = null;
@@ -291,26 +352,45 @@ function scheduleLeftAction(sq) {
   }, LEFT_DBL_MS);
 }
 
+// Puts the selected tool to work on one square. Returns true only when the
+// click really added a drawing - an origin mark, a cancelled origin, a shape
+// that was already there and an eraser swipe all return false, which is what
+// keeps the double-click take-back honest.
 function placeWithTool(sq) {
+  if (!sq) return false;
   const tool = state.currentTool;
+
   if (tool === 'arrow' || tool === 'rectangle') {
-    const add = (tool === 'arrow') ? addArrow : addRectangle;
-    if (!state.drawingFrom) {
+    if (!state.drawingFrom) {             // first click: mark the origin square
       state.drawingFrom = sq;
-    } else if (state.drawingFrom === sq) {
-      state.drawingFrom = null;
-    } else {
-      add(state.drawingFrom, sq);
-      state.drawingFrom = null;
+      highlightSquares();
+      return false;
     }
+    const from = state.drawingFrom;
+    state.drawingFrom = null;
+    if (from === sq) { highlightSquares(); return false; }   // clicked origin again: cancel
+    const list = (tool === 'arrow') ? state.arrows : state.rectangles;
+    const before = list.length;
+    if (tool === 'arrow') addArrow(from, sq); else addRectangle(from, sq);
     highlightSquares();
-    return;
+    if (list.length > before) { notePlaced(sq); return true; }
+    __lastPlaced = null;
+    return false;
   }
-  if (tool === 'circle')    { addShapeOnce('circles', sq);   return; }
-  if (tool === 'highlight') { addShapeOnce('highlights', sq); return; }
-  if (tool === 'triangle')  { addTriangle(sq);               return; }
-  if (tool === 'hexagon')   { addHexagon(sq);                return; }
-  if (tool === 'eraser')    { eraseAnnotationAt(sq);         return; }
+
+  if (tool === 'circle' || tool === 'highlight' || tool === 'triangle' || tool === 'hexagon') {
+    const kind = (tool === 'circle') ? 'circles'
+               : (tool === 'highlight') ? 'highlights'
+               : (tool === 'triangle') ? 'triangles' : 'hexagons';
+    const before = state[kind].length;
+    addShapeOnce(kind, sq);
+    if (state[kind].length > before) { notePlaced(sq); return true; }
+    __lastPlaced = null;
+    return false;
+  }
+
+  if (tool === 'eraser') { __lastPlaced = null; eraseAnnotationAt(sq); return false; }
+  return false;
 }
 
 // The right button owns ONE job in play modes: the arrow. A drag draws it in a

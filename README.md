@@ -26,6 +26,14 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   except select. Placing never toggles: one click puts the shape down, the
   double click takes it away (`scheduleLeftAction()` / `placeWithTool()` in
   `js/12-board-interactions.js`, ~260ms double-click window)
+- **A double click can only take back what that click itself placed** — same
+  square, same tool, same colour, within ~0.9s (`takeBackMatches()`). Drawings
+  that were already on the board, including arrows made with the right button,
+  are never destroyed by a double click; use the eraser or Undo for those
+- Switching tools **finishes** a click that is still inside its double-click
+  window, so a marking is never silently swallowed, and Undo/Redo drop a
+  half-finished click-click origin mark (left or right) along with its
+  highlight. Identical rectangles are not stacked on top of each other
 - **The right button is ALWAYS the arrow** in Normal mode, no matter which
   tool is selected: right-drag draws it in one gesture, and two single right
   clicks work too (first = origin square, second = target, same square twice
@@ -45,7 +53,9 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   | Puzzle — saved or selected puzzle, explaining | arrow |
   | Puzzle — ▶ Test (student solving) | arrow |
 - 12 colors, default amber `#ffaa00` (the one from the reference shots)
-- "Clear all annotations" button, plus 1-by-1 undo/redo for every marking
+- "Clear all annotations" button, plus 1-by-1 undo/redo for every marking —
+  all six kinds count for history (`annoTotal()`), so erasing or clearing a
+  lone triangle/hexagon is undoable too
 
 ### 🏹 Arrows that read on a recording (`js/11-annotations-render.js`)
 Arrows are drawn as one SVG group per arrow — a round-capped band plus a filled

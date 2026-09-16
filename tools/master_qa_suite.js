@@ -542,6 +542,90 @@ async function runMasterSuite() {
   });
 
   // ----------------------------------------------------
+  // GROUP 11c: BUG-FIX REGRESSIONS (found by the bughunt harness)
+  // ----------------------------------------------------
+  test('ANNO-FIX', 'erasing/clearing a lone triangle or hexagon is undoable', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.addTriangle('d4'); window.addHexagon('e5');
+    window.eraseAnnotationAt('d4');
+    assert(window.state.triangles.length === 0, 'triangle erased');
+    window.undoAnnotation();
+    assert(window.state.triangles.length === 1, 'undo brings the triangle back');
+    window.clearAllAnnotations();
+    assert(window.state.hexagons.length === 0, 'cleared');
+    window.undoAnnotation();
+    assert(window.state.hexagons.length === 1, 'undo brings the hexagon back');
+  });
+
+  test('ANNO-FIX', 'identical rectangles never stack', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('rectangle');
+    assert(window.addRectangle('c3', 'f6') === true, 'first box added');
+    assert(window.addRectangle('c3', 'f6') === false, 'duplicate ignored');
+    assert(window.addRectangle('f6', 'c3') === false, 'same box, other corner order');
+    assert(window.state.rectangles.length === 1);
+  });
+
+  test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    assert(window.addShapeOnce('circles', 'd4') === true);
+    assert(window.addShapeOnce('circles', 'd4') === false, 'already there');
+    assert(window.addArrow('a1', 'a5') === true);
+    assert(window.addArrow('a1', 'a5') === false, 'toggled off');
+    assert(window.state.arrows.length === 0);
+  });
+
+  test('ANNO-FIX', 'double click never destroys drawings it did not place', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('arrow');
+    window.addArrow('a1', 'a5');
+    window.state.drawingFrom = null;
+    window.scheduleLeftAction('a5');      // 1st click only marks an origin
+    window.scheduleLeftAction('a5');      // 2nd click = double click
+    assert(window.state.arrows.length === 1, 'pre-existing arrow survives');
+
+    window.setTool('circle');
+    window.addCircle('d4');
+    window.scheduleLeftAction('d4'); window.scheduleLeftAction('d4');
+    assert(window.state.circles.length === 1, 'pre-existing circle survives');
+  });
+
+  test('ANNO-FIX', 'double click still takes back what THIS click placed', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('triangle');
+    window.scheduleLeftAction('d5'); window.flushLeftAction();   // placed
+    assert(window.state.triangles.length === 1);
+    window.scheduleLeftAction('d5');                             // taken back
+    assert(window.state.triangles.length === 0);
+    window.scheduleLeftAction('d5');                             // swallowed 2nd click ...
+    window.flushLeftAction();
+    assert(window.state.triangles.length === 0, '...did not place it again');
+  });
+
+  test('ANNO-FIX', 'undo/redo drop origin marks even with nothing to undo', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.handleRightClickOrDrag('b1', 'b1', false);
+    assert(window.state.rightArrowFrom === 'b1');
+    window.undoAnnotation();
+    assert(window.state.rightArrowFrom === null, 'right origin dropped');
+    window.setTool('arrow');
+    window.placeWithTool('c1');
+    assert(window.state.drawingFrom === 'c1');
+    window.redoAnnotation();
+    assert(window.state.drawingFrom === null, 'left origin dropped');
+  });
+
+  test('ANNO-FIX', 'switching tools finishes the pending click', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('circle');
+    window.scheduleLeftAction('e4');
+    window.setTool('arrow');
+    assert(window.state.circles.length === 1, 'circle was placed, not swallowed');
+    assert(window.state.currentTool === 'arrow');
+    assert(window.state.drawingFrom === null, 'origin marks reset on tool switch');
+  });
+
+  // ----------------------------------------------------
   // GROUP 12: UTILITIES
   // ----------------------------------------------------
   test('UTILS', 'uniqueId uniqueness, escapeHtml, autoName, toast silencing', () => {
