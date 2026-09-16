@@ -626,6 +626,137 @@ async function runMasterSuite() {
   });
 
   // ----------------------------------------------------
+  // GROUP 11d: BASE POSITION (undo / move list must follow the position on screen)
+  // ----------------------------------------------------
+  // NOTE: START_FEN is a top-level const in js/00-constants.js, so it is a
+  // shared global binding but NOT a window property - compare against the
+  // literal here.
+  const STD_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  test('BASE-FEN', 'undo, move list and deleteMove replay on the custom start', () => {
+    const CUSTOM = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 5 4';
+    window.state.game.load(CUSTOM);
+    window.resetMoveHistory(CUSTOM);
+    assert(window.state.baseFen === CUSTOM, 'base recorded');
+    assert(window.state.history.length === 0 && window.state.historyIndex === -1);
+
+    window.state.game.move('Nf6');
+    window.state.history.push('Nf6');
+    window.state.historyIndex = 0;
+
+    window.prevMove();
+    assert(window.state.game.fen() === CUSTOM, 'undo returns to the custom start, got ' + window.state.game.fen());
+    window.nextMove();
+    assert(window.state.historyIndex === 0 && window.state.game.fen() !== CUSTOM, 'redo replays the move');
+
+    window.goToMove(-1);
+    assert(window.state.game.fen() === CUSTOM, 'first position in the list is the custom base');
+    assert(window.getCurrentFen() === CUSTOM, 'FEN read-out matches');
+
+    window.goToMove(0);
+    window.deleteMove();
+    assert(window.state.history.length === 0 && window.state.game.fen() === CUSTOM, 'deleteMove keeps the custom base');
+  });
+
+  test('BASE-FEN', 'every fresh move list remembers where it started', () => {
+    const KRK = '4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1';
+    window.state.game.load(KRK);
+    window.resetMoveHistory();            // no argument = take the board as it is
+    assert(window.state.baseFen === KRK, 'got ' + window.state.baseFen);
+
+    window.state.game.reset();
+    window.resetMoveHistory();
+    assert(window.state.baseFen === STD_START, 'standard start is the default base, got ' + window.state.baseFen);
+
+    window.loadFen && (window.document.getElementById('fenInput').value = KRK);
+    window.loadFen();
+    assert(window.state.baseFen === KRK, 'loading a FEN moves the base with it, got ' + window.state.baseFen);
+    window.state.game.reset(); window.resetMoveHistory();
+  });
+
+  test('BASE-FEN', 'the base position survives a save / restore round trip', () => {
+    const CUSTOM = '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1';
+    window.state.game.load(CUSTOM);
+    window.resetMoveHistory(CUSTOM);
+    const payload = window.sessionPayload();
+    assert(payload.baseFen === CUSTOM, 'payload carries the base');
+    window.state.baseFen = STD_START;                 // as if the page had just booted
+    window.applySession(payload);
+    assert(window.state.baseFen === CUSTOM, 'restored base, got ' + window.state.baseFen);
+    window.state.game.reset(); window.resetMoveHistory();
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11e: PUZZLE PLAYABILITY (a puzzle you can actually play)
+  // ----------------------------------------------------
+  test('PUZZLE-PLAY', 'selecting a puzzle and testing it hands over the Select tool', () => {
+    const PF = '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1';
+    const lib = window.getLibrary();
+    const ch = lib.chapters[0];
+    ch.puzzles = (ch.puzzles || []).filter(x => x.id !== 'qa_p1');
+    ch.puzzles.push({ id: 'qa_p1', title: 'Back rank', description: 'Mate in 1', solution: 'Ra8#', difficulty: 3, tags: '', fen: PF });
+    window.saveLibrary(lib);
+
+    window.setMode('puzzle');
+    window.setTool('arrow');                          // explaining state, as the editor leaves it
+    window.handleLibraryAction('select-puzzle', ch.id, 'qa_p1');
+    assert(window.state.currentTool === 'select', 'a selected puzzle is playable, tool=' + window.state.currentTool);
+    assert(window.state.authoringMode === false && window.state.setupMode === false);
+
+    window.startPuzzleTest();
+    assert(window.state.currentTool === 'select', 'test mode must not leave the arrow tool, tool=' + window.state.currentTool);
+    assert(window.state.puzzle && window.state.puzzle.moves.join(',') === 'Ra8#', 'solution parsed');
+
+    window.handleSquareClick('a1');
+    window.handleSquareClick('a8');                   // the student answers with left clicks
+    assert(window.state.puzzle.solved === true, 'puzzle solved through the board');
+
+    window.endPuzzleTest(false);
+    assert(window.state.currentTool === 'arrow', 'after the test the board goes back to explaining');
+  });
+
+  test('PUZZLE-PLAY', 'Normal mode always comes back playable', () => {
+    window.setMode('puzzle');
+    window.setTool('arrow');
+    window.setMode('normal');
+    assert(window.state.currentTool === 'select', 'tool=' + window.state.currentTool);
+    assert(window.state.setupMode === false && window.state.authoringMode === false);
+    assert(window.state.baseFen === STD_START, 'base=' + window.state.baseFen);
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11f: KEYBOARD (documented shortcuts must be the real ones)
+  // ----------------------------------------------------
+  const pressKey = (key, opts) =>
+    window.document.dispatchEvent(new window.KeyboardEvent('keydown', Object.assign({ key, bubbles: true, cancelable: true }, opts || {})));
+
+  test('KEYS', 'E / H / O / A / V select the tools the README promises', () => {
+    window.setTool('select');
+    pressKey('e'); assert(window.state.currentTool === 'eraser', 'E -> eraser, got ' + window.state.currentTool);
+    pressKey('H'); assert(window.state.currentTool === 'highlight', 'H -> highlight');
+    pressKey('o'); assert(window.state.currentTool === 'circle', 'O -> circle');
+    pressKey('a'); assert(window.state.currentTool === 'arrow', 'A -> arrow');
+    pressKey('v'); assert(window.state.currentTool === 'select', 'V -> select');
+    const c0 = window.state.currentColor;
+    pressKey('c'); assert(window.state.currentColor !== c0, 'C cycles the colour');
+  });
+
+  test('KEYS', 'Esc cancels a pending click, the selection and origin marks', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('circle');
+    window.scheduleLeftAction('d4');                      // still inside its window
+    window.state.selectedSquare = 'e2';
+    window.handleRightClickOrDrag('b1', 'b1', false);     // right-click origin mark
+    pressKey('Escape');
+    assert(window.state.selectedSquare === null, 'selection dropped');
+    assert(window.state.rightArrowFrom === null, 'right origin dropped');
+    assert(window.state.drawingFrom === null, 'left origin dropped');
+    window.flushLeftAction();                             // pending click was dropped
+    assert(window.state.circles.length === 0, 'nothing was placed after Esc');
+    window.setTool('select');
+  });
+
+  // ----------------------------------------------------
   // GROUP 12: UTILITIES
   // ----------------------------------------------------
   test('UTILS', 'uniqueId uniqueness, escapeHtml, autoName, toast silencing', () => {

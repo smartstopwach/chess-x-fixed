@@ -28,8 +28,7 @@ function loadPuzzleToEditor(puzzleId) {
     }
     // Reset main board to standard
     state.game.reset();
-    state.history = [];
-    state.historyIndex = -1;
+    resetMoveHistory();
     renderAll();
     return;
   }
@@ -60,16 +59,20 @@ function loadPuzzleToEditor(puzzleId) {
   if (puzzle.fen) {
     try {
       state.game.load(puzzle.fen);
-      state.history = [];
-      state.historyIndex = -1;
+      resetMoveHistory(puzzle.fen);
       renderAll();
     } catch (e) {}
   }
 
   if (isAuthoringMode()) setAuthoringMode(false);
-  if (typeof setTool === 'function') setTool('arrow');
+  // The loaded puzzle is meant to be PLAYED ("play it, or press ✎ Edit
+  // position"), so the left button has to move pieces. setAuthoringMode(false)
+  // leaves the Arrow tool selected, and with that every left click draws an
+  // arrow instead of playing the move. Explaining still works: the right
+  // button is always the arrow in every teaching state.
+  if (typeof setTool === 'function') setTool('select');
 
-  toast(`Loaded puzzle: ${puzzle.title}`);
+  toast(`Loaded puzzle: ${puzzle.title} — click a piece, then its square`);
 }
 
 function saveCurrentPuzzle() {
@@ -219,8 +222,7 @@ function loadFENToBoard(fen) {
   if (!fen) return;
   try {
     state.game.load(fen);
-    state.history = [];
-    state.historyIndex = -1;
+    resetMoveHistory(fen);
     renderAll();
     toast('Position loaded to board', 'success');
   } catch (e) {
@@ -296,8 +298,7 @@ function startPuzzleTest() {
   try { state.game.load(puz.fen); }
   catch (e) { toast('This puzzle FEN cannot be loaded: ' + e.message.slice(0, 40), 'error'); return; }
 
-  state.history = [];
-  state.historyIndex = -1;
+  resetMoveHistory(puz.fen);
   clearAllAnnotations();
 
   state.puzzle = {
@@ -312,6 +313,12 @@ function startPuzzleTest() {
     revealing: false,
   };
   document.body.dataset.testing = 'true';
+
+  // A live puzzle is solved with the left button, so the Select tool is
+  // required here - arriving from the editor the Arrow tool is still selected
+  // and every click would draw instead of moving, leaving the student unable
+  // to answer at all.
+  if (typeof setTool === 'function') setTool('select');
 
   renderAll();
   const overlay = $('puzzleOverlay');

@@ -30,6 +30,7 @@ const state = {
   game: createGame(),
   history: [],           // Persistent move history (SAN strings), survives undo/load
   historyIndex: -1,      // Pointer into history: -1 = start, history.length-1 = latest
+  baseFen: START_FEN,    // position the current move list is played from
   position: { fen: '' },
   flipped: false,
   selectedSquare: null,

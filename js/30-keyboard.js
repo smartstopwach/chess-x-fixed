@@ -33,6 +33,17 @@ document.addEventListener('keydown', (e) => {
       exitAuthoringMode();
       return;
     }
+    // Otherwise Esc puts down whatever is half-finished: a click still inside
+    // its double-click window, a selected piece, or a click-click origin mark
+    // (left button or right). Without this the highlighted origin square sits
+    // there until the same square is clicked again.
+    e.preventDefault();
+    if (typeof cancelLeftAction === 'function') cancelLeftAction();
+    state.selectedSquare = null;
+    state.drawingFrom = null;
+    state.rightArrowFrom = null;
+    if (typeof highlightSquares === 'function') highlightSquares();
+    return;
   }
 
   switch (e.key) {

@@ -388,8 +388,7 @@ function clearBoard() {
   state.heldPiece = null;
   state.selectedRackPiece = null;
   $$('.rack-piece').forEach(x => x.classList.remove('selected'));
-  state.history = [];
-  state.historyIndex = -1;
+  resetMoveHistory('8/8/8/8/8/8/8/8 w - - 0 1');
   setupHistory.length = 0;
   setupHistoryIndex = -1;
   pushSetupHistory();
@@ -432,9 +431,9 @@ function startFromPosition() {
   $$('.square').forEach(sq => sq.classList.remove('drop-target', 'drop-invalid', 'held-source', 'selected'));
   updateSetupHint();
 
-  // Reset move history for play from this position
-  state.history = [];
-  state.historyIndex = -1;
+  // Reset move history for play from this position - and remember that THIS
+  // position is now the start, so undo comes back here
+  resetMoveHistory();
 
   // Restore active tool
   if (!state.currentTool) state.currentTool = 'select';

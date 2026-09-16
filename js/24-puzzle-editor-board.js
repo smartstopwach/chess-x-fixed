@@ -80,8 +80,7 @@ function peLoadPreset(name) {
   try {
     state.game.load(fen);
     if (puzzleGame()) puzzleGame().load(fen);
-    state.history = [];
-    state.historyIndex = -1;
+    resetMoveHistory(fen);
     state.selectedSquare = null;
     state.heldPiece = null;
     puzzleState.heldPiece = null;

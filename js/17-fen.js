@@ -12,8 +12,8 @@ function copyFen() {
 function loadFen() {
   try {
     state.game.load(els.fenInput.value);
-    state.history = [];           // reset history on FEN load (no PGN)
-    state.historyIndex = -1;
+    resetMoveHistory();           // reset history on FEN load (no PGN); the
+                                  // loaded position becomes the new start
     if (typeof syncSetupControlsFromFen === 'function') {
       syncSetupControlsFromFen(els.fenInput.value);
     }

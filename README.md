@@ -148,6 +148,13 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 - Clean SAN notation
 - Click any move to jump to it
 - Previous/Next/Delete
+- **Navigation follows the position on screen**: the recorded SAN moves are
+  replayed on `state.baseFen` — the position the game actually started from —
+  so Undo, ←/→, a move-list click and Delete after *Custom Setup → START FROM
+  POSITION*, a FEN load or a puzzle all come back to **that** position instead
+  of teleporting to the standard opening. Every fresh move list records its
+  base (`resetMoveHistory()` in `js/16-move-list.js`) and the session snapshot
+  carries it, so it survives F5 too
 - Variation support
 - Compact panel that doesn't distract during recording
 
@@ -194,7 +201,12 @@ to numbered grid columns, which left a phone with a 56px-wide board.
   saved FEN is now read from the visible board and the editor copy is kept in
   step, so a dragged piece can no longer disappear after saving
 - **▶ Test plays the puzzle for real**: authoring is switched off, so clicks are
-  legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work)
+  legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work), and
+  the **Select tool is handed over** — the editor leaves Arrow selected, which
+  would turn every student click into a drawing instead of a move. Selecting a
+  puzzle from the library does the same, and Normal mode always comes back with
+  Select. Explaining still needs no tool switch: the right button is the arrow
+  in every teaching state
 - The solution line is parsed from the free-text field and checked move by move:
   correct → the opponent's reply is played automatically and you continue;
   wrong → the move stays on the board and you get a ✗ so you can undo and retry
@@ -300,20 +312,15 @@ right-click, the lock screen and the escape hatch — all passing.
 
 ## ⚠️ Known issues found while refactoring (not yet fixed)
 
-1. **Dead keyboard cases** — `js/30-keyboard.js` has `case 'e'`/`case 'E'` and
-   `case 'h'`/`case 'H'` twice in the same `switch`. A `switch` takes the first
-   match, so `E` toggles setup mode and `H` shows the front page; the
-   `setTool('eraser')` / `setTool('highlight')` branches are unreachable, even
-   though the table above advertises them. Use the tool buttons instead.
-2. **`test.html` DOM checks always fail** — that page loads the scripts but has
+1. **`test.html` DOM checks always fail** — that page loads the scripts but has
    no `#board` markup, so "board element exists / 64 squares / 32 pieces" can
    never pass (it fails identically before and after the split). The first four
    checks are meaningful.
-3. **`css/23-modal-dead.css`** — in the original `styles.css`, line 1224 had a
+2. **`css/23-modal-dead.css`** — in the original `styles.css`, line 1224 had a
    section banner where `.modal-overlay {` belonged, so that block plus
    `.modal-content/-header/-actions` is commented out and the file carries two
    unmatched `}`. No modal exists in `index.html`/`app.js`, so nothing is lost.
-4. **"Recording Mode" and "Layout Presets" are documented above but not in this
+3. **"Recording Mode" and "Layout Presets" are documented above but not in this
    copy** — there is no `setLayout`, no red RECORDING button, `js/19-layouts.js`
    is an empty stub, and `state.uiHidden` is declared but never written. The
    `css/12-layout.css` `[data-layout="focus"]` rules are therefore dead too.
@@ -327,20 +334,26 @@ right-click, the lock screen and the escape hatch — all passing.
 - Hide/show toggle
 
 ### ⌨️ Keyboard Shortcuts
+(ignored while a text field has focus; `js/30-keyboard.js` is the source of truth)
+
 | Key | Action |
 |---|---|
+| `1` / `2` / `3` | Normal / Puzzle / Custom Setup mode |
 | `←` / `→` | Previous / Next move |
 | `F` | Flip board |
 | `R` | Reset board |
-| `V` | Select tool |
+| `V` | Select tool (play chess) |
 | `A` | Arrow tool |
-| `C` | Circle tool |
+| `O` | Circle tool |
 | `E` | Eraser tool |
-| `H` | Highlight tool (or hide UI in recording mode) |
-| `N` / `P` | Next / Previous bookmark |
-| `Ctrl+Z` | Undo |
+| `H` | Highlight tool |
+| `C` | Cycle the drawing colour |
+| `P` | Puzzle authoring on/off (during ▶ Test: back to the editor) |
 | `M` | Replay the checkmate / stalemate / draw animation |
-| `Esc` | Exit recording mode |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo — drawings when a drawing tool is active, otherwise moves |
+| `Esc` | Cancel what is half-finished: a pending click, the selected piece, a click-click arrow origin; leaves ▶ Test or position editing first |
+
+Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 
 ### 💾 Save / Load / Export
 - **Save Lesson** — exports full lesson as JSON (position + moves + annotations + notes + bookmarks + theme)

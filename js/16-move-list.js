@@ -1,6 +1,24 @@
 // ============================================
 // MOVE LIST
 // ============================================
+// Where the game on screen started. Every navigation function replays SAN on
+// top of this, so it follows Custom Setup / FEN loads / puzzles automatically.
+function baseFen() {
+  const b = (state.baseFen || '').trim();
+  return b || START_FEN;
+}
+
+// Start a fresh move list from the position that is on the board right now
+// (or from an explicit FEN). Never reset history without saying where it
+// starts, or undo will take the board back to the standard opening.
+function resetMoveHistory(fen) {
+  let base = (fen || '').trim();
+  if (!base) { try { base = state.game.fen(); } catch (e) { base = ''; } }
+  state.baseFen = base || START_FEN;
+  state.history = [];
+  state.historyIndex = -1;
+}
+
 function renderMovesList() {
   els.movesList.innerHTML = '';
   const history = state.history || [];
@@ -30,7 +48,7 @@ function goToMove(idx) {
   if (idx < -1 || idx >= state.history.length) return;
   state.historyIndex = idx;
   if (idx < 0) {
-    state.game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    state.game.load(baseFen());
   } else {
     state.game.load(getFenAtMove(idx));
   }
@@ -39,8 +57,10 @@ function goToMove(idx) {
 }
 
 function getFenAtMove(idx) {
-  // idx is into state.history (persistent, SAN strings)
+  // idx is into state.history (persistent, SAN strings), replayed on the
+  // position this game actually started from
   const game = new Chess();
+  try { game.load(baseFen()); } catch (e) { game.reset(); }
   for (let i = 0; i <= idx && i < state.history.length; i++) {
     try { game.move(state.history[i]); } catch (e) {}
   }
@@ -50,7 +70,7 @@ function getFenAtMove(idx) {
 function getCurrentFen() {
   // The actual FEN shown on the board, reconstructed from history up to historyIndex
   if (state.historyIndex < 0) {
-    return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    return baseFen();
   }
   return getFenAtMove(state.historyIndex);
 }
@@ -72,7 +92,7 @@ function prevMove() {
     renderAll();
   } else if (state.historyIndex === 0) {
     state.historyIndex = -1;
-    state.game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    state.game.load(baseFen());
     state.selectedSquare = null;
     renderAll();
   }
@@ -84,7 +104,7 @@ function deleteMove() {
   state.history.pop();
   state.historyIndex = state.history.length - 1;
   if (state.historyIndex < 0) {
-    state.game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    state.game.load(baseFen());
   } else {
     state.game.load(getFenAtMove(state.historyIndex));
   }

@@ -77,6 +77,7 @@ function sessionPayload() {
     fen: fenOf(state.game),
     history: asArray(state.history).slice(0, 500),
     historyIndex: state.historyIndex,
+    baseFen: (state.baseFen || START_FEN),
     flipped: !!state.flipped,
     theme: state.boardTheme,
     pieceStyle: state.pieceStyle,
@@ -209,6 +210,7 @@ function applySession(s) {
       if (current !== s.fen) state.game.load(s.fen);
     }
     state.history = asArray(s.history);
+    state.baseFen = (typeof s.baseFen === 'string' && s.baseFen.trim()) ? s.baseFen.trim() : START_FEN;
     state.historyIndex = (typeof s.historyIndex === 'number' &&
       s.historyIndex >= -1 && s.historyIndex < state.history.length) ? s.historyIndex : state.history.length - 1;
     state.flipped = !!s.flipped;
