@@ -661,8 +661,10 @@ function rejectMove(from, to, piece) {
   const turn = state.game.turn();
   const toName = pieceName(pieceLetter(piece));
 
-  // Clicked a piece that isn't yours to move.
+  // Clicked a piece that isn't yours to move. Give this specific mistake a
+  // short error cue; legal moves keep the original wooden tap.
   if (piece && piece.color !== turn) {
+    if (typeof playMoveErrorSound === 'function') playMoveErrorSound();
     if (!from) {
       toast(`${turnName(turn)} to move — ${toName} cannot be selected right now`, 'error');
     } else {

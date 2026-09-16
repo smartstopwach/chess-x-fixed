@@ -24,6 +24,7 @@ function makeHarness(options = {}) {
   let contexts = 0;
   let resumes = 0;
   let audioElements = 0;
+  const audioSources = [];
   let fallbackPlays = 0;
 
   class FakeAudioContext {
@@ -69,6 +70,7 @@ function makeHarness(options = {}) {
 
   function FakeAudio(src) {
     audioElements++;
+    audioSources.push(src);
     this.src = src;
     this.volume = 1;
     this.currentTime = 0;
@@ -104,7 +106,7 @@ function makeHarness(options = {}) {
   return {
     sandbox,
     events,
-    stats: () => ({ contexts, resumes, audioElements, fallbackPlays }),
+    stats: () => ({ contexts, resumes, audioElements, audioSources, fallbackPlays }),
   };
 }
 
@@ -144,12 +146,29 @@ check('board press warms audio before the move release', () => {
   assert(h.stats().contexts === 1 && h.stats().resumes === 1, 'board press did not unlock audio');
 });
 
+check('schedules a distinct error cue for the wrong-side click', () => {
+  const h = makeHarness();
+  h.sandbox.playMoveErrorSound();
+  assert(h.events.length === 1, 'error oscillator was not created');
+  assert(h.events[0].frequency[0][1] === 180, 'error cue frequency');
+  assert(h.events[0].stops.length === 1 && h.events[0].stops[0] > 12, 'error cue was not scheduled');
+});
+
 check('prefers the local wooden sample in a browser that supports WAV', () => {
   const h = makeHarness({ audioSupported: true });
   h.sandbox.playPieceMoveSound({ flags: 'n' });
   const stats = h.stats();
   assert(stats.audioElements === 1 && stats.fallbackPlays === 1, 'wooden sample was not played');
   assert(h.events.length === 0, 'synthetic fallback should not replace the sample');
+});
+
+check('plays the local error sample when audio files are supported', () => {
+  const h = makeHarness({ audioSupported: true });
+  h.sandbox.playMoveErrorSound();
+  const stats = h.stats();
+  assert(stats.audioElements === 1 && stats.fallbackPlays === 1, 'error sample was not played');
+  assert(stats.audioSources[0] === 'audio/error.wav', 'wrong error sample selected');
+  assert(h.events.length === 0, 'synthetic error fallback should not replace the sample');
 });
 
 check('uses a lower capture cue and accepts a delayed replay', () => {

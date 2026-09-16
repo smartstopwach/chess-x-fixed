@@ -106,6 +106,47 @@ function playPieceMoveSound(move, delay = 0) {
   }
 }
 
+function playMoveErrorSound() {
+  try {
+    // Use a local short buzzer when the browser can decode audio files. This
+    // keeps the error cue consistent on browsers without Web Audio synthesis.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/error.wav');
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.52;
+        try {
+          audio.currentTime = 0;
+          const result = audio.play();
+          if (result && typeof result.catch === 'function') result.catch(() => {});
+        } catch (e) {}
+        return;
+      }
+    }
+
+    // Web Audio fallback: a brief descending square-wave buzz, deliberately
+    // distinct from the wooden move tap but short enough not to be annoying.
+    if (!prepareMoveAudio()) return;
+    const ctx = moveAudioContext;
+    const now = Number(ctx.currentTime);
+    const start = Number.isFinite(now) ? now : 0;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(180, start);
+    oscillator.frequency.exponentialRampToValueAtTime(110, start + 0.12);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.16, start + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.17);
+  } catch (e) {
+    // Sound is optional and must never block the board interaction.
+  }
+}
+
 function squareName(r, c) {
   return String.fromCharCode(97 + c) + (8 - r);
 }

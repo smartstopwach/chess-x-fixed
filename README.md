@@ -224,6 +224,8 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 - Display "YOUR MOVE?" with custom question
 - **Clicking a puzzle in the library gives you a playable board** (it used to
   leave the piece editor armed, so every click edited instead of moved)
+- Clicking a piece belonging to the side that is **not** to move is rejected
+  with a short error sound; legal moves keep the wooden move tap
 - **✎ Edit position** (in the Puzzle Editor panel) is the explicit way to place
   or remove pieces; `Esc` or ✕ Exit hands the board back to play with the
   position intact — exiting no longer resets to the starting position

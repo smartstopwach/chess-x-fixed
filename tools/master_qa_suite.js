@@ -267,6 +267,12 @@ async function runMasterSuite() {
     assert(window.state.selectedSquare === null, `Expected selectedSquare null, got '${window.state.selectedSquare}'`);
     assert(window.state.game.fen().includes('4P3'), `Expected e4 move on board`);
 
+    // Clicking an opponent piece on the wrong turn rejects the selection and
+    // emits the error cue without changing the board.
+    window.handleSquareClick('d2');
+    assert(window.state.selectedSquare === null, 'opponent piece was not rejected');
+    assert($('boardMsg').className.includes('error'), 'wrong-side click did not show an error');
+
     // Simulated Touch Move
     window.onTouchStart({ touches: [{ clientX: 50, clientY: 50 }] });
     window.onTouchMove({ touches: [{ clientX: 150, clientY: 150 }], preventDefault: () => {} });

@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 244, `expected the current 244 named declarations, found ${found.length}`);
+assert(found.length === 245, `expected the current 245 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -129,8 +129,9 @@ check('message, audio, material and promotion helpers', () => {
   assert(window.prepareMoveAudio() === true, 'audio context warm-up');
   window.playPieceMoveSound({ flags: 'n' });
   window.playPieceMoveSound({ flags: 'c' }, 0.05);
+  window.playMoveErrorSound();
   const audio = getAudioCounts();
-  assert(audio.audioCreated === 1 && audio.oscillatorsStarted === 2, 'audio scheduling');
+  assert(audio.audioCreated === 1 && audio.oscillatorsStarted === 3, 'audio scheduling');
   window.AudioContext = class { constructor() { throw new Error('blocked'); } };
   window.playPieceMoveSound(); // browser restriction must remain a no-op
 });
