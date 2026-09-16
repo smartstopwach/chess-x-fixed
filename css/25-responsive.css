@@ -40,7 +40,7 @@
 @media (max-width: 900px) and (orientation: landscape) {
   .sidebar { max-height: 120px; }
   .board-area { min-height: 200px; }
-  .board-meta-top, .board-meta-bottom { display: none; }
+  .board-meta-strip, .board-meta-top, .board-meta-bottom { display: none; }
 }
 
 @media (max-width: 600px) {
@@ -53,7 +53,18 @@
 }
 
 /* Tablet landscape - starts above the one-column breakpoint so the two rules
-   can never both match and fight each other */
+   can never both match and fight each other.
+   `.layout[data-layout]` here is as specific as the per-layout rules in
+   12-layout.css and comes later, so it used to win and hand the board the
+   240px *sidebar* track (a 1024x768 window got a 240px board while the right
+   panel kept 280px). Every layout therefore gets its own track list here, with
+   the board always in a minmax(0,1fr) track so it can never be squeezed by a
+   fixed-width panel. */
 @media (min-width: 901px) and (max-width: 1024px) and (orientation: landscape) {
-  .layout, .layout[data-layout] { grid-template-columns: 240px 1fr 280px; }
+  .layout, .layout[data-layout] { grid-template-columns: 240px minmax(0, 1fr) 260px; }
+  .layout[data-layout="focus"],
+  .layout[data-layout="moves"] { grid-template-columns: minmax(0, 1fr) 260px; }
+  .layout[data-layout="explain"] { grid-template-columns: 240px minmax(0, 1fr); }
+  .layout[data-layout="board"],
+  .layout[data-layout="present"] { grid-template-columns: minmax(0, 1fr); }
 }

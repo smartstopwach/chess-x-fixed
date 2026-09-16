@@ -77,6 +77,8 @@ function sessionPayload() {
     fen: fenOf(state.game),
     history: asArray(state.history).slice(0, 500),
     historyIndex: state.historyIndex,
+    baseFen: (state.baseFen || START_FEN),
+    variations: asArray(state.variations).slice(0, 20),
     flipped: !!state.flipped,
     theme: state.boardTheme,
     pieceStyle: state.pieceStyle,
@@ -86,6 +88,8 @@ function sessionPayload() {
     circles: asArray(state.circles),
     highlights: asArray(state.highlights),
     rectangles: asArray(state.rectangles),
+    triangles: asArray(state.triangles),
+    hexagons: asArray(state.hexagons),
     setup: {
       whiteCastleK: fieldVal('optWhiteCastleK'),
       whiteCastleQ: fieldVal('optWhiteCastleQ'),
@@ -94,7 +98,16 @@ function sessionPayload() {
       halfmove: fieldVal('optHalfmove'),
       fullmove: fieldVal('optFullmove')
     },
-    engine: { depth: fieldVal('engineDepth'), multipv: fieldVal('engineMultiPV') },
+    // The configured depth/multiPV live in state. Reading the <select> instead
+    // saved whatever the control happened to display, so a depth that was set
+    // through setEngineDepth() (session restore, a preset, the API) came back
+    // after F5 as the select's old value - and as a string, not a number.
+    engine: {
+      depth: (typeof state.engine.depth === 'number' && state.engine.depth > 0)
+        ? state.engine.depth : (parseInt(fieldVal('engineDepth'), 10) || 15),
+      multipv: (typeof state.engine.multipv === 'number' && state.engine.multipv > 0)
+        ? state.engine.multipv : (parseInt(fieldVal('engineMultiPV'), 10) || 1)
+    },
     clock: { wTime: clock.wTime, bTime: clock.bTime },
     // Entering puzzle mode resets this pointer, so it is copied into the
     // snapshot and restored from there instead of being read back from the
@@ -207,6 +220,9 @@ function applySession(s) {
       if (current !== s.fen) state.game.load(s.fen);
     }
     state.history = asArray(s.history);
+    state.baseFen = (typeof s.baseFen === 'string' && s.baseFen.trim()) ? s.baseFen.trim() : START_FEN;
+    state.variations = asArray(s.variations);
+    if (typeof renderVariations === 'function') renderVariations();
     state.historyIndex = (typeof s.historyIndex === 'number' &&
       s.historyIndex >= -1 && s.historyIndex < state.history.length) ? s.historyIndex : state.history.length - 1;
     state.flipped = !!s.flipped;
@@ -227,13 +243,17 @@ function applySession(s) {
     state.circles = asArray(s.circles);
     state.highlights = asArray(s.highlights);
     state.rectangles = asArray(s.rectangles);
+    state.triangles = asArray(s.triangles);
+    state.hexagons = asArray(s.hexagons);
     const su = s.setup || {};
     ['whiteCastleK', 'whiteCastleQ', 'blackCastleK', 'blackCastleQ', 'halfmove', 'fullmove'].forEach(k => {
       if (su[k] !== undefined) setFieldVal('opt' + k.charAt(0).toUpperCase() + k.slice(1), su[k]);
     });
     const en = s.engine || {};
-    if (en.depth) { setFieldVal('engineDepth', en.depth); state.engine.depth = en.depth; }
-    if (en.multipv) { setFieldVal('engineMultiPV', en.multipv); state.engine.multipv = en.multipv; }
+    const enDepth = parseInt(en.depth, 10);
+    if (!isNaN(enDepth) && enDepth > 0) { state.engine.depth = enDepth; setFieldVal('engineDepth', enDepth); }
+    const enMp = parseInt(en.multipv, 10);
+    if (!isNaN(enMp) && enMp > 0) { state.engine.multipv = enMp; setFieldVal('engineMultiPV', enMp); }
     if (s.clock) {
       if (typeof s.clock.wTime === 'number') state.clock.wTime = s.clock.wTime;
       if (typeof s.clock.bTime === 'number') state.clock.bTime = s.clock.bTime;

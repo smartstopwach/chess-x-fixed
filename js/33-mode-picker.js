@@ -53,8 +53,7 @@ function setMode(mode) {
   }
 
   state.game.reset();
-  state.history = [];
-  state.historyIndex = -1;
+  resetMoveHistory();
   if (typeof puzzleGame === 'function' && puzzleGame()) {
     puzzleGame().load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     puzzleState.history = [];
@@ -70,6 +69,10 @@ function setMode(mode) {
     document.body.dataset.authoring = 'false';
     document.body.dataset.setupEditing = 'false';
     state.setupMode = false;
+    // Normal mode means "play chess": puzzle/authoring flows leave the Arrow
+    // tool selected, and with that a left click draws instead of moving, so the
+    // Select tool is restored on the way in.
+    if (typeof setTool === 'function') setTool('select');
     // Force left sidebar hidden (focus mode default)
     const layout = document.getElementById('layout');
     if (layout) layout.classList.remove('left-sidebar-visible');

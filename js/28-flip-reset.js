@@ -12,8 +12,7 @@ function flipBoard() {
 function resetBoard() {
   if (state.history.length > 0 && !confirm('Reset board and clear moves?')) return;
   state.game.reset();
-  state.history = [];
-  state.historyIndex = -1;
+  resetMoveHistory();
   clearAllAnnotations();
   renderAll();
 }

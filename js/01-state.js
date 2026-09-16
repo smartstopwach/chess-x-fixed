@@ -30,6 +30,7 @@ const state = {
   game: createGame(),
   history: [],           // Persistent move history (SAN strings), survives undo/load
   historyIndex: -1,      // Pointer into history: -1 = start, history.length-1 = latest
+  baseFen: START_FEN,    // position the current move list is played from
   position: { fen: '' },
   flipped: false,
   selectedSquare: null,
@@ -40,6 +41,9 @@ const state = {
   circles: [],
   highlights: [],
   rectangles: [],
+  triangles: [],
+  hexagons: [],
+  rightArrowFrom: null,   // first square of a right-click-click arrow
   drawingFrom: null,
   isDrawing: false,
   boardTheme: 'classic',
@@ -63,7 +67,8 @@ const state = {
     stockfish: null,
     enabled: false,
     evaluating: false,
-    depth: 15,
+    depth: 15,          // what the teacher asked for (the Depth select)
+    searchDepth: 0,     // what Stockfish has actually reached so far
     multipv: 1,
     eval: 0,
     bestMove: '',

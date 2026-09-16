@@ -107,8 +107,7 @@ function handleLibraryAction(action, chapterId, puzzleId) {
     // Same as + New Puzzle button — enter authoring mode with fresh state
     // Reset main board to standard so user gets a clean slate
     state.game.reset();
-    state.history = [];
-    state.historyIndex = -1;
+    resetMoveHistory();
     state.selectedSquare = null;
     state.heldPiece = null;
     state.selectedRackPiece = null;

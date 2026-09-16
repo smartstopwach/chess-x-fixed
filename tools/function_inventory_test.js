@@ -22,7 +22,7 @@ async function testInventory() {
 
   const scripts = [
     'chess.min.js', 'pieces.js', 'engine.js', 'js/00-constants.js', 'js/01-state.js',
-    'js/02-dom.js', 'js/03-utils.js', 'js/10-board-render.js', 'js/11-annotations-render.js',
+    'js/02-dom.js', 'js/03-utils.js', 'js/04-protect.js', 'js/10-board-render.js', 'js/11-annotations-render.js',
     'js/12-board-interactions.js', 'js/13-annotation-tools.js', 'js/14-tool-selection.js',
     'js/15-position-setup.js', 'js/16-move-list.js', 'js/17-fen.js', 'js/18-themes.js',
     'js/19-layouts.js', 'js/20-puzzle-library-store.js', 'js/21-puzzle-uid.js',

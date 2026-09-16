@@ -42,6 +42,7 @@ async function runMasterSuite() {
     'js/01-state.js',
     'js/02-dom.js',
     'js/03-utils.js',
+    'js/04-protect.js',
     'js/10-board-render.js',
     'js/11-annotations-render.js',
     'js/12-board-interactions.js',
@@ -511,6 +512,425 @@ async function runMasterSuite() {
     assert(window.celebrateMate() === false);
     window.state.setupMode = false;
     document.body.dataset.setupEditing = 'false';
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11b: RIGHT-BUTTON MATRIX (arrow while teaching, erase while editing)
+  // ----------------------------------------------------
+  test('RIGHT-BUTTON', 'right button is the arrow only outside position editing', () => {
+    window.state.setupMode = false;
+    window.state.authoringMode = false;
+    assert(window.rightButtonIsArrow() === true);
+    assert(window.isEditingPosition() === false);
+
+    window.state.setupMode = true;                      // Custom Setup editing
+    assert(window.rightButtonIsArrow() === false);
+    window.state.setupMode = false;
+
+    window.state.authoringMode = true;                  // puzzle authoring
+    assert(window.rightButtonIsArrow() === false);
+    window.state.authoringMode = false;
+
+    const before = window.state.arrows.length;
+    window.handleRightClickOrDrag('a1', 'a5', true);    // teaching: drag = arrow
+    assert(window.state.arrows.length === before + 1);
+    window.handleRightClickOrDrag('b1', 'b1', false);   // origin mark
+    assert(window.state.rightArrowFrom === 'b1');
+    window.handleRightClickOrDrag('b5', 'b5', false);   // finish it
+    assert(window.state.arrows.length === before + 2);
+    assert(window.state.rightArrowFrom === null);
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11c: BUG-FIX REGRESSIONS (found by the bughunt harness)
+  // ----------------------------------------------------
+  test('ANNO-FIX', 'erasing/clearing a lone triangle or hexagon is undoable', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.addTriangle('d4'); window.addHexagon('e5');
+    window.eraseAnnotationAt('d4');
+    assert(window.state.triangles.length === 0, 'triangle erased');
+    window.undoAnnotation();
+    assert(window.state.triangles.length === 1, 'undo brings the triangle back');
+    window.clearAllAnnotations();
+    assert(window.state.hexagons.length === 0, 'cleared');
+    window.undoAnnotation();
+    assert(window.state.hexagons.length === 1, 'undo brings the hexagon back');
+  });
+
+  test('ANNO-FIX', 'identical rectangles never stack', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('rectangle');
+    assert(window.addRectangle('c3', 'f6') === true, 'first box added');
+    assert(window.addRectangle('c3', 'f6') === false, 'duplicate ignored');
+    assert(window.addRectangle('f6', 'c3') === false, 'same box, other corner order');
+    assert(window.state.rectangles.length === 1);
+  });
+
+  test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    assert(window.addShapeOnce('circles', 'd4') === true);
+    assert(window.addShapeOnce('circles', 'd4') === false, 'already there');
+    assert(window.addArrow('a1', 'a5') === true);
+    assert(window.addArrow('a1', 'a5') === false, 'toggled off');
+    assert(window.state.arrows.length === 0);
+  });
+
+  test('ANNO-FIX', 'double click never destroys drawings it did not place', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('arrow');
+    window.addArrow('a1', 'a5');
+    window.state.drawingFrom = null;
+    window.scheduleLeftAction('a5');      // 1st click only marks an origin
+    window.scheduleLeftAction('a5');      // 2nd click = double click
+    assert(window.state.arrows.length === 1, 'pre-existing arrow survives');
+
+    window.setTool('circle');
+    window.addCircle('d4');
+    window.scheduleLeftAction('d4'); window.scheduleLeftAction('d4');
+    assert(window.state.circles.length === 1, 'pre-existing circle survives');
+  });
+
+  test('ANNO-FIX', 'double click still takes back what THIS click placed', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('triangle');
+    window.scheduleLeftAction('d5'); window.flushLeftAction();   // placed
+    assert(window.state.triangles.length === 1);
+    window.scheduleLeftAction('d5');                             // taken back
+    assert(window.state.triangles.length === 0);
+    window.scheduleLeftAction('d5');                             // swallowed 2nd click ...
+    window.flushLeftAction();
+    assert(window.state.triangles.length === 0, '...did not place it again');
+  });
+
+  test('ANNO-FIX', 'undo/redo drop origin marks even with nothing to undo', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.handleRightClickOrDrag('b1', 'b1', false);
+    assert(window.state.rightArrowFrom === 'b1');
+    window.undoAnnotation();
+    assert(window.state.rightArrowFrom === null, 'right origin dropped');
+    window.setTool('arrow');
+    window.placeWithTool('c1');
+    assert(window.state.drawingFrom === 'c1');
+    window.redoAnnotation();
+    assert(window.state.drawingFrom === null, 'left origin dropped');
+  });
+
+  test('ANNO-FIX', 'switching tools finishes the pending click', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('circle');
+    window.scheduleLeftAction('e4');
+    window.setTool('arrow');
+    assert(window.state.circles.length === 1, 'circle was placed, not swallowed');
+    assert(window.state.currentTool === 'arrow');
+    assert(window.state.drawingFrom === null, 'origin marks reset on tool switch');
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11d: BASE POSITION (undo / move list must follow the position on screen)
+  // ----------------------------------------------------
+  // NOTE: START_FEN is a top-level const in js/00-constants.js, so it is a
+  // shared global binding but NOT a window property - compare against the
+  // literal here.
+  const STD_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  test('BASE-FEN', 'undo, move list and deleteMove replay on the custom start', () => {
+    const CUSTOM = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 5 4';
+    window.state.game.load(CUSTOM);
+    window.resetMoveHistory(CUSTOM);
+    assert(window.state.baseFen === CUSTOM, 'base recorded');
+    assert(window.state.history.length === 0 && window.state.historyIndex === -1);
+
+    window.state.game.move('Nf6');
+    window.state.history.push('Nf6');
+    window.state.historyIndex = 0;
+
+    window.prevMove();
+    assert(window.state.game.fen() === CUSTOM, 'undo returns to the custom start, got ' + window.state.game.fen());
+    window.nextMove();
+    assert(window.state.historyIndex === 0 && window.state.game.fen() !== CUSTOM, 'redo replays the move');
+
+    window.goToMove(-1);
+    assert(window.state.game.fen() === CUSTOM, 'first position in the list is the custom base');
+    assert(window.getCurrentFen() === CUSTOM, 'FEN read-out matches');
+
+    window.goToMove(0);
+    window.deleteMove();
+    assert(window.state.history.length === 0 && window.state.game.fen() === CUSTOM, 'deleteMove keeps the custom base');
+  });
+
+  test('BASE-FEN', 'every fresh move list remembers where it started', () => {
+    const KRK = '4k3/8/8/8/8/8/8/R3K3 w - - 0 1';
+    window.state.game.load(KRK);
+    window.resetMoveHistory();            // no argument = take the board as it is
+    assert(window.state.baseFen === KRK, 'got ' + window.state.baseFen);
+
+    window.state.game.reset();
+    window.resetMoveHistory();
+    assert(window.state.baseFen === STD_START, 'standard start is the default base, got ' + window.state.baseFen);
+
+    window.loadFen && (window.document.getElementById('fenInput').value = KRK);
+    window.loadFen();
+    assert(window.state.baseFen === KRK, 'loading a FEN moves the base with it, got ' + window.state.baseFen);
+    window.state.game.reset(); window.resetMoveHistory();
+  });
+
+  test('BASE-FEN', 'the base position survives a save / restore round trip', () => {
+    const CUSTOM = '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1';
+    window.state.game.load(CUSTOM);
+    window.resetMoveHistory(CUSTOM);
+    const payload = window.sessionPayload();
+    assert(payload.baseFen === CUSTOM, 'payload carries the base');
+    window.state.baseFen = STD_START;                 // as if the page had just booted
+    window.applySession(payload);
+    assert(window.state.baseFen === CUSTOM, 'restored base, got ' + window.state.baseFen);
+    window.state.game.reset(); window.resetMoveHistory();
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11e: PUZZLE PLAYABILITY (a puzzle you can actually play)
+  // ----------------------------------------------------
+  test('PUZZLE-PLAY', 'selecting a puzzle and testing it hands over the Select tool', () => {
+    const PF = '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1';
+    const lib = window.getLibrary();
+    const ch = lib.chapters[0];
+    ch.puzzles = (ch.puzzles || []).filter(x => x.id !== 'qa_p1');
+    ch.puzzles.push({ id: 'qa_p1', title: 'Back rank', description: 'Mate in 1', solution: 'Ra8#', difficulty: 3, tags: '', fen: PF });
+    window.saveLibrary(lib);
+
+    window.setMode('puzzle');
+    window.setTool('arrow');                          // explaining state, as the editor leaves it
+    window.handleLibraryAction('select-puzzle', ch.id, 'qa_p1');
+    assert(window.state.currentTool === 'select', 'a selected puzzle is playable, tool=' + window.state.currentTool);
+    assert(window.state.authoringMode === false && window.state.setupMode === false);
+
+    window.startPuzzleTest();
+    assert(window.state.currentTool === 'select', 'test mode must not leave the arrow tool, tool=' + window.state.currentTool);
+    assert(window.state.puzzle && window.state.puzzle.moves.join(',') === 'Ra8#', 'solution parsed');
+
+    window.handleSquareClick('a1');
+    window.handleSquareClick('a8');                   // the student answers with left clicks
+    assert(window.state.puzzle.solved === true, 'puzzle solved through the board');
+
+    window.endPuzzleTest(false);
+    assert(window.state.currentTool === 'arrow', 'after the test the board goes back to explaining');
+  });
+
+  test('PUZZLE-PLAY', 'Normal mode always comes back playable', () => {
+    window.setMode('puzzle');
+    window.setTool('arrow');
+    window.setMode('normal');
+    assert(window.state.currentTool === 'select', 'tool=' + window.state.currentTool);
+    assert(window.state.setupMode === false && window.state.authoringMode === false);
+    assert(window.state.baseFen === STD_START, 'base=' + window.state.baseFen);
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11f: KEYBOARD (documented shortcuts must be the real ones)
+  // ----------------------------------------------------
+  const pressKey = (key, opts) =>
+    window.document.dispatchEvent(new window.KeyboardEvent('keydown', Object.assign({ key, bubbles: true, cancelable: true }, opts || {})));
+
+  test('KEYS', 'E / H / O / A / V select the tools the README promises', () => {
+    window.setTool('select');
+    pressKey('e'); assert(window.state.currentTool === 'eraser', 'E -> eraser, got ' + window.state.currentTool);
+    pressKey('H'); assert(window.state.currentTool === 'highlight', 'H -> highlight');
+    pressKey('o'); assert(window.state.currentTool === 'circle', 'O -> circle');
+    pressKey('a'); assert(window.state.currentTool === 'arrow', 'A -> arrow');
+    pressKey('v'); assert(window.state.currentTool === 'select', 'V -> select');
+    const c0 = window.state.currentColor;
+    pressKey('c'); assert(window.state.currentColor !== c0, 'C cycles the colour');
+  });
+
+  test('KEYS', 'Esc cancels a pending click, the selection and origin marks', () => {
+    window.clearAllAnnotations(false); window.initAnnoHistory();
+    window.setTool('circle');
+    window.scheduleLeftAction('d4');                      // still inside its window
+    window.state.selectedSquare = 'e2';
+    window.handleRightClickOrDrag('b1', 'b1', false);     // right-click origin mark
+    pressKey('Escape');
+    assert(window.state.selectedSquare === null, 'selection dropped');
+    assert(window.state.rightArrowFrom === null, 'right origin dropped');
+    assert(window.state.drawingFrom === null, 'left origin dropped');
+    window.flushLeftAction();                             // pending click was dropped
+    assert(window.state.circles.length === 0, 'nothing was placed after Esc');
+    window.setTool('select');
+  });
+
+  // ----------------------------------------------------
+  // GROUP 11g: POSITION VALIDATION (impossible positions must be refused)
+  // ----------------------------------------------------
+  test('VALIDATE', 'legal positions pass', () => {
+    const good = [
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+      '4k3/8/8/8/8/8/8/R3K3 w - - 0 1',
+      '4k3/P7/8/8/8/8/8/4K3 w - - 0 1',
+      'r1bqkb1r/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1'
+    ];
+    good.forEach(f => {
+      const r = window.validatePosition(f);
+      assert(r.ok === true, 'should be legal: ' + f + ' -> ' + r.reason);
+    });
+  });
+
+  test('VALIDATE', 'impossible positions are refused with a reason', () => {
+    const bad = {
+      '8/8/8/8/8/8/8/8 w - - 0 1': 'king',
+      '3k3k/8/8/8/8/8/8/K6K w - - 0 1': 'two kings',
+      'K6k/8/8/8/8/8/8/7k w - - 0 1': 'king',
+      'P6k/8/8/8/8/8/8/K7 w - - 0 1': 'last rank',
+      '7k/8/8/8/8/8/8/PK6 w - - 0 1': 'first rank',
+      '4k3/ppppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1': '9 pawns',
+      '4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1': 'castling',
+      '4k3/8/8/8/8/8/8/4R1K1 w - - 0 1': 'own king in check',
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e3 0 1': 'en-passant',
+      '4k3/8/8/8/8/8/8/3QQK2 w - - 0 1': 'promoted',
+      'nonsense': 'incomplete',
+      '4k3/8/8/8 w - - 0 1': '8 ranks'
+    };
+    Object.keys(bad).forEach(f => {
+      const r = window.validatePosition(f);
+      assert(r.ok === false, 'should be refused: ' + f);
+      assert(typeof r.reason === 'string' && r.reason.length > 3, 'needs a reason: ' + f);
+    });
+  });
+
+  test('VALIDATE', 'START FROM POSITION refuses an impossible board and stays editing', () => {
+    window.setMode('setup');
+    window.state.game.load('8/8/8/8/8/8/8/8 w - - 0 1');      // no kings at all
+    window.syncSetupControlsFromFen('8/8/8/8/8/8/8/8 w - - 0 1');
+    window.startFromPosition();
+    assert(window.state.setupMode === true, 'still editing');
+    assert(window.document.body.dataset.setupEditing === 'true');
+    assert(window.state.history.length === 0);
+
+    window.state.game.load('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+    window.syncSetupControlsFromFen('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+    window.startFromPosition();
+    assert(window.state.setupMode === false, 'a legal position starts');
+    assert(window.state.baseFen === '4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
+  });
+
+  test('VALIDATE', 'the FEN box refuses an impossible position and keeps the board', () => {
+    const before = window.state.game.fen();
+    window.document.getElementById('fenInput').value = '8/8/8/8/8/8/8/8 w - - 0 1';
+    window.loadFen();
+    assert(window.state.game.fen() === before, 'board untouched');
+    window.document.getElementById('fenInput').value = '';
+    window.loadFen();
+    assert(window.state.game.fen() === before, 'empty input is refused too');
+  });
+
+  test('VARIATIONS', 'saved positions are stored as labelled objects and can be jumped to', () => {
+    window.setMode('normal');
+    window.state.game.reset(); window.resetMoveHistory(); window.state.variations = [];
+    window.handleSquareClick('e2'); window.handleSquareClick('e4');
+    window.saveVariation();
+    assert(window.state.variations.length === 1, 'one saved position');
+    const v = window.state.variations[0];
+    assert(typeof v === 'object' && v.fen && v.label === '1.e4', JSON.stringify(v));
+    window.saveVariation();
+    assert(window.state.variations.length === 1, 'the same position is not saved twice');
+    assert(window.document.getElementById('variationList').children.length === 1, 'chip is rendered');
+
+    window.handleSquareClick('e7'); window.handleSquareClick('e5');
+    assert(window.state.history.length === 2);
+    window.goToVariation(0);
+    assert(window.state.history.length === 0 && window.state.game.fen() === v.fen, 'jumped back to the saved line');
+    assert(window.state.baseFen === v.fen, 'the saved position became the new base');
+    window.removeVariation(0);
+    assert(window.state.variations.length === 0, 'chip removed');
+    assert(window.document.getElementById('variationList').children.length === 0);
+  });
+
+  test('ENGINE-DEPTH', 'the configured depth survives the engine reporting its own', () => {
+    window.setEngineDepth(20);
+    assert(window.state.engine.depth === 20, 'setEngineDepth stores the number, got ' + window.state.engine.depth);
+    assert(window.document.getElementById('engineDepth').value === '20', 'the control shows it too');
+    window.state.engine.enabled = true;
+    window.handleEngineMessage('info depth 7 seldepth 9 multipv 1 score cp 21 nodes 12345 pv g1f3 g8f6');
+    assert(window.state.engine.depth === 20, 'user setting must not be overwritten, got ' + window.state.engine.depth);
+    assert(window.state.engine.searchDepth === 7, 'reached depth is tracked separately');
+    assert(window.document.getElementById('depth').textContent === '7', 'display shows the reached depth');
+    window.setEngineDepth('nonsense');
+    assert(window.state.engine.depth === 20, 'garbage input is ignored');
+    window.setEngineMultiPV('x');
+    assert(window.state.engine.multipv === 1, 'garbage multiPV falls back to 1');
+  });
+
+  test('ENGINE-OFF', 'a search abandoned by STOP cannot repaint the panel', () => {
+    window.state.engine.enabled = true;
+    window.handleEngineMessage('info depth 12 seldepth 14 multipv 1 score cp 33 nodes 999 pv d2d4 d7d5');
+    assert(window.state.engine.bestMove === 'd2d4', 'best move recorded while analysing');
+    window.state.engine.enabled = false;                 // what toggleEngine() does
+    window.document.getElementById('engineStatus').textContent = 'Idle';
+    window.handleEngineMessage('info depth 14 seldepth 18 multipv 1 score cp 41 nodes 5000 pv e2e4 e7e5');
+    window.handleEngineMessage('bestmove e2e4 ponder e7e5');
+    assert(window.document.getElementById('engineStatus').textContent === 'Idle', 'status stays Idle, got ' + window.document.getElementById('engineStatus').textContent);
+    assert(window.state.engine.bestMove === 'd2d4', 'a cancelled search must not replace the best move');
+    assert(window.state.engine.searchDepth === 12, 'reached depth is not updated while off');
+  });
+
+  test('CLOCK-PAINT', 'starting the clock marks the side that is on move', () => {
+    window.state.clock.activeColor = 'w';
+    window.state.clock.running = false;
+    window.paintClockSide();
+    assert(!window.document.getElementById('clockWhite').classList.contains('active'), 'nothing is highlighted while paused');
+    window.state.clock.running = true;
+    window.paintClockSide();
+    assert(window.document.getElementById('clockWhite').classList.contains('active'), 'white is on move');
+    assert(!window.document.getElementById('clockBlack').classList.contains('active'));
+    window.switchClockSide();
+    assert(window.state.clock.activeColor === 'b' &&
+      window.document.getElementById('clockBlack').classList.contains('active') &&
+      !window.document.getElementById('clockWhite').classList.contains('active'), 'a move hands the highlight over');
+    window.state.clock.running = false;
+    window.paintClockSide();
+    assert(!window.document.getElementById('clockBlack').classList.contains('active'), 'pausing clears it');
+  });
+
+  test('SETUP-DRAG', 'a held rack piece no longer blocks dragging a board piece', () => {
+    // The full press -> travel -> release drag is exercised with real mouse
+    // events in the browser suite (ui_test2 T9); here the observable state
+    // machine around it is checked.
+    window.setMode('setup');
+    const FEN = '4k3/8/8/8/8/8/8/R3K3 w - - 0 1';
+    window.state.game.load(FEN);
+    window.syncSetupControlsFromFen(FEN);
+    window.state.setupMode = true;
+    window.document.body.dataset.setupEditing = 'true';
+    window.state.heldPiece = { piece: 'Q', source: 'rack' };   // rack pieces stay held
+    window.state.selectedRackPiece = 'Q';
+    const sqOf = name => ({ dataset: { square: name } });
+    const placement = () => window.state.game.fen().split(' ')[0];
+
+    // Pressing an OCCUPIED square picks the board piece up (so the gesture can
+    // still become a drag) instead of stamping the held queen over it.
+    window.beginSquarePress(sqOf('a1'), 10, 10, 0, 1);
+    assert(window.state.heldPiece && window.state.heldPiece.source === 'a1' && window.state.heldPiece.piece === 'R',
+      'the rook was picked up, got ' + JSON.stringify(window.state.heldPiece));
+    assert(placement() === '4k3/8/8/8/8/8/8/R3K3', 'nothing was placed on the press, got ' + placement());
+
+    // Releasing on the same square is a click: the held queen replaces the rook
+    // and stays in hand for the next one.
+    window.endSquarePress(sqOf('a1'), 12, 12);
+    assert(placement() === '4k3/8/8/8/8/8/8/Q3K3', 'the click placed the queen, got ' + placement());
+    assert(window.state.heldPiece && window.state.heldPiece.piece === 'Q' && window.state.heldPiece.source === 'rack',
+      'the rack piece is still in hand, got ' + JSON.stringify(window.state.heldPiece));
+
+    // A dropped gesture (Esc, release off the board, lost focus) hands the rack
+    // piece back instead of leaving the teacher holding the piece under it.
+    window.beginSquarePress(sqOf('e1'), 10, 10, 0, 1);
+    assert(window.state.heldPiece && window.state.heldPiece.source === 'e1', 'the king was picked up');
+    window.cancelSquarePress();
+    assert(window.state.heldPiece && window.state.heldPiece.piece === 'Q' && window.state.heldPiece.source === 'rack',
+      'cancelling returns the queen to hand, got ' + JSON.stringify(window.state.heldPiece));
+    assert(placement() === '4k3/8/8/8/8/8/8/Q3K3', 'and nothing was placed, got ' + placement());
+
+    // Pressing an EMPTY square with a rack piece still places at once
+    window.beginSquarePress(sqOf('h5'), 10, 10, 0, 1);
+    assert(placement() === '4k3/8/8/7Q/8/8/8/Q3K3', 'an empty square is stamped immediately, got ' + placement());
   });
 
   // ----------------------------------------------------

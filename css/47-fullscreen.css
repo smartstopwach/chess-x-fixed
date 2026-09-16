@@ -21,6 +21,10 @@
   border-radius: 0;
 }
 
+:fullscreen .board-meta-strip {
+  min-height: 14px;
+}
+
 :fullscreen .board-meta-top,
 :fullscreen .board-meta-bottom {
   min-height: 14px;

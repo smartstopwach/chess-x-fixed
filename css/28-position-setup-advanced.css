@@ -53,6 +53,12 @@
   border: 1px solid var(--border);
 }
 .piece-count .count-w { color: #ffffff; }
+.count-pts {
+  margin-left: 6px;
+  opacity: .78;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .piece-count .count-b { color: var(--text-primary); }
 .piece-count .count-sep { color: var(--text-muted); margin: 0 2px; }
 

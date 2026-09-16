@@ -134,8 +134,13 @@ function exportLibrary() {
   const a = document.createElement('a');
   a.href = url;
   a.download = `chessx-library-${new Date().toISOString().split('T')[0]}.json`;
+  // The anchor has to be in the document for Firefox to honour the click, and
+  // the blob URL must outlive it - revoking on the very next line could cancel
+  // a download that had not started yet.
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
   toast('Library exported', 'success');
 }
 

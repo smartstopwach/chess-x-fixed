@@ -43,7 +43,9 @@ function pushAnnoHistory() {
     arrows: state.arrows.map(a => ({ ...a })),
     circles: state.circles.map(c => ({ ...c })),
     highlights: state.highlights.map(h => ({ ...h })),
-    rectangles: state.rectangles.map(r => ({ ...r }))
+    rectangles: state.rectangles.map(r => ({ ...r })),
+    triangles: (state.triangles || []).map(t => ({ ...t })),
+    hexagons: (state.hexagons || []).map(h => ({ ...h }))
   };
   // Truncate future redo branch if we are in the middle of history
   annoHistory.length = annoHistoryIndex + 1;
@@ -66,15 +68,29 @@ function updateAnnoButtons() {
   });
 }
 
+// Undo/Redo always drop a half-finished gesture first: a click-click origin
+// mark is not a drawing, it never reaches the history, and leaving it behind
+// would make the next click draw an arrow nobody asked for - even when there
+// is nothing left to undo.
+function dropTransientMarks() {
+  const had = !!(state.drawingFrom || state.rightArrowFrom);
+  state.drawingFrom = null;
+  state.rightArrowFrom = null;
+  if (had && typeof highlightSquares === 'function') highlightSquares();
+  return had;
+}
+
 function undoAnnotation() {
-  if (annoHistoryIndex <= 0) return;
+  if (annoHistoryIndex <= 0) { dropTransientMarks(); return; }
+  dropTransientMarks();
   annoHistoryIndex--;
   const snap = annoHistory[annoHistoryIndex];
   state.arrows = snap.arrows.map(a => ({ ...a }));
   state.circles = snap.circles.map(c => ({ ...c }));
   state.highlights = snap.highlights.map(h => ({ ...h }));
   state.rectangles = snap.rectangles.map(r => ({ ...r }));
-  state.drawingFrom = null;
+  state.triangles = (snap.triangles || []).map(t => ({ ...t }));
+  state.hexagons = (snap.hexagons || []).map(h => ({ ...h }));
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
   updateAnnoButtons();
@@ -82,26 +98,39 @@ function undoAnnotation() {
 }
 
 function redoAnnotation() {
-  if (annoHistoryIndex >= annoHistory.length - 1) return;
+  if (annoHistoryIndex >= annoHistory.length - 1) { dropTransientMarks(); return; }
+  dropTransientMarks();
   annoHistoryIndex++;
   const snap = annoHistory[annoHistoryIndex];
   state.arrows = snap.arrows.map(a => ({ ...a }));
   state.circles = snap.circles.map(c => ({ ...c }));
   state.highlights = snap.highlights.map(h => ({ ...h }));
   state.rectangles = snap.rectangles.map(r => ({ ...r }));
-  state.drawingFrom = null;
+  state.triangles = (snap.triangles || []).map(t => ({ ...t }));
+  state.hexagons = (snap.hexagons || []).map(h => ({ ...h }));
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
   updateAnnoButtons();
   toast('Redid 1 drawing', 'info');
 }
 
+// Total number of drawings on the board - all SIX kinds. Anything that decides
+// "did the board change?" must count every kind, or a change to triangles /
+// hexagons would skip the history step and become impossible to undo.
+function annoTotal() {
+  return state.arrows.length + state.circles.length + state.highlights.length +
+         state.rectangles.length + (state.triangles || []).length + (state.hexagons || []).length;
+}
+
+// Returns true when the arrow was added, false when an identical arrow was
+// already there and got toggled off.
 function addArrow(from, to) {
   const idx = state.arrows.findIndex(a => a.from === from && a.to === to && a.color === state.currentColor);
   if (idx >= 0) state.arrows.splice(idx, 1);
   else state.arrows.push({ from, to, color: state.currentColor });
   renderAnnotations();
   pushAnnoHistory();
+  return idx < 0;
 }
 
 function addCircle(sq) {
@@ -120,30 +149,61 @@ function addHighlight(sq) {
   pushAnnoHistory();
 }
 
+// Place-if-missing: a single left click puts the shape down, a double left
+// click takes it away again (eraseAnnotationAt), so placing never toggles.
+// Returns true only when the shape was really put down.
+function addShapeOnce(kind, sq) {
+  const list = state[kind];
+  if (!list || !sq) return false;
+  if (list.some(x => x.square === sq && x.color === state.currentColor)) return false;
+  list.push({ square: sq, color: state.currentColor });
+  renderAnnotations();
+  pushAnnoHistory();
+  return true;
+}
+
+function addTriangle(sq) { return addShapeOnce('triangles', sq); }
+function addHexagon(sq) { return addShapeOnce('hexagons', sq); }
+
+// Same box, same colour = the same rectangle: never stack duplicates on top of
+// each other (they are invisible, and each one would need its own undo step).
+// c3-f6 and f6-c3 describe one box, so the pair is compared sorted.
 function addRectangle(from, to) {
+  if (!from || !to) return false;
+  const key = [from, to].sort().join('|');
+  const dup = state.rectangles.some(r => [r.from, r.to].sort().join('|') === key && r.color === state.currentColor);
+  if (dup) return false;
   state.rectangles.push({ from, to, color: state.currentColor });
   renderAnnotations();
   pushAnnoHistory();
+  return true;
 }
 
 function eraseAnnotationAt(sq) {
-  const prevCount = state.arrows.length + state.circles.length + state.highlights.length + state.rectangles.length;
+  const prevCount = annoTotal();
   state.arrows = state.arrows.filter(a => a.from !== sq && a.to !== sq);
   state.circles = state.circles.filter(c => c.square !== sq);
   state.highlights = state.highlights.filter(h => h.square !== sq);
   state.rectangles = state.rectangles.filter(r => r.from !== sq && r.to !== sq);
-  const newCount = state.arrows.length + state.circles.length + state.highlights.length + state.rectangles.length;
+  state.triangles = (state.triangles || []).filter(t => t.square !== sq);
+  state.hexagons = (state.hexagons || []).filter(h => h.square !== sq);
+  const removed = annoTotal() !== prevCount;
   renderAnnotations();
-  if (prevCount !== newCount) pushAnnoHistory();
+  if (removed) pushAnnoHistory();
+  return removed;
 }
 
 function clearAllAnnotations(keepHistory) {
-  const hadAny = state.arrows.length > 0 || state.circles.length > 0 || state.highlights.length > 0 || state.rectangles.length > 0;
+  const hadAny = annoTotal() > 0;
   state.arrows = [];
   state.circles = [];
   state.highlights = [];
   state.rectangles = [];
+  state.triangles = [];
+  state.hexagons = [];
   state.drawingFrom = null;
+  state.rightArrowFrom = null;
+  if (typeof cancelLeftAction === 'function') cancelLeftAction();
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
   if (hadAny && keepHistory !== false) pushAnnoHistory();

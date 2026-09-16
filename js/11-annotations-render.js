@@ -104,6 +104,40 @@ function renderAnnotations() {
     svg.appendChild(circle);
   });
 
+  // Triangles - equilateral, point up, centred on the square like the circle
+  (state.triangles || []).forEach(t => {
+    const p = sqPos(t.square);
+    const r = sqSize * 0.42;
+    const pts = [-90, 30, 150].map(deg => {
+      const a = deg * Math.PI / 180;
+      return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
+    }).join(' ');
+    const el = svgEl('polygon', {
+      points: pts, fill: 'none', stroke: t.color,
+      'stroke-width': Math.max(3, sqSize * 0.06), 'stroke-linejoin': 'round'
+    });
+    el.dataset.type = 'triangle';
+    el.dataset.square = t.square;
+    svg.appendChild(el);
+  });
+
+  // Hexagons - regular, flat-top, same footprint as the circle
+  (state.hexagons || []).forEach(h => {
+    const p = sqPos(h.square);
+    const r = sqSize * 0.42;
+    const pts = [0, 60, 120, 180, 240, 300].map(deg => {
+      const a = deg * Math.PI / 180;
+      return (p.x + r * Math.cos(a)).toFixed(2) + ',' + (p.y + r * Math.sin(a)).toFixed(2);
+    }).join(' ');
+    const el = svgEl('polygon', {
+      points: pts, fill: 'none', stroke: h.color,
+      'stroke-width': Math.max(3, sqSize * 0.06), 'stroke-linejoin': 'round'
+    });
+    el.dataset.type = 'hexagon';
+    el.dataset.square = h.square;
+    svg.appendChild(el);
+  });
+
   // Arrows - thick rounded band, triangular head on the target square centre
   const band = Math.max(ARROW_STYLE.minBand, sqSize * ARROW_STYLE.band);
   const headLen = sqSize * ARROW_STYLE.headLen;

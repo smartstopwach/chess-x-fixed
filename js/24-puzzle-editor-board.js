@@ -80,8 +80,7 @@ function peLoadPreset(name) {
   try {
     state.game.load(fen);
     if (puzzleGame()) puzzleGame().load(fen);
-    state.history = [];
-    state.historyIndex = -1;
+    resetMoveHistory(fen);
     state.selectedSquare = null;
     state.heldPiece = null;
     puzzleState.heldPiece = null;
@@ -282,7 +281,8 @@ function peUpdatePieceCount() {
   }
   const wCount = counts.P + counts.N + counts.B + counts.R + counts.Q + counts.K;
   const bCount = counts.p + counts.n + counts.b + counts.r + counts.q + counts.k;
-  el.innerHTML = `<span class="count-w">${wCount}</span><span class="count-sep">·</span><span class="count-b">${bCount}</span>`;
+  el.innerHTML = `<span class="count-w">${wCount}</span><span class="count-sep">·</span><span class="count-b">${bCount}</span>` +
+    (typeof materialCountHtml === 'function' ? materialCountHtml(counts) : '');
 }
 
 function peUpdateHint() {

@@ -5,10 +5,16 @@
 //   • LEFT CLICK on piece/square: normal chess move / piece selection (or setup pick/place)
 //   • LEFT DRAG (sqA -> sqB):
 //       - in setup editing: moves piece from sqA to sqB (NO arrows/drawings)
-//       - in normal mode / after START FROM POSITION: ALWAYS draws an arrow
+//       - in normal mode / after START FROM POSITION: rectangle tool = box,
+//         eraser = wipe both squares, every other tool = arrow
+//   • LEFT CLICK: the selected tool does its job (select = chess), through a
+//       short double-click window; a DOUBLE left click takes back what the
+//       first click of that pair put down - and never anything older
 //   • RIGHT CLICK / RIGHT DRAG:
-//       - in setup editing: erases piece at square (NO drawings)
-//       - in normal mode / after START FROM POSITION: uses selected drawing tool (circle, highlight, rect, eraser, arrow)
+//       - while editing a position (setup editing OR puzzle authoring): erases
+//         the piece at square (NO drawings)
+//       - while teaching / playing in ANY mode: always the ARROW (drag, or
+//         click the origin square then the target square)
 //   • Drag threshold: DRAG_SLOP_PX (10px) to prevent accidental drags during clicks.
 const DRAG_SLOP_PX = 10;
 
@@ -16,11 +22,27 @@ let pressSquare = null;    // square the pointer went down on
 let pressX = 0;
 let pressY = 0;
 let pressButton = 0;       // 0 = left, 2 = right
+let pressDetail = 1;       // mousedown detail: 2 = second click of a double click
 let pressMoved = false;    // pointer travelled past the slop -> this is a real drag
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
+let lastTouchAt = 0;       // when the last real touch gesture was seen
+let setupDeferredRack = null;  // rack piece waiting to see if the press is a click or a drag
+const TOUCH_SUPPRESS_MS = 800;
+
+// A tap on a phone makes Chrome replay the gesture as synthetic
+// mousedown/mousemove/mouseup/click right after touchend. Handled twice, a tap
+// on a piece selected it and then deselected it, and a tap with a drawing tool
+// looked like a double click and reversed whatever the first pass had drawn -
+// so on touch devices the tools appeared to do nothing at all. Every mouse
+// handler therefore refuses a gesture that came from a finger.
+function pressCameFromTouch(e) {
+  if (e && e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents === true) return true;
+  return (Date.now() - lastTouchAt) < TOUCH_SUPPRESS_MS;
+}
 
 function onSquareMouseDown(e) {
+  if (pressCameFromTouch(e)) return;
   // Stop the browser from starting a native image/text drag or a text
   // selection — either one silently swallows the matching mouseup and the
   // move never happens.
@@ -33,10 +55,11 @@ function onSquareMouseDown(e) {
       ae.matches('input, textarea, select')) {
     ae.blur();
   }
-  beginSquarePress(e.target.closest('.square'), e.clientX, e.clientY, e.button);
+  beginSquarePress(e.target.closest('.square'), e.clientX, e.clientY, e.button, e.detail);
 }
 
 function onSquareMouseMove(e) {
+  if (pressCameFromTouch(e)) return;
   if (pressSquare === null || pressMoved) return;
   if (Math.hypot(e.clientX - pressX, e.clientY - pressY) > DRAG_SLOP_PX) {
     pressMoved = true;
@@ -44,6 +67,7 @@ function onSquareMouseMove(e) {
 }
 
 function onSquareMouseUp(e) {
+  if (pressCameFromTouch(e)) return;
   endSquarePress(e.target.closest('.square'), e.clientX, e.clientY);
 }
 
@@ -54,12 +78,14 @@ function onTouchStart(e) {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   touchHandledPress = true;
+  lastTouchAt = Date.now();
   const el = (typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
   beginSquarePress(el ? el.closest('.square') : null, t.clientX, t.clientY, 0);
 }
 
 function onTouchMove(e) {
   if (!touchHandledPress || e.touches.length !== 1) return;
+  lastTouchAt = Date.now();
   const t = e.touches[0];
   if (pressSquare !== null && !pressMoved &&
       Math.hypot(t.clientX - pressX, t.clientY - pressY) > DRAG_SLOP_PX) {
@@ -73,14 +99,31 @@ function onTouchMove(e) {
 function onTouchEnd(e) {
   if (!touchHandledPress) return;
   touchHandledPress = false;
+  lastTouchAt = Date.now();
   const t = (e.changedTouches && e.changedTouches[0]) || null;
   const target = (t && typeof document.elementFromPoint === 'function') ? document.elementFromPoint(t.clientX, t.clientY) : null;
-  if (pressMoved && e.preventDefault) e.preventDefault();
+  // The gesture is fully handled here, so the emulated mouse pair (and the
+  // click that follows it) must never reach the board - a tap is not two taps.
+  if (e.cancelable && e.preventDefault) e.preventDefault();
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 
-function beginSquarePress(sq, x, y, button) {
+// The right button owns the arrow ONLY while teaching / playing. During any
+// kind of position editing - Custom Setup editing, or puzzle authoring - the
+// right button keeps its building job (erase the piece under the cursor),
+// because that is what setting up a position needs. Same rule in every mode.
+function isEditingPosition() {
+  return state.setupMode === true ||
+         (typeof isAuthoringMode === 'function' && isAuthoringMode() === true);
+}
+
+function rightButtonIsArrow() {
+  return !isEditingPosition();
+}
+
+function beginSquarePress(sq, x, y, button, detail) {
   pressConsumed = false;
+  pressDetail = (detail >= 2) ? 2 : 1;
 
   if (!sq) return;
   const sqName = sq.dataset.square;
@@ -93,19 +136,16 @@ function beginSquarePress(sq, x, y, button) {
 
   // RIGHT-CLICK:
   if (pressButton === 2) {
-    // In setup mode, right-click erases piece immediately; no drawing
-    if (state.setupMode) {
+    // Editing a position (setup editing OR puzzle authoring): the right
+    // button erases the piece immediately - no drawing, no arrow.
+    if (isEditingPosition()) {
       pressConsumed = true;
-      erasePieceAt(sqName);
+      if (state.setupMode) erasePieceAt(sqName);
+      else if (typeof peErasePiece === 'function') peErasePiece(sqName);
       return;
     }
-    // In puzzle authoring mode, right-click erases piece
-    if (isAuthoringMode()) {
-      pressConsumed = true;
-      if (typeof peErasePiece === 'function') peErasePiece(sqName);
-      return;
-    }
-    // In normal / played mode, right-click waits for release to distinguish click vs drag tool action
+    // Teaching / playing (Normal, Setup after START FROM POSITION, Puzzle
+    // saved/selected or under test): the release becomes an arrow gesture.
     return;
   }
 
@@ -145,6 +185,21 @@ function beginSquarePress(sq, x, y, button) {
   if (state.setupMode) {
     // If a piece is already held from the rack or board:
     if (state.heldPiece) {
+      const occupant = (typeof getPieceAt === 'function') ? getPieceAt(sqName) : null;
+      // A rack piece stays held so several of them can be stamped out, but that
+      // used to make every press on an OCCUPIED square place a copy - so the
+      // piece already on the board could not be dragged anywhere ("drag pieces
+      // too" simply did nothing after picking something from the rack). Let the
+      // gesture decide instead: a drag moves the board piece, a plain click
+      // still replaces it with the held rack piece.
+      if (occupant && state.heldPiece.source === 'rack') {
+        setupDeferredRack = state.heldPiece.piece;
+        state.heldPiece = null;
+        state.selectedRackPiece = null;
+        $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+        pickPieceFromBoard(sqName);
+        return;                    // not consumed - the release decides
+      }
       pressConsumed = true;
       placePieceOnSetup(sqName, state.heldPiece.piece);
       return;
@@ -175,9 +230,11 @@ function endSquarePress(sq, x, y) {
   const from = pressSquare;
   const moved = pressMoved;
   const btn = pressButton;
+  const dbl = pressDetail === 2;
   const consumed = pressConsumed;
+  const deferredRack = setupDeferredRack;   // read before the press state is cleared
 
-  cancelSquarePress();
+  cancelSquarePress(true);                  // this release completes a gesture
 
   if (consumed) return;
 
@@ -191,6 +248,27 @@ function endSquarePress(sq, x, y) {
       state.heldPiece = null;
       state.selectedRackPiece = null;
       $$('.rack-piece').forEach(x => x.classList.remove('selected'));
+      // If a rack piece was in hand when the drag started, hand it back: moving
+      // a piece out of the way must not cost the teacher the piece they were
+      // about to stamp down.
+      if (deferredRack) {
+        state.heldPiece = { piece: deferredRack, source: 'rack' };
+        state.selectedRackPiece = deferredRack;
+        const rackEl = document.querySelector(`.rack-piece[data-piece="${deferredRack}"]`);
+        if (rackEl) rackEl.classList.add('selected');
+      }
+      highlightDropSquares();
+      updateSetupHint();
+    } else if (deferredRack && from) {
+      // The press on an occupied square turned out to be a click, not a drag:
+      // the held rack piece replaces what was there, and stays held.
+      const held = deferredRack;
+      state.heldPiece = { piece: held, source: 'rack' };
+      placePieceOnSetup(sqName, held);
+      state.heldPiece = { piece: held, source: 'rack' };
+      state.selectedRackPiece = held;
+      const rackEl = document.querySelector(`.rack-piece[data-piece="${held}"]`);
+      if (rackEl) rackEl.classList.add('selected');
       highlightDropSquares();
       updateSetupHint();
     }
@@ -198,14 +276,24 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 2. RIGHT CLICK / RIGHT DRAG (Drawing Tools):
+  // 2. RIGHT CLICK / RIGHT DRAG: the right button is ALWAYS the arrow while
+  //    teaching / playing - in Normal, in Custom Setup after START FROM
+  //    POSITION, and in Puzzle mode once you are out of authoring - whether or
+  //    not the arrow tool is selected in the palette. While editing a position
+  //    the press already erased a piece and was consumed, so nothing reaches
+  //    here; the guard is a belt-and-braces second lock.
   if (btn === 2) {
+    if (!rightButtonIsArrow()) return;
+    __lastPlaced = null;
     handleRightClickOrDrag(from, sqName, isDrag);
     return;
   }
 
   // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
   if (isDrag) {
+    cancelLeftAction();   // a drag is not a click: drop any pending place
+    __lastPlaced = null;  // ...and the take-back context goes with it
+    if (state.drawingFrom) { state.drawingFrom = null; highlightSquares(); }
     if (state.currentTool === 'rectangle') {
       addRectangle(from, sqName);
     } else if (state.currentTool === 'eraser') {
@@ -218,95 +306,197 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 4. LEFT CLICK with active drawing tool:
-  if (state.currentTool === 'arrow') {
-    if (!state.drawingFrom) {
-      state.drawingFrom = sqName;
-      highlightSquares();
-    } else if (state.drawingFrom === sqName) {
-      state.drawingFrom = null;
-      highlightSquares();
-    } else {
-      addArrow(state.drawingFrom, sqName);
-      state.drawingFrom = null;
-      highlightSquares();
-    }
+  // 4. LEFT CLICK with 'select': chess move / piece selection, instantly.
+  if (state.currentTool === 'select') {
+    handleSquareClick(sqName);
     return;
   }
 
-  if (state.currentTool === 'circle') {
-    addCircle(sqName);
+  // 5. LEFT CLICK with any drawing tool: the selected tool does its job, but
+  //    through a double-click window, because a DOUBLE left click on a square
+  //    reverses whatever the left click put there (every tool except select).
+  //    The second click of a double click (mousedown detail 2) reverses at
+  //    once; anything else goes through the short double-click window.
+  if (dbl) {
+    cancelLeftAction();
+    // Second click of a real double click: if the first one only marked an
+    // arrow/rectangle origin, drop that mark; if it actually drew something,
+    // take that something back. Drawings that were already on the board stay.
+    if (state.drawingFrom === sqName) { state.drawingFrom = null; highlightSquares(); return; }
+    if (takeBackMatches(sqName)) takeBack(sqName);
     return;
   }
-
-  if (state.currentTool === 'highlight') {
-    addHighlight(sqName);
-    return;
-  }
-
-  if (state.currentTool === 'rectangle') {
-    if (!state.drawingFrom) {
-      state.drawingFrom = sqName;
-      highlightSquares();
-    } else if (state.drawingFrom === sqName) {
-      state.drawingFrom = null;
-      highlightSquares();
-    } else {
-      addRectangle(state.drawingFrom, sqName);
-      state.drawingFrom = null;
-      highlightSquares();
-    }
-    return;
-  }
-
-  if (state.currentTool === 'eraser') {
-    eraseAnnotationAt(sqName);
-    return;
-  }
-
-  // 5. LEFT CLICK with 'select' tool (Normal Chess Move / Piece Selection):
-  handleSquareClick(sqName);
+  scheduleLeftAction(sqName);
 }
 
-function handleRightClickOrDrag(from, to, isDrag) {
+// ---- left click: single = place, double = take back -----------------------
+let __leftTimer = null;
+let __leftSq = null;
+let __lastPlaced = null;       // { sq, tool, color, at } of the last real placement
+let __suppressSq = null;       // square whose next click is swallowed ...
+let __suppressUntil = 0;       // ... because it was the 2nd click of a take-back
+const LEFT_DBL_MS = 260;       // window in which a second click is a double click
+const LEFT_TAKEBACK_MS = 900;  // window in which a repeat click takes it back
+
+function cancelLeftAction() {
+  if (__leftTimer) { clearTimeout(__leftTimer); __leftTimer = null; }
+  __leftSq = null;
+}
+
+function flushLeftAction() {
+  if (!__leftTimer) return;
+  clearTimeout(__leftTimer);
+  __leftTimer = null;
+  const sq = __leftSq;
+  __leftSq = null;
+  placeWithTool(sq);
+}
+
+// A repeat click may only take back what THIS click sequence put on the board:
+// same square, same tool, same colour, and just now. Anything older - a shape
+// from a minute ago, an arrow drawn with the right button - is left untouched,
+// so a double click can never destroy work that was already there.
+function takeBackMatches(sq) {
+  return !!__lastPlaced &&
+         __lastPlaced.sq === sq &&
+         __lastPlaced.tool === state.currentTool &&
+         __lastPlaced.color === state.currentColor &&
+         (Date.now() - __lastPlaced.at) <= LEFT_TAKEBACK_MS;
+}
+
+function notePlaced(sq) {
+  __lastPlaced = { sq: sq, tool: state.currentTool, color: state.currentColor, at: Date.now() };
+}
+
+// A take-back is usually the first half of a double click. Swallowing the click
+// that follows it keeps the pair a pair - otherwise the second click would put
+// the shape straight back and the board would only flicker.
+function suppressNextClick(sq) {
+  __suppressSq = sq;
+  __suppressUntil = Date.now() + LEFT_DBL_MS;
+}
+
+function clickSuppressed(sq) {
+  if (__suppressSq === sq && Date.now() <= __suppressUntil) {
+    __suppressSq = null; __suppressUntil = 0;
+    return true;
+  }
+  return false;
+}
+
+function takeBack(sq) {
+  __lastPlaced = null;
+  eraseAnnotationAt(sq);
+  suppressNextClick(sq);
+}
+
+function scheduleLeftAction(sq) {
+  if (__leftTimer && __leftSq === sq) {   // second click inside the window ...
+    cancelLeftAction();                   // ...the first one placed nothing yet
+    if (state.drawingFrom === sq) { state.drawingFrom = null; highlightSquares(); return; }
+    if (takeBackMatches(sq)) takeBack(sq);
+    return;
+  }
+  flushLeftAction();                      // a pending place on another square
+  if (clickSuppressed(sq)) return;        // 2nd click of a take-back pair
+  if (takeBackMatches(sq)) {              // slower second click: take it back
+    takeBack(sq);
+    return;
+  }
+  __leftSq = sq;
+  __leftTimer = setTimeout(() => {
+    __leftTimer = null;
+    __leftSq = null;
+    placeWithTool(sq);
+  }, LEFT_DBL_MS);
+}
+
+// Puts the selected tool to work on one square. Returns true only when the
+// click really added a drawing - an origin mark, a cancelled origin, a shape
+// that was already there and an eraser swipe all return false, which is what
+// keeps the double-click take-back honest.
+function placeWithTool(sq) {
+  if (!sq) return false;
   const tool = state.currentTool;
 
-  if (isDrag && from && to && from !== to) {
-    if (tool === 'rectangle') {
-      addRectangle(from, to);
-    } else if (tool === 'eraser') {
-      eraseAnnotationAt(from);
-      eraseAnnotationAt(to);
-    } else if (tool === 'circle') {
-      addCircle(to);
-    } else if (tool === 'highlight') {
-      addHighlight(to);
-    } else {
-      // Default / 'select' / 'arrow': right-drag draws an arrow
-      addArrow(from, to);
+  if (tool === 'arrow' || tool === 'rectangle') {
+    if (!state.drawingFrom) {             // first click: mark the origin square
+      state.drawingFrom = sq;
+      highlightSquares();
+      return false;
     }
-  } else {
-    // Single square right-click
-    if (tool === 'circle') {
-      addCircle(to);
-    } else if (tool === 'highlight') {
-      addHighlight(to);
-    } else if (tool === 'eraser') {
-      eraseAnnotationAt(to);
-    } else if (tool === 'rectangle') {
-      addHighlight(to);
-    } else {
-      // Default / 'select' / 'arrow': right-click toggles circle
-      addCircle(to);
-    }
+    const from = state.drawingFrom;
+    state.drawingFrom = null;
+    if (from === sq) { highlightSquares(); return false; }   // clicked origin again: cancel
+    const list = (tool === 'arrow') ? state.arrows : state.rectangles;
+    const before = list.length;
+    if (tool === 'arrow') addArrow(from, sq); else addRectangle(from, sq);
+    highlightSquares();
+    if (list.length > before) { notePlaced(sq); return true; }
+    __lastPlaced = null;
+    return false;
   }
+
+  if (tool === 'circle' || tool === 'highlight' || tool === 'triangle' || tool === 'hexagon') {
+    const kind = (tool === 'circle') ? 'circles'
+               : (tool === 'highlight') ? 'highlights'
+               : (tool === 'triangle') ? 'triangles' : 'hexagons';
+    const before = state[kind].length;
+    addShapeOnce(kind, sq);
+    if (state[kind].length > before) { notePlaced(sq); return true; }
+    __lastPlaced = null;
+    return false;
+  }
+
+  if (tool === 'eraser') { __lastPlaced = null; eraseAnnotationAt(sq); return false; }
+  return false;
 }
 
-function cancelSquarePress() {
+// The right button owns ONE job in play modes: the arrow. A drag draws it in a
+// single gesture; two single clicks work as well (first click marks the origin
+// square, second click finishes the arrow, clicking the origin again cancels).
+// Which tool is selected in the palette makes no difference here.
+function handleRightClickOrDrag(from, to, isDrag) {
+  if (isDrag && from && to && from !== to) {
+    state.rightArrowFrom = null;
+    addArrow(from, to);
+    return;
+  }
+  if (!from) return;
+  if (!state.rightArrowFrom) {
+    state.rightArrowFrom = from;
+  } else if (state.rightArrowFrom === from) {
+    state.rightArrowFrom = null;
+  } else {
+    addArrow(state.rightArrowFrom, from);
+    state.rightArrowFrom = null;
+  }
+  highlightSquares();
+}
+
+function cancelSquarePress(fromRelease) {
   pressSquare = null;
   pressMoved = false;
   pressConsumed = false;
   pressButton = 0;
+  pressDetail = 1;
+  // A gesture that was DROPPED (Esc, release off the board, lost focus) must
+  // hand the teacher their rack piece back instead of leaving them holding the
+  // piece that happened to be under the cursor. A release that is completing
+  // the gesture (fromRelease) decides for itself in endSquarePress.
+  if (setupDeferredRack) {
+    const held = setupDeferredRack;
+    setupDeferredRack = null;
+    if (state.setupMode && !fromRelease) {
+      // the temporary pick-up of the board piece is over: hand back the rack
+      // piece the teacher was actually holding
+      state.heldPiece = { piece: held, source: 'rack' };
+      state.selectedRackPiece = held;
+      const rackEl = document.querySelector(`.rack-piece[data-piece="${held}"]`);
+      if (rackEl) rackEl.classList.add('selected');
+      if (typeof updateSetupHint === 'function') updateSetupHint();
+    }
+  }
   if (state.isDrawing) {
     state.isDrawing = false;
     state.drawingFrom = null;
@@ -524,6 +714,16 @@ function tryMakeMove(from, to, promotion = null) {
   state.history = state.history.slice(0, state.historyIndex + 1);
   state.history.push(result.san);
   state.historyIndex = state.history.length - 1;
+
+  // A real move was made: hand the clock over (it used to switch on any board
+  // click, so drawing an arrow also flipped whose time was running).
+  try {
+    if (state.clock && state.clock.running) {
+      // a move that ends the game stops the clock instead of switching it
+      const ended = typeof stopClockIfGameIsOver === 'function' && stopClockIfGameIsOver();
+      if (!ended && typeof switchClockSide === 'function') switchClockSide();
+    }
+  } catch (e) {}
 
   renderAll();            // fail-safe: never throws out of a single panel
   // Puzzle play mode: grade the move the user just made.

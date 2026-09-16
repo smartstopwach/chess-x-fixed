@@ -17,13 +17,45 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - 3 piece styles (Alpha, Merida, Classic)
 
 ### ✏️ Teaching Drawing Tools
-- Arrows (drag from one square to another) — thick **lichess-style** arrows, see below
-- Circles (click to toggle)
-- Square highlights
-- Rectangle highlight areas
-- Eraser (per-square)
-- 7 colors, default amber `#ffaa00` (the one from the reference shots)
-- "Clear all annotations" button
+- **Select, Arrow, Circle, Highlight, Rectangle, Triangle, Hexagon, Eraser** —
+  the palette in the left sidebar; Triangle and Hexagon are outlined shapes
+  centred on a square, exactly like the circle
+- **Left click does whatever the selected tool says** (select = chess move /
+  piece pick-up, every drawing tool = its own marking), and **a double left
+  click on a square reverses what the left click put there** — every tool
+  except select. Placing never toggles: one click puts the shape down, the
+  double click takes it away (`scheduleLeftAction()` / `placeWithTool()` in
+  `js/12-board-interactions.js`, ~260ms double-click window)
+- **A double click can only take back what that click itself placed** — same
+  square, same tool, same colour, within ~0.9s (`takeBackMatches()`). Drawings
+  that were already on the board, including arrows made with the right button,
+  are never destroyed by a double click; use the eraser or Undo for those
+- Switching tools **finishes** a click that is still inside its double-click
+  window, so a marking is never silently swallowed, and Undo/Redo drop a
+  half-finished click-click origin mark (left or right) along with its
+  highlight. Identical rectangles are not stacked on top of each other
+- **The right button is ALWAYS the arrow** in Normal mode, no matter which
+  tool is selected: right-drag draws it in one gesture, and two single right
+  clicks work too (first = origin square, second = target, same square twice
+  = cancel). `handleRightClickOrDrag()` owns this and nothing else
+- Left-drag keeps its old jobs (rectangle tool = rectangle, eraser = erase both
+  squares, anything else = arrow)
+- The right-button arrow works in **every mode while teaching**, and never
+  while **editing a position** (`isEditingPosition()` /
+  `rightButtonIsArrow()` in `js/12-board-interactions.js`):
+
+  | state | right drag / right click |
+  |---|---|
+  | Normal — playing / explaining | arrow |
+  | Custom Setup — editing the position | erase piece (no drawing) |
+  | Custom Setup — after START FROM POSITION | arrow |
+  | Puzzle — authoring (new puzzle / ✎ Edit position) | erase piece (no drawing) |
+  | Puzzle — saved or selected puzzle, explaining | arrow |
+  | Puzzle — ▶ Test (student solving) | arrow |
+- 12 colors, default amber `#ffaa00` (the one from the reference shots)
+- "Clear all annotations" button, plus 1-by-1 undo/redo for every marking —
+  all six kinds count for history (`annoTotal()`), so erasing or clearing a
+  lone triangle/hexagon is undoable too
 
 ### 🏹 Arrows that read on a recording (`js/11-annotations-render.js`)
 Arrows are drawn as one SVG group per arrow — a round-capped band plus a filled
@@ -70,6 +102,27 @@ Measured board size (before → after), no clipped rank in any mode:
 | 1366×768 | 581 → **637** | 531 → **587** | 531 → **637** |
 | 390×844 (phone) | clipped → **370** | | |
 
+**The board touches the topbar in every mode.** Nothing sits above the board
+any more: `.layout` carries no vertical padding, `.board-area` /
+`.board-wrapper` start at the column's top edge (`justify-content:
+flex-start`), and the two player rows (name + captured pieces) share a single
+16px strip *under* the board (`.board-meta-strip` in `index.html`, styled in
+`css/18-board.css`). `autoFitBoard()` then hands the whole freed column to the
+squares, so the board's top edge lands exactly on the topbar's bottom edge —
+identically in Normal, Puzzle and Custom Setup, because the change is on the
+mode-agnostic board column:
+
+| window | gap above board | board before → after |
+|---|---|---|
+| 1366×800 | 28px → **0** | 689 → **729** |
+| 1920×1080 | 28px → **0** | 969 → **1009** |
+| 390×844 (phone) | – → 10px | 370 → **370** (width-limited) |
+| 844×390 (phone landscape) | – → **0** | → **200** (player strip hidden) |
+
+No rank is clipped at any of those sizes: at 1366×800 the board's bottom edge
+lands on 784 and the 16px strip finishes exactly at the window edge.
+Before/after comparison images accompany this change.
+
 **Full (the `Full` button) is the recording path**, and it now really means
 bigger: `css/47-fullscreen.css` compacts the topbar (54px → 40px) and the layout
 gaps while fullscreen is on, and `autoFitBoard()` re-runs on `fullscreenchange`,
@@ -77,28 +130,65 @@ so the board takes the freed rows — 949 → **975** at 1920×1080, 637 → **6
 1366×768. Nothing is hidden (every button stays reachable mid-recording) and
 leaving fullscreen restores the normal sizing exactly.
 
-Supporting trims: `.layout` padding 12→8 and gap 12→8, `.board-area` padding
-8→4, the two player-info rows 28px→16px each, board frame 3px→2px. Below 900px
+Supporting trims: `.layout` padding 12→8 and gap 12→8 (now `0 8px`, the
+vertical padding is gone entirely), `.board-area` padding 8→4→0, the two
+player-info rows 28px→16px each and now sharing one 16px strip below the
+board, board frame 3px→2px. Below 900px
 every layout collapses to one column — the desktop rules used to pin the panels
 to numbered grid columns, which left a phone with a 56px-wide board.
 
 ### 🧩 Position Setup
 - Visual piece rack to add/remove pieces
-- Castling rights toggles
-- Side-to-move selector
+- Castling rights toggles (kept in step with whatever FEN you load)
+- Side-to-move selector, en-passant square, halfmove / fullmove counters
 - FEN input + paste + copy
 - "Start from position" button
+- **Placing and moving pieces** (`js/12-board-interactions.js`): a rack piece
+  stays in your hand so you can stamp out several of them. Click an empty
+  square to place it. On a square that already holds a piece the gesture
+  decides — **drag** moves that piece somewhere else, a plain **click** replaces
+  it with the piece in hand. Right-click always erases while editing, and
+  Undo/Redo step through every edit.
+- **Impossible positions are refused** (`validatePosition()` in
+  `js/15-position-setup.js`): START FROM POSITION and the FEN box both check the
+  position before it becomes the lesson — exactly one king per side, no pawns on
+  the first/last rank, at most 8 pawns and 16 pieces per side, extra
+  queens/rooks/bishops/knights only up to the number of pawns you removed,
+  castling letters only while the king and that rook are still on their home
+  squares, an en-passant square that matches the side to move (rank 6 for White,
+  rank 3 for Black, empty, with the pawn that just stepped past it present),
+  numeric move counters, and the side that just moved may not be left in check.
+  A refusal says **why** and leaves you in the editor with your work intact;
+  saving a puzzle on such a position still saves, but the warning rides along in
+  the same message so it cannot be missed.
 
 ### 📜 Move List
 - Clean SAN notation
 - Click any move to jump to it
 - Previous/Next/Delete
-- Variation support
+- **Navigation follows the position on screen**: the recorded SAN moves are
+  replayed on `state.baseFen` — the position the game actually started from —
+  so Undo, ←/→, a move-list click and Delete after *Custom Setup → START FROM
+  POSITION*, a FEN load or a puzzle all come back to **that** position instead
+  of teleporting to the standard opening. Every fresh move list records its
+  base (`resetMoveHistory()` in `js/16-move-list.js`) and the session snapshot
+  carries it, so it survives F5 too
+- **Variations you can actually use**: `+ Variation` snapshots the position you
+  are looking at as a chip under the move list (`#variationList`), labelled with
+  the move that led to it (`1.e4`, `1...e5`, or `start`). Click a chip to put
+  that position back on the board — it becomes the base position, so the moves
+  you play next are recorded from there — or ✕ to drop it. The last 20 are part
+  of the session snapshot, so they survive F5.
 - Compact panel that doesn't distract during recording
 
 ### 🤖 Stockfish Analysis
 - Real evaluation, best move, PV
-- Configurable depth (10/15/20/25)
+- Configurable depth (10/15/20/25). The depth you pick (`state.engine.depth`)
+  and the depth the engine has actually reached (`state.engine.searchDepth`,
+  shown in the panel) are two different numbers — the engine's progress reports
+  no longer overwrite your setting, and switching analysis off ignores the
+  messages from the search it was told to abandon, so the panel cannot come back
+  to life on its own
 - Multi-PV (1/2/3/4)
 - Eval bar visualization
 - **"Hide Engine"** button — critical for clean recording
@@ -139,7 +229,12 @@ to numbered grid columns, which left a phone with a 56px-wide board.
   saved FEN is now read from the visible board and the editor copy is kept in
   step, so a dragged piece can no longer disappear after saving
 - **▶ Test plays the puzzle for real**: authoring is switched off, so clicks are
-  legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work)
+  legal chess moves (piece selection, move list, `Ctrl+Z`, `←`/`→` all work), and
+  the **Select tool is handed over** — the editor leaves Arrow selected, which
+  would turn every student click into a drawing instead of a move. Selecting a
+  puzzle from the library does the same, and Normal mode always comes back with
+  Select. Explaining still needs no tool switch: the right button is the arrow
+  in every teaching state
 - The solution line is parsed from the free-text field and checked move by move:
   correct → the opponent's reply is played automatically and you continue;
   wrong → the move stays on the board and you get a ✗ so you can undo and retry
@@ -217,22 +312,67 @@ move" plus `in_check()`, so it still works with the offline fallback engine.
 labels without the shake, ripple or sweeps (`prefers-reduced-motion` guard in
 `css/46-checkmate.css`).
 
+### 🔒 Inspection deterrent (`js/04-protect.js`)
+DevTools belong to the browser, so a page can never *truly* disable them — what
+it can do is close every door a page is allowed to close, and that is what this
+file does:
+
+- **shortcuts swallowed** (capture phase, before the app's own handler): `F12`,
+  `Ctrl/Cmd+Shift+I` / `+J` / `+K` / `+C`, and `Ctrl/Cmd+U` (view-source).
+  App shortcuts such as `Ctrl+Z` are untouched.
+- **no right-click "Inspect" menu** anywhere except text fields. The board's
+  own `contextmenu` listener fires first, so right-click drawing and
+  setup-mode erase keep working (verified: 32 → 31 pieces on a right-click).
+- **a debugger trap notices DevTools anyway** (docked, undocked or remote):
+  while they are open the whole app is locked behind a full-screen card
+  (`#inspectGuard`, styled in `css/48-inspect-guard.css`) until they are
+  closed again. A high-threshold window-size check catches the docked case
+  without ever tripping on bookmarks bars.
+
+Owner escape hatch for debugging your own site: open it with
+`?allowinspect=1`, or set `localStorage.setItem('chessx-allow-inspect','1')`.
+
+Honest caveat: this is a deterrent, not a lock. The sources still travel to the
+browser, so a determined person can read them (JS disabled, `curl`, another
+browser, or this repository). Nothing client-side changes that.
+14 headless-Chromium checks cover the shortcuts, the menu, the board
+right-click, the lock screen and the escape hatch — all passing.
+
+### ⚖️ Material points (`js/00-constants.js` + `js/10-board-render.js`)
+Standard counting, live on the board:
+
+| Piece | Pawn | Knight | Bishop | Rook | Queen | King |
+|---|---|---|---|---|---|---|
+| Value | 1 | 3 | 3 | 5 | 9 | 0 (never counted) |
+
+- Each player row shows their **total material** and the running **difference**
+  (`+3`, `−5`), with the point value of every captured piece in the capture
+  strip
+- The numbers follow the position on screen: undo/redo, ←/→, a move-list click,
+  a variation chip, flipping the board, loading a FEN or a puzzle all repaint
+  them, and a promotion adds the new queen's 9 points for the right colour
+- While you are **building** a position (Custom Setup editing or puzzle
+  authoring) the score stays silent — an unfinished board has no meaningful
+  material — and it comes back the moment you press START FROM POSITION or save
+  and test the puzzle
+
+### 💬 Messages without pop-ups
+Toast pop-ups are switched off, but refusals and confirmations still have to be
+seen: `toast()` writes to a slim pill over the bottom of the board
+(`#boardMsg`, `js/03-utils.js`). It is absolutely positioned, so a message can
+never change the size of the board, and it clears itself after six seconds.
+
 ## ⚠️ Known issues found while refactoring (not yet fixed)
 
-1. **Dead keyboard cases** — `js/30-keyboard.js` has `case 'e'`/`case 'E'` and
-   `case 'h'`/`case 'H'` twice in the same `switch`. A `switch` takes the first
-   match, so `E` toggles setup mode and `H` shows the front page; the
-   `setTool('eraser')` / `setTool('highlight')` branches are unreachable, even
-   though the table above advertises them. Use the tool buttons instead.
-2. **`test.html` DOM checks always fail** — that page loads the scripts but has
+1. **`test.html` DOM checks always fail** — that page loads the scripts but has
    no `#board` markup, so "board element exists / 64 squares / 32 pieces" can
    never pass (it fails identically before and after the split). The first four
    checks are meaningful.
-3. **`css/23-modal-dead.css`** — in the original `styles.css`, line 1224 had a
+2. **`css/23-modal-dead.css`** — in the original `styles.css`, line 1224 had a
    section banner where `.modal-overlay {` belonged, so that block plus
    `.modal-content/-header/-actions` is commented out and the file carries two
    unmatched `}`. No modal exists in `index.html`/`app.js`, so nothing is lost.
-4. **"Recording Mode" and "Layout Presets" are documented above but not in this
+3. **"Recording Mode" and "Layout Presets" are documented above but not in this
    copy** — there is no `setLayout`, no red RECORDING button, `js/19-layouts.js`
    is an empty stub, and `state.uiHidden` is declared but never written. The
    `css/12-layout.css` `[data-layout="focus"]` rules are therefore dead too.
@@ -244,22 +384,35 @@ labels without the shake, ripple or sweeps (`prefers-reduced-motion` guard in
 - Blitz / Rapid / Classical presets
 - Custom time
 - Hide/show toggle
+- The side that is on move is highlighted **from the moment you press Start**,
+  not only after the first move
+- Only a **legal move** hands the clock over — drawing an arrow, marking a
+  square or an illegal attempt leaves it where it was (in Puzzle mode the
+  auto-reply switches it too)
+- When a flag falls the clock stops itself, the button reads *Start Clock*
+  again and the message strip says *Time expired!*
 
 ### ⌨️ Keyboard Shortcuts
+(ignored while a text field has focus; `js/30-keyboard.js` is the source of truth)
+
 | Key | Action |
 |---|---|
+| `1` / `2` / `3` | Normal / Puzzle / Custom Setup mode |
 | `←` / `→` | Previous / Next move |
 | `F` | Flip board |
 | `R` | Reset board |
-| `V` | Select tool |
+| `V` | Select tool (play chess) |
 | `A` | Arrow tool |
-| `C` | Circle tool |
+| `O` | Circle tool |
 | `E` | Eraser tool |
-| `H` | Highlight tool (or hide UI in recording mode) |
-| `N` / `P` | Next / Previous bookmark |
-| `Ctrl+Z` | Undo |
+| `H` | Highlight tool |
+| `C` | Cycle the drawing colour |
+| `P` | Puzzle authoring on/off (during ▶ Test: back to the editor) |
 | `M` | Replay the checkmate / stalemate / draw animation |
-| `Esc` | Exit recording mode |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo — drawings when a drawing tool is active, otherwise moves |
+| `Esc` | Cancel what is half-finished: a pending click, the selected piece, a click-click arrow origin; leaves ▶ Test or position editing first |
+
+Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 
 ### 💾 Save / Load / Export
 - **Save Lesson** — exports full lesson as JSON (position + moves + annotations + notes + bookmarks + theme)
@@ -285,8 +438,18 @@ labels without the shake, ripple or sweeps (`prefers-reduced-motion` guard in
 - Classic, Tournament, Wooden, Dark, Minimal, Green
 
 ### 📱 Responsive Design
-- Optimized for Windows, Mac, iPad (landscape), Android tablets
-- Rearranges panels on small screens
+- Optimized for Windows, Mac, iPad (landscape), Android tablets and phones
+- Rearranges panels on small screens (one column below 900px, board first)
+- The board is re-measured against **the room actually left in the window**, so
+  it can never be clipped by the sidebars: a 1024×768 window gets a ~700px
+  board, a 390×844 phone a ~365px one, and every rank stays reachable
+  (`js/27-autofit.js`). The space watcher is rate-limited instead of
+  "three refits and stop", so it keeps working for the whole session.
+- **Finger input**: a tap is one gesture, never two. Chrome replays a tap as
+  synthetic mouse events, and handling both made a tap select-then-deselect a
+  piece and turn a drawing tap into a double click that undid itself — drawing
+  tools now work with a finger exactly as they do with a mouse (tap-tap for a
+  click-click arrow, swipe for a drag arrow)
 
 ## 🚀 Usage
 
@@ -315,7 +478,7 @@ numbered to match it — so alphabetical order = load order.
 
 ```
 index.html            the only page: markup + the <link>/<script> list (edit here)
-css/                  33 files — was styles.css, one file per section banner
+css/                  35 files — was styles.css, one file per section banner
   00-base.css           tokens, reset, typography
   10..28-*.css          shared chrome: topbar, layout, board, panels, clock, notes…
   30..35-puzzle-*.css   puzzle library + editor styling
@@ -326,12 +489,14 @@ css/                  33 files — was styles.css, one file per section banner
   45-mode-normal.css    Normal mode overrides
   46-checkmate.css      checkmate / stalemate / draw animations
   47-fullscreen.css     compact chrome while in Full, so the board grows
+  48-inspect-guard.css  full-screen lock shown while DevTools is open
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.
-js/                   31 files — was app.js, one file per section banner
+js/                   32 files — was app.js, one file per section banner
   00-constants.js       PIECE_FONT
   01-state.js 02-dom.js 03-utils.js          shared core
+  04-protect.js         inspection deterrent (shortcuts, menu, devtools lock)
   10..19-*.js           board render, interactions, annotations (arrow shapes
                         live in 11-annotations-render.js), tools, setup,
                         move list, FEN, themes, layouts

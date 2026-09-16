@@ -19,6 +19,12 @@ function initEngine() {
 
 function handleEngineMessage(line) {
   if (typeof line !== 'string') return;
+  // Switching analysis off sends `stop`, and the engine keeps flushing the
+  // search it was told to abandon for a moment afterwards. Those late lines
+  // must not repaint the panel - the status used to end up frozen on
+  // "Analyzing d14" with analysis switched off, and a move from a cancelled
+  // search could replace the best move that was actually reported.
+  if (!state.engine.enabled) { state.engine.evaluating = false; return; }
 
   if (line.startsWith('info') && line.includes('score')) {
     const parts = line.split(' ');
@@ -52,7 +58,11 @@ function handleEngineMessage(line) {
       state.engine.eval = evalCp;
       state.engine.bestMove = pvMoves[0] || '';
       state.engine.pv = pvMoves.join(' ');
-      state.engine.depth = depth;
+      // The engine reports the depth it has REACHED so far. That must never
+      // replace the depth the teacher configured: requestEngineEval() sends
+      // state.engine.depth, so overwriting it made every later analysis use
+      // whatever half-finished number arrived last (and the session saved it).
+      state.engine.searchDepth = depth;
 
       $('evalValue').textContent = (evalCp > 0 ? '+' : '') + evalDisplay;
       $('bestMove').textContent = pvMoves[0] ? formatMove(pvMoves[0]) : '—';
@@ -69,9 +79,7 @@ function handleEngineMessage(line) {
 
   if (line.startsWith('bestmove')) {
     const parts = line.split(' ');
-    if (parts[1] && parts[1] !== '(none)') {
-      state.engine.bestMove = parts[1];
-    }
+    if (parts[1] && parts[1] !== '(none)') state.engine.bestMove = parts[1];
     $('engineStatus').textContent = 'Done';
     state.engine.evaluating = false;
   }
@@ -110,12 +118,22 @@ function hideEngine() {
 }
 
 function setEngineDepth(d) {
-  state.engine.depth = parseInt(d);
+  const n = parseInt(d, 10);
+  if (!isNaN(n) && n > 0) {
+    state.engine.depth = n;
+    // keep the control showing the truth - it used to stay on the old number
+    // while the engine searched at the new one
+    const sel = (typeof $ === 'function') ? $('engineDepth') : null;
+    if (sel && Array.prototype.some.call(sel.options, o => parseInt(o.value, 10) === n)) sel.value = String(n);
+  }
   if (state.engine.enabled) requestEngineEval();
 }
 
 function setEngineMultiPV(n) {
-  state.engine.multipv = parseInt(n);
+  const m = parseInt(n, 10);
+  state.engine.multipv = (!isNaN(m) && m > 0) ? m : 1;
+  const mpSel = (typeof $ === 'function') ? $('engineMultiPV') : null;
+  if (mpSel && mpSel.value !== String(state.engine.multipv)) mpSel.value = String(state.engine.multipv);
   if (state.engine.stockfish) {
     state.engine.stockfish.setMultiPV(n);
     if (state.engine.enabled) requestEngineEval();

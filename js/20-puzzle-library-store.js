@@ -6,7 +6,13 @@ const LIBRARY_KEY = 'chessx-library-v1';
 function getLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Corrupted or half-written storage ("null", "{}", a truncated blob)
+      // must never reach the callers as null/undefined - entering puzzle mode
+      // with such a value threw inside enterAuthoringForNewPuzzle().
+      if (parsed && Array.isArray(parsed.chapters)) return parsed;
+    }
   } catch (e) {}
   // Default: one welcome chapter with one example puzzle
   return {
