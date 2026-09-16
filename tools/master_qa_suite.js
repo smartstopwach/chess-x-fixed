@@ -551,14 +551,27 @@ async function runMasterSuite() {
     assert(window.mateStatus(staleGame) === 'stalemate');
 
     // Material draw (K vs K)
-    assert(window.looksDrawnMaterial('4k3/8/8/8/8/8/8/4K3 w - - 0 1') === true);
+    const drawFen = '4k3/8/8/8/8/8/8/4K3 w - - 0 1';
+    assert(window.looksDrawnMaterial(drawFen) === true);
+    const savedFen = window.state.game.fen();
+    window.state.game.load(drawFen);
+    window.state.history = [];
+    window.state.historyIndex = -1;
+    window.state.setupMode = false;
+    window.state.authoringMode = false;
+    document.body.dataset.setupEditing = 'false';
+    document.body.dataset.authoring = 'false';
+    assert(window.isFinishedPosition() === true, 'draw is terminal while playing');
+    assert(window.tryMakeMove('e1', 'e2') === false, 'draw blocks another move');
+    assert(window.state.game.fen() === drawFen, 'draw guard leaves position unchanged');
 
-    // Silenced during editing
+    // Silenced during editing and editable despite terminal material
     window.state.setupMode = true;
     document.body.dataset.setupEditing = 'true';
     assert(window.celebrateMate() === false);
     window.state.setupMode = false;
     document.body.dataset.setupEditing = 'false';
+    window.state.game.load(savedFen);
   });
 
   // ----------------------------------------------------

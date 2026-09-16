@@ -103,6 +103,17 @@ function mateStatus(game) {
   return null;
 }
 
+// A finished position is locked only while the board is being played. Setup
+// and puzzle-authoring modes must remain editable so a teacher can construct a
+// position that currently has insufficient material or no legal move.
+function isFinishedPosition(game) {
+  if (state.setupMode || state.authoringMode ||
+      (document.body && (document.body.dataset.setupEditing === 'true' || document.body.dataset.authoring === 'true'))) {
+    return false;
+  }
+  try { return !!mateStatus(game || state.game); } catch (e) { return false; }
+}
+
 function finishInfo(game) {
   const kind = mateStatus(game);
   if (!kind) return null;

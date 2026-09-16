@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 242, `expected the current 242 named declarations, found ${found.length}`);
+assert(found.length === 243, `expected the current 243 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];

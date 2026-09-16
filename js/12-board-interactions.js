@@ -584,6 +584,15 @@ function cancelSquarePress(fromRelease) {
 
 // A single click on a square in NORMAL mode.
 function handleSquareClick(sqName) {
+  // Checkmate, stalemate, and draw are terminal for play. Do this before
+  // selecting a piece, otherwise the first click still appears to offer a move
+  // even though the position has already finished.
+  if (typeof isFinishedPosition === 'function' && isFinishedPosition()) {
+    state.selectedSquare = null;
+    if (typeof celebrateMate === 'function') celebrateMate();
+    return;
+  }
+
   // Clicking the already-selected square deselects it.
   if (state.selectedSquare === sqName) {
     state.selectedSquare = null;
@@ -768,6 +777,14 @@ function cancelPromotionDialog() {
 }
 
 function tryMakeMove(from, to, promotion = null) {
+  // Never allow a new move after checkmate, stalemate, or draw. Navigation,
+  // Undo, and position editing remain available through their own controls.
+  if (typeof isFinishedPosition === 'function' && isFinishedPosition()) {
+    state.selectedSquare = null;
+    if (typeof celebrateMate === 'function') celebrateMate();
+    return false;
+  }
+
   if (!promotion && isPromotionMove(from, to)) {
     const piece = state.game.get(from);
     const color = piece ? piece.color : state.game.turn();

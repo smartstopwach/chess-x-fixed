@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "43ca077b98791ca4579f1a00f7bd2abde30a3b405fc5cb4adbe730872e88d66e",
+  "concat_sha256": "2a30ff19bddd34ec9080c1fecca019b340879ebafd2bfb3bde03897e66ca1a87",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -43,8 +43,8 @@
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 830,
-      "bytes": 31320
+      "lines": 847,
+      "bytes": 32058
     },
     {
       "file": "js/13-annotation-tools.js",
@@ -153,8 +153,8 @@
     },
     {
       "file": "js/35-checkmate.js",
-      "lines": 255,
-      "bytes": 9853
+      "lines": 266,
+      "bytes": 10391
     },
     {
       "file": "js/36-persist.js",
