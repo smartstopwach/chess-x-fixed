@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "92af013c7d38aa0eaf553c824cb80c8d9ca4e15014dfebc543dac57b8d257ff1",
+  "concat_sha256": "de5a98a22856f1d1fa613329641200130d84448c0177ce7c8ea5fa3b94bb384a",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -23,8 +23,8 @@
     },
     {
       "file": "js/03-utils.js",
-      "lines": 127,
-      "bytes": 5468
+      "lines": 123,
+      "bytes": 5139
     },
     {
       "file": "js/04-protect.js",

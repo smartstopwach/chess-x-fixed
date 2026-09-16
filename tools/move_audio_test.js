@@ -72,6 +72,7 @@ function makeHarness(options = {}) {
     this.src = src;
     this.volume = 1;
     this.currentTime = 0;
+    this.canPlayType = () => options.audioSupported ? 'probably' : '';
     this.play = () => {
       fallbackPlays++;
       return Promise.resolve();
@@ -84,7 +85,7 @@ function makeHarness(options = {}) {
     window.webkitAudioContext = FakeAudioContext;
     delete window.AudioContext;
   }
-  if (options.noWebAudio) window.Audio = FakeAudio;
+  if (options.audioSupported || options.noWebAudio) window.Audio = FakeAudio;
 
   const sandbox = {
     window,
@@ -143,6 +144,14 @@ check('board press warms audio before the move release', () => {
   assert(h.stats().contexts === 1 && h.stats().resumes === 1, 'board press did not unlock audio');
 });
 
+check('prefers the local wooden sample in a browser that supports WAV', () => {
+  const h = makeHarness({ audioSupported: true });
+  h.sandbox.playPieceMoveSound({ flags: 'n' });
+  const stats = h.stats();
+  assert(stats.audioElements === 1 && stats.fallbackPlays === 1, 'wooden sample was not played');
+  assert(h.events.length === 0, 'synthetic fallback should not replace the sample');
+});
+
 check('uses a lower capture cue and accepts a delayed replay', () => {
   const h = makeHarness();
   h.sandbox.playPieceMoveSound({ flags: 'c' }, 0.08);
@@ -158,8 +167,8 @@ check('supports the webkit-prefixed audio context', () => {
   assert(h.events.length === 1, 'webkit cue was not scheduled');
 });
 
-check('falls back safely when Web Audio is unavailable', () => {
-  const h = makeHarness({ noWebAudio: true });
+check('uses the local sample when Web Audio is unavailable', () => {
+  const h = makeHarness({ noWebAudio: true, audioSupported: true });
   h.sandbox.playPieceMoveSound();
   const stats = h.stats();
   assert(stats.audioElements === 1 && stats.fallbackPlays === 1, 'fallback audio was not attempted');

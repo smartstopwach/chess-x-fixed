@@ -28,12 +28,12 @@ function toast(message, type = '') {
   showBoardMessage(message, kind);
 }
 
-// A short Web Audio move cue keeps every board mode responsive without
-// shipping a remote asset. The context is warmed on the board press (rather
-// than only after the move), which is important on mobile Safari/Chrome where
-// resume() must happen inside the original user gesture. The old version only
-// resumed while the move was being committed; some browsers then kept the
-// context suspended and the cue was silent.
+// A short, dry wooden WAV cue gives moves the familiar chess-board "tap"
+// instead of a synthetic musical tone. The Web Audio context is still warmed
+// on the board press as a reliable fallback for embedded browsers and delayed
+// puzzle replays. Warming it during the original gesture is important on
+// mobile Safari/Chrome, where resuming only after mouseup/touchend can leave
+// the first move silent.
 let moveAudioContext = null;
 
 function prepareMoveAudio() {
@@ -57,18 +57,17 @@ function prepareMoveAudio() {
 
 function playPieceMoveSound(move, delay = 0) {
   try {
-    if (!prepareMoveAudio()) {
-      // Older embedded browsers may not expose Web Audio at all. Keep a tiny
-      // local WAV fallback so those browsers still get a cue instead of a
-      // silent no-op. It is only used when the Web Audio path is unavailable.
-      if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
-        const audio = new window.Audio('audio/move.wav');
-        // JSDOM and a few embedded shells expose Audio but report no WAV
-        // decoder. Avoid calling their placeholder play() implementation;
-        // real browsers return "maybe" or "probably" here.
-        if (typeof audio.canPlayType === 'function' && !audio.canPlayType('audio/wav')) return;
-        audio.volume = 0.65;
-        const playFallback = () => {
+    // Prefer the local wooden sample in real browsers. Unlike a raw oscillator
+    // this has the short, dry attack of a piece landing on a wooden board.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/move.wav');
+      // JSDOM and a few embedded shells expose Audio but report no WAV
+      // decoder. Avoid calling their placeholder play() implementation;
+      // real browsers return "maybe" or "probably" here.
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.78;
+        const playSample = () => {
           try {
             audio.currentTime = 0;
             const result = audio.play();
@@ -76,16 +75,16 @@ function playPieceMoveSound(move, delay = 0) {
           } catch (e) {}
         };
         const wait = Math.max(0, Number(delay) || 0) * 1000;
-        if (wait > 0) setTimeout(playFallback, wait);
-        else playFallback();
+        if (wait > 0) setTimeout(playSample, wait);
+        else playSample();
+        return;
       }
-      return;
     }
 
+    // Web Audio fallback for browsers that can create a context but cannot
+    // decode the local sample. It remains deliberately short and dry.
+    if (!prepareMoveAudio()) return;
     const ctx = moveAudioContext;
-    // Leave a small scheduling margin. It prevents a cue scheduled at exactly
-    // currentTime from being rejected when resume() completes between the
-    // context lookup and oscillator.start().
     const now = Number(ctx.currentTime);
     const start = (Number.isFinite(now) ? now : 0) +
       Math.max(0.01, Number(delay) || 0);
@@ -93,9 +92,6 @@ function playPieceMoveSound(move, delay = 0) {
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.type = 'triangle';
-    // The previous 105–205 Hz cue was too quiet on ordinary laptop/phone
-    // speakers. These ranges remain short and unobtrusive, but are clearly
-    // audible as a move/capture distinction.
     oscillator.frequency.setValueAtTime(captured ? 270 : 420, start);
     oscillator.frequency.exponentialRampToValueAtTime(captured ? 135 : 220, start + 0.13);
     gain.gain.setValueAtTime(0.0001, start);
