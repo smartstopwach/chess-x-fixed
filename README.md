@@ -401,6 +401,7 @@ never change the size of the board, and it clears itself after six seconds.
 |---|---|
 | `1` / `2` / `3` | Normal / Puzzle / Custom Setup mode |
 | `←` / `→` | Previous / Next move |
+| `↓` | Next puzzle in Puzzle mode |
 | `F` | Flip board |
 | `R` | Reset board |
 | `V` | Select tool (play chess) |

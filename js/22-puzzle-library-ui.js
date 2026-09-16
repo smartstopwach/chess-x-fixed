@@ -70,6 +70,31 @@ function renderLibrary(filter = '') {
   };
 }
 
+// Keyboard navigation follows the library order across chapters. The Down
+// arrow is intentionally limited to Puzzle mode so normal chess-board arrow
+// keys and text-entry controls keep their existing meaning.
+function switchPuzzleByOffset(offset = 1) {
+  if (!document.body || document.body.dataset.mode !== 'puzzle' || document.body.dataset.testing === 'true') return false;
+  const lib = getLibrary();
+  const entries = [];
+  (lib.chapters || []).forEach(chapter => {
+    (chapter.puzzles || []).forEach(puzzle => entries.push({ chapter, puzzle }));
+  });
+  if (!entries.length) {
+    toast('No puzzles available', 'info');
+    return false;
+  }
+
+  const current = entries.findIndex(entry => entry.puzzle.id === lib.activePuzzleId);
+  const step = Number(offset) < 0 ? -1 : 1;
+  const nextIndex = current < 0
+    ? (step > 0 ? 0 : entries.length - 1)
+    : (current + step + entries.length) % entries.length;
+  const target = entries[nextIndex];
+  handleLibraryAction('select-puzzle', target.chapter.id, target.puzzle.id);
+  return true;
+}
+
 function escapeHtml(s) {
   return (s || '').replace(/[&<>"']/g, ch => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'

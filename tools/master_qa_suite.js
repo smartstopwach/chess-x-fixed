@@ -425,6 +425,32 @@ async function runMasterSuite() {
     // Export & Import
     const exported = JSON.stringify(activeLib);
     assert(exported.includes(chapName));
+
+    // Down-arrow puzzle navigation follows the library order.
+    const navFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const navOne = {
+      id: window.uniqueId('puzzle'), title: 'Navigation One', description: '', solution: '',
+      difficulty: 1, tags: '', fen: navFen, chapterId: newChap.id, createdAt: Date.now()
+    };
+    const navTwo = {
+      id: window.uniqueId('puzzle'), title: 'Navigation Two', description: '', solution: '',
+      difficulty: 1, tags: '', fen: navFen, chapterId: newChap.id, createdAt: Date.now() + 1
+    };
+    foundChap.puzzles.push(navOne, navTwo);
+    activeLib.activeChapterId = newChap.id;
+    activeLib.activePuzzleId = navOne.id;
+    window.saveLibrary(activeLib);
+    window.renderLibrary();
+    const down = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    document.dispatchEvent(down);
+    assert(down.defaultPrevented === true, 'Down arrow shortcut was consumed');
+    const navigatedLib = window.getLibrary();
+    assert(navigatedLib.activeChapterId === newChap.id, 'Active chapter follows the selected puzzle');
+    assert(navigatedLib.activePuzzleId === navTwo.id, 'Down arrow loaded the next puzzle');
+    assert(window.state.game.fen() === navFen, 'Next puzzle position loaded onto the board');
+    assert(document.body.dataset.authoring === 'false' && window.state.setupMode === false, 'Next puzzle is playable');
+    const activeRow = document.querySelector(`[data-action="select-puzzle"][data-puzzle-id="${navTwo.id}"]`);
+    assert(activeRow && activeRow.classList.contains('active'), 'Library highlights the next puzzle');
   });
 
   test('PUZZLE/IMPORT', 'strictly validates imported library JSON before storage', () => {

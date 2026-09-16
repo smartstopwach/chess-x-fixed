@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "b24a40d7f4be76e7d1398c43045fba42bf09ef499d6d24a4149869416df5a78b",
+  "concat_sha256": "59f1d07044a2713c788028028b7bda81c7ad5139351ea77028423e2a5ca775b0",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -93,8 +93,8 @@
     },
     {
       "file": "js/22-puzzle-library-ui.js",
-      "lines": 227,
-      "bytes": 9039
+      "lines": 252,
+      "bytes": 10086
     },
     {
       "file": "js/23-puzzle-crud.js",
@@ -133,8 +133,8 @@
     },
     {
       "file": "js/30-keyboard.js",
-      "lines": 105,
-      "bytes": 3918
+      "lines": 108,
+      "bytes": 4054
     },
     {
       "file": "js/31-render-all.js",
