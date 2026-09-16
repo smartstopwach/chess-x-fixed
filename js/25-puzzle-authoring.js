@@ -128,7 +128,7 @@ function exitAuthoringMode() {
 
 function exportLibrary() {
   const lib = getLibrary();
-  const json = JSON.stringify(lib, null, 2);
+  const json = JSON.stringify(libraryExportPayload(lib), null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -145,18 +145,55 @@ function exportLibrary() {
 }
 
 function importLibrary(file) {
+  if (!file || typeof FileReader === 'undefined') {
+    toast('Choose a JSON library file first', 'error');
+    return;
+  }
+  if (typeof file.size === 'number' && file.size > MAX_IMPORT_FILE_BYTES) {
+    toast('Import rejected: file is larger than 10 MB', 'error');
+    return;
+  }
+
   const reader = new FileReader();
+  reader.onerror = () => toast('Could not read this file', 'error');
   reader.onload = (e) => {
+    let parsed;
     try {
-      const lib = JSON.parse(e.target.result);
-      if (!lib.chapters || !Array.isArray(lib.chapters)) throw new Error('Invalid format');
-      saveLibrary(lib);
-      renderLibrary($('librarySearch')?.value || '');
-      renderChapterSelect();
-      toast(`Imported ${lib.chapters.length} chapter(s)`, 'success');
+      parsed = JSON.parse(String(e.target.result || ''));
     } catch (err) {
-      toast('Invalid library file', 'error');
+      console.warn('Puzzle library JSON parse failed:', err);
+      toast('Import rejected: the file is not valid JSON', 'error');
+      return;
     }
+
+    let report;
+    try {
+      report = validatePuzzleLibrary(parsed);
+    } catch (err) {
+      console.error('Puzzle library validation failed:', err);
+      toast('Import rejected: the library structure could not be verified', 'error');
+      return;
+    }
+    if (!report.ok) {
+      console.warn('Puzzle library import rejected:', report.errors);
+      const shown = report.errors.slice(0, 2).join(' | ');
+      const more = report.errors.length > 2 ? ` (+${report.errors.length - 2} more)` : '';
+      toast(`Import rejected: ${shown}${more}`, 'error');
+      return; // Never overwrite a working library with a bad file.
+    }
+
+    const lib = report.library;
+    saveLibrary(lib);
+    renderLibrary($('librarySearch')?.value || '');
+    renderChapterSelect();
+    // If the exported file remembers an active puzzle, refill the editor too;
+    // otherwise the old form used to remain visible after a successful import.
+    if (lib.activePuzzleId && typeof loadPuzzleToEditor === 'function') {
+      loadPuzzleToEditor(lib.activePuzzleId);
+    }
+    const warningText = report.warnings.length ? ` (${report.warnings.length} warning(s))` : '';
+    if (report.warnings.length) console.warn('Puzzle library import warnings:', report.warnings);
+    toast(`Imported ${lib.chapters.length} chapter(s), ${lib.chapters.reduce((n, c) => n + c.puzzles.length, 0)} puzzle(s)${warningText}`, 'success');
   };
   reader.readAsText(file);
 }

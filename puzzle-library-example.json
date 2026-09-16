@@ -1,0 +1,38 @@
+{
+  "format": "chessx-puzzle-library",
+  "version": 1,
+  "exportedAt": "2026-09-16T00:00:00.000Z",
+  "chapters": [
+    {
+      "id": "chapter-import-demo",
+      "name": "Import Demo",
+      "expanded": true,
+      "puzzles": [
+        {
+          "id": "puzzle-back-rank-mate",
+          "title": "Back Rank Mate",
+          "description": "White to move and deliver checkmate with the rook.",
+          "solution": "Re8#",
+          "difficulty": 2,
+          "tags": "mate, rook, import-demo",
+          "fen": "6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1",
+          "chapterId": "chapter-import-demo",
+          "createdAt": 1789516800000
+        },
+        {
+          "id": "puzzle-knight-move",
+          "title": "Knight Development",
+          "description": "Find a legal developing move for the white knight.",
+          "solution": "Nf3",
+          "difficulty": 1,
+          "tags": "knight, practice, import-demo",
+          "fen": "4k3/8/8/8/8/8/3N4/4K3 w - - 0 1",
+          "chapterId": "chapter-import-demo",
+          "createdAt": 1789516800000
+        }
+      ]
+    }
+  ],
+  "activeChapterId": "chapter-import-demo",
+  "activePuzzleId": "puzzle-back-rank-mate"
+}

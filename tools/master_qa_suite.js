@@ -423,6 +423,36 @@ async function runMasterSuite() {
     assert(exported.includes(chapName));
   });
 
+  test('PUZZLE/IMPORT', 'strictly validates imported library JSON before storage', () => {
+    const good = {
+      format: 'chessx-puzzle-library',
+      version: 1,
+      chapters: [{
+        id: 'import-chapter', name: 'Import checks', expanded: true,
+        puzzles: [{
+          id: 'import-puzzle', title: 'Back Rank', description: 'Mate in one',
+          solution: 'Re8#', difficulty: 2, tags: 'mate',
+          fen: '6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1',
+          chapterId: 'import-chapter', createdAt: Date.now()
+        }]
+      }],
+      activeChapterId: 'import-chapter', activePuzzleId: 'import-puzzle'
+    };
+    const accepted = window.validatePuzzleLibrary(good);
+    assert(accepted.ok, JSON.stringify(accepted.errors));
+    assert(accepted.library.chapters[0].puzzles.length === 1);
+    assert(window.libraryExportPayload(accepted.library).format === 'chessx-puzzle-library');
+
+    const badFen = JSON.parse(JSON.stringify(good));
+    badFen.chapters[0].puzzles[0].fen = 'not-a-fen';
+    assert(!window.validatePuzzleLibrary(badFen).ok, 'bad FEN was accepted');
+
+    const duplicate = JSON.parse(JSON.stringify(good));
+    duplicate.chapters[0].puzzles[0].id = 'other';
+    duplicate.chapters[0].puzzles.push({ ...duplicate.chapters[0].puzzles[0], id: 'other', title: 'Duplicate' });
+    assert(!window.validatePuzzleLibrary(duplicate).ok, 'duplicate IDs were accepted');
+  });
+
   // ----------------------------------------------------
   // GROUP 8: PUZZLE PLAY & TEST MODE
   // ----------------------------------------------------
