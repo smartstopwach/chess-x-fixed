@@ -70,6 +70,27 @@ Measured board size (before → after), no clipped rank in any mode:
 | 1366×768 | 581 → **637** | 531 → **587** | 531 → **637** |
 | 390×844 (phone) | clipped → **370** | | |
 
+**The board touches the topbar in every mode.** Nothing sits above the board
+any more: `.layout` carries no vertical padding, `.board-area` /
+`.board-wrapper` start at the column's top edge (`justify-content:
+flex-start`), and the two player rows (name + captured pieces) share a single
+16px strip *under* the board (`.board-meta-strip` in `index.html`, styled in
+`css/18-board.css`). `autoFitBoard()` then hands the whole freed column to the
+squares, so the board's top edge lands exactly on the topbar's bottom edge —
+identically in Normal, Puzzle and Custom Setup, because the change is on the
+mode-agnostic board column:
+
+| window | gap above board | board before → after |
+|---|---|---|
+| 1366×800 | 28px → **0** | 689 → **729** |
+| 1920×1080 | 28px → **0** | 969 → **1009** |
+| 390×844 (phone) | – → 10px | 370 → **370** (width-limited) |
+| 844×390 (phone landscape) | – → **0** | → **200** (player strip hidden) |
+
+No rank is clipped at any of those sizes: at 1366×800 the board's bottom edge
+lands on 784 and the 16px strip finishes exactly at the window edge.
+Before/after comparison images accompany this change.
+
 **Full (the `Full` button) is the recording path**, and it now really means
 bigger: `css/47-fullscreen.css` compacts the topbar (54px → 40px) and the layout
 gaps while fullscreen is on, and `autoFitBoard()` re-runs on `fullscreenchange`,
@@ -77,8 +98,10 @@ so the board takes the freed rows — 949 → **975** at 1920×1080, 637 → **6
 1366×768. Nothing is hidden (every button stays reachable mid-recording) and
 leaving fullscreen restores the normal sizing exactly.
 
-Supporting trims: `.layout` padding 12→8 and gap 12→8, `.board-area` padding
-8→4, the two player-info rows 28px→16px each, board frame 3px→2px. Below 900px
+Supporting trims: `.layout` padding 12→8 and gap 12→8 (now `0 8px`, the
+vertical padding is gone entirely), `.board-area` padding 8→4→0, the two
+player-info rows 28px→16px each and now sharing one 16px strip below the
+board, board frame 3px→2px. Below 900px
 every layout collapses to one column — the desktop rules used to pin the panels
 to numbered grid columns, which left a phone with a 56px-wide board.
 

@@ -5,12 +5,14 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
+  /* the wrapper sticks to the TOP of the column: the board's first square row
+     begins exactly where the topbar ends, in Normal / Puzzle / Setup alike */
+  justify-content: flex-start;
   position: relative;
   background: var(--bg-secondary);
-  border-radius: var(--radius);
+  border-radius: 0;
   /* every pixel of padding is a pixel the board cannot use */
-  padding: 4px;
+  padding: 0;
   min-height: 0;
   overflow: hidden;
   height: 100%;
@@ -20,6 +22,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;   /* board first, player strip under it */
   gap: 0;
   max-width: 100%;
   max-height: 100%;
@@ -28,16 +31,29 @@
   min-height: 0;
 }
 
-/* Player name rows: kept, but trimmed to the height they actually need so the
-   board gets the rest of the column. */
-.board-meta-top, .board-meta-bottom {
+/* Player rows: both live in ONE slim strip *below* the board (.board-meta-strip)
+   instead of one above + one below. Nothing sits over the board any more, so
+   the board touches the topbar and autoFitBoard() gives it the freed height. */
+.board-meta-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
   max-width: var(--board-size, 640px);
-  padding: 0 4px;
+  flex-shrink: 0;
+  min-height: 16px;
+}
+
+.board-meta-top, .board-meta-bottom {
+  width: auto;
+  max-width: 50%;
+  padding: 0;
   flex-shrink: 0;
   min-height: 16px;
   line-height: 16px;
   font-size: 10px;
+  overflow: hidden;
 }
 
 .player-info {

@@ -393,14 +393,6 @@
   <!-- CENTER: BOARD AREA -->
   <section class="board-area" id="boardArea">
     <div class="board-wrapper" id="boardWrapper">
-      <div class="board-meta-top" id="boardMetaTop">
-        <div class="player-info">
-          <div class="player-flag black" id="playerTop"></div>
-          <div class="player-name" id="playerTopName">Black</div>
-          <div class="captured" id="capturedTop"></div>
-        </div>
-      </div>
-
       <div class="board-container" id="boardContainer">
         <div class="board" id="board"></div>
         <svg class="board-svg" id="boardSvg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -416,11 +408,23 @@
         </div>
       </div>
 
-      <div class="board-meta-bottom">
-        <div class="player-info">
-          <div class="player-flag white" id="playerBottom"></div>
-          <div class="player-name" id="playerBottomName">White</div>
-          <div class="captured" id="capturedBottom"></div>
+      <!-- Both player rows share ONE slim strip *under* the board: nothing may
+           sit above the board, so its top edge lands flush on the topbar and
+           autoFitBoard() hands every freed pixel to the squares. -->
+      <div class="board-meta-strip">
+        <div class="board-meta-top" id="boardMetaTop">
+          <div class="player-info">
+            <div class="player-flag black" id="playerTop"></div>
+            <div class="player-name" id="playerTopName">Black</div>
+            <div class="captured" id="capturedTop"></div>
+          </div>
+        </div>
+        <div class="board-meta-bottom">
+          <div class="player-info">
+            <div class="player-flag white" id="playerBottom"></div>
+            <div class="player-name" id="playerBottomName">White</div>
+            <div class="captured" id="capturedBottom"></div>
+          </div>
         </div>
       </div>
     </div>

@@ -5,7 +5,10 @@
   display: grid;
   grid-template-columns: 280px 1fr 320px;
   gap: 8px;
-  padding: 8px;
+  /* no vertical padding: every pixel of it was dead space between the topbar
+     and the board (and below it). The board column now starts flush at the
+     topbar's bottom edge in all three modes. */
+  padding: 0 8px;
   flex: 1;
   min-height: 0;
   overflow: hidden;

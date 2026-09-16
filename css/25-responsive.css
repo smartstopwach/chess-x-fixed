@@ -40,7 +40,7 @@
 @media (max-width: 900px) and (orientation: landscape) {
   .sidebar { max-height: 120px; }
   .board-area { min-height: 200px; }
-  .board-meta-top, .board-meta-bottom { display: none; }
+  .board-meta-strip, .board-meta-top, .board-meta-bottom { display: none; }
 }
 
 @media (max-width: 600px) {
