@@ -102,6 +102,7 @@ function doInit() {
   setTimeout(() => safeCall('initEngine', initEngine), 50);
 
   safeCall('updateClocks', updateClocks);
+  safeCall('updateSoundButton', updateSoundButton);
 
   // Front page on first load - but if the user was mid-work when the page was
   // reloaded (or closed), put them back where they were instead of wiping it.

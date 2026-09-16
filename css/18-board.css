@@ -156,6 +156,7 @@
   height: 100%;
   position: relative;
   transition: none;
+  transform-origin: center center;
 }
 
 /* FLIP: rotate the entire board 180deg so it appears from the other side */
@@ -328,6 +329,7 @@ body[data-flipped="true"] .board .coord {
   height: 100%;
   pointer-events: none;
   z-index: 2;
+  transform-origin: center center;
 }
 
 .board-svg.eraser-mode { pointer-events: auto; cursor: crosshair; }

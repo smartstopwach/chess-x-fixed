@@ -190,6 +190,12 @@ async function testInventory() {
   check('deleteCurrentPuzzle', () => { window.deleteCurrentPuzzle(); });
   check('newPuzzle', () => { window.newPuzzle(); });
   check('exportLibrary', () => { window.exportLibrary(); });
+  check('verifyPuzzleLibrary', () => {
+    const res = window.verifyPuzzleLibrary({
+      chapters: [{ name: 'Test', puzzles: [{ title: 'Mate', fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1', solution: 'Re8#' }] }]
+    });
+    if (!res.ok || res.validCount !== 1) throw new Error('Verification failed');
+  });
   check('importLibrary', () => { window.importLibrary(new window.Blob(['{}'], { type: 'application/json' })); });
 
   // PUZZLE PLAY
@@ -265,6 +271,9 @@ async function testInventory() {
   check('autoName', () => { if (!window.autoName('Test', { chapters: [] })) throw new Error(); });
   check('toast', () => { window.toast('msg'); });
   check('stars', () => { if (window.stars(3) !== '★★★☆☆') throw new Error(); });
+  check('playMoveSound', () => { window.playMoveSound('e4'); });
+  check('toggleSound', () => { window.toggleSound(); window.toggleSound(); });
+  check('updateSoundButton', () => { window.updateSoundButton(); });
 
   console.log(`\n======================================================`);
   console.log(`INVENTORY UNIT TEST RESULT: ${passed} PASSED | ${failed} FAILED`);

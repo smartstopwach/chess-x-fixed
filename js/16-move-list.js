@@ -127,6 +127,7 @@ function goToMove(idx) {
   }
   state.selectedSquare = null;
   renderAll();
+  try { playMoveSound(idx >= 0 ? state.history[idx] : ''); } catch (e) {}
 }
 
 function getFenAtMove(idx) {
@@ -154,6 +155,7 @@ function nextMove() {
     state.game.load(getFenAtMove(state.historyIndex));
     state.selectedSquare = null;
     renderAll();
+    try { playMoveSound(state.history[state.historyIndex]); } catch (e) {}
   }
 }
 
@@ -163,11 +165,13 @@ function prevMove() {
     state.game.load(getFenAtMove(state.historyIndex));
     state.selectedSquare = null;
     renderAll();
+    try { playMoveSound(state.history[state.historyIndex]); } catch (e) {}
   } else if (state.historyIndex === 0) {
     state.historyIndex = -1;
     state.game.load(baseFen());
     state.selectedSquare = null;
     renderAll();
+    try { playMoveSound(''); } catch (e) {}
   }
 }
 
