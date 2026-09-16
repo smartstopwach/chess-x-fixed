@@ -167,7 +167,8 @@ function addHexagon(sq) { return addShapeOnce('hexagons', sq); }
 
 // Same box, same colour = the same rectangle: never stack duplicates on top of
 // each other (they are invisible, and each one would need its own undo step).
-// c3-f6 and f6-c3 describe one box, so the pair is compared sorted.
+// The UI creates one-square boxes; the sorted comparison also keeps older
+// saved multi-square rectangles from being duplicated.
 function addRectangle(from, to) {
   if (!from || !to) return false;
   const key = [from, to].sort().join('|');

@@ -18,8 +18,8 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 
 ### ✏️ Teaching Drawing Tools
 - **Select, Arrow, Circle, Highlight, Rectangle, Triangle, Hexagon, Eraser** —
-  the palette in the left sidebar; Triangle and Hexagon are outlined shapes
-  centred on a square, exactly like the circle
+  the palette in the left sidebar; Circle, Rectangle, Triangle and Hexagon are
+  fitted inside one square and centred on that square's piece/centre
 - **Left click does whatever the selected tool says** (select = chess move /
   piece pick-up, every drawing tool = its own marking), and **a double left
   click on a square reverses what the left click put there** — every tool
@@ -38,8 +38,9 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   tool is selected: right-drag draws it in one gesture, and two single right
   clicks work too (first = origin square, second = target, same square twice
   = cancel). `handleRightClickOrDrag()` owns this and nothing else
-- Left-drag keeps its old jobs (rectangle tool = rectangle, eraser = erase both
-  squares, anything else = arrow)
+- Left-drag draws an arrow (except that Rectangle and Eraser are click-only):
+  Rectangle places one fitted box in the clicked square; Eraser removes marks
+  only from the square clicked after selecting it, never from a held drag
 - The right-button arrow works in **every mode while teaching**, and never
   while **editing a position** (`isEditingPosition()` /
   `rightButtonIsArrow()` in `js/12-board-interactions.js`):

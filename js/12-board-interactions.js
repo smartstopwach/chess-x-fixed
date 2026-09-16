@@ -5,8 +5,8 @@
 //   • LEFT CLICK on piece/square: normal chess move / piece selection (or setup pick/place)
 //   • LEFT DRAG (sqA -> sqB):
 //       - in setup editing: moves piece from sqA to sqB (NO arrows/drawings)
-//       - in normal mode / after START FROM POSITION: rectangle tool = box,
-//         eraser = wipe both squares, every other tool = arrow
+//       - in normal mode / after START FROM POSITION: a rectangle click marks
+//         one fitted square, eraser is click-only, every other tool = arrow
 //   • LEFT CLICK: the selected tool does its job (select = chess), through a
 //       short double-click window; a DOUBLE left click takes back what the
 //       first click of that pair put down - and never anything older
@@ -295,10 +295,14 @@ function endSquarePress(sq, x, y) {
     __lastPlaced = null;  // ...and the take-back context goes with it
     if (state.drawingFrom) { state.drawingFrom = null; highlightSquares(); }
     if (state.currentTool === 'rectangle') {
-      addRectangle(from, sqName);
+      // A box is a one-square mark. Do not turn a drag into a large
+      // out-of-square rectangle; click the square to place the fitted box.
+      return;
     } else if (state.currentTool === 'eraser') {
-      eraseAnnotationAt(from);
-      eraseAnnotationAt(sqName);
+      // Eraser is intentionally click-only. Holding and dragging it used to
+      // erase both end squares, which made it too easy to remove drawings by
+      // accident. The single-click path below is its only action.
+      return;
     } else {
       // Left-drag ALWAYS draws an arrow!
       addArrow(from, sqName);
@@ -312,20 +316,40 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 5. LEFT CLICK with any drawing tool: the selected tool does its job, but
-  //    through a double-click window, because a DOUBLE left click on a square
-  //    reverses whatever the left click put there (every tool except select).
-  //    The second click of a double click (mousedown detail 2) reverses at
-  //    once; anything else goes through the short double-click window.
+  // 5. LEFT CLICK with the remaining drawing tools: the selected tool does its
+  //    job through a double-click window, because a DOUBLE left click on a
+  //    square reverses whatever the left click put there (every tool except
+  //    select, with Rectangle/Eraser handled immediately below). The second
+  //    click of a double click (mousedown detail 2) reverses at once.
   if (dbl) {
     cancelLeftAction();
     // Second click of a real double click: if the first one only marked an
-    // arrow/rectangle origin, drop that mark; if it actually drew something,
-    // take that something back. Drawings that were already on the board stay.
+    // arrow origin, drop that mark; if it actually drew something, take that
+    // something back. Drawings that were already on the board stay.
     if (state.drawingFrom === sqName) { state.drawingFrom = null; highlightSquares(); return; }
     if (takeBackMatches(sqName)) takeBack(sqName);
     return;
   }
+
+  // Rectangle and eraser are deliberately immediate click tools. They do not
+  // need the drawing tools' double-click delay: a single eraser click must
+  // erase now, and a one-square box must appear on that click. A later second
+  // click still reaches the double-click branch above and can take back a box
+  // that this click placed.
+  if (state.currentTool === 'rectangle' || state.currentTool === 'eraser') {
+    flushLeftAction();
+    if (state.currentTool === 'rectangle') {
+      const before = state.rectangles.length;
+      addRectangle(sqName, sqName);
+      if (state.rectangles.length > before) notePlaced(sqName);
+      else __lastPlaced = null;
+    } else {
+      __lastPlaced = null;
+      eraseAnnotationAt(sqName);
+    }
+    return;
+  }
+
   scheduleLeftAction(sqName);
 }
 
@@ -419,7 +443,7 @@ function placeWithTool(sq) {
   if (!sq) return false;
   const tool = state.currentTool;
 
-  if (tool === 'arrow' || tool === 'rectangle') {
+  if (tool === 'arrow') {
     if (!state.drawingFrom) {             // first click: mark the origin square
       state.drawingFrom = sq;
       highlightSquares();
@@ -428,16 +452,26 @@ function placeWithTool(sq) {
     const from = state.drawingFrom;
     state.drawingFrom = null;
     if (from === sq) { highlightSquares(); return false; }   // clicked origin again: cancel
-    const list = (tool === 'arrow') ? state.arrows : state.rectangles;
-    const before = list.length;
-    if (tool === 'arrow') addArrow(from, sq); else addRectangle(from, sq);
+    const before = state.arrows.length;
+    addArrow(from, sq);
     highlightSquares();
-    if (list.length > before) { notePlaced(sq); return true; }
+    if (state.arrows.length > before) { notePlaced(sq); return true; }
     __lastPlaced = null;
     return false;
   }
 
-  if (tool === 'circle' || tool === 'highlight' || tool === 'triangle' || tool === 'hexagon') {
+  // All square marks, including Rect, are placed by one click and are fitted
+  // inside that square. Rect used to share the arrow's two-click range logic,
+  // which is why a test click could produce a box several squares wide.
+  if (tool === 'circle' || tool === 'highlight' || tool === 'rectangle' ||
+      tool === 'triangle' || tool === 'hexagon') {
+    if (tool === 'rectangle') {
+      const before = state.rectangles.length;
+      addRectangle(sq, sq);
+      if (state.rectangles.length > before) { notePlaced(sq); return true; }
+      __lastPlaced = null;
+      return false;
+    }
     const kind = (tool === 'circle') ? 'circles'
                : (tool === 'highlight') ? 'highlights'
                : (tool === 'triangle') ? 'triangles' : 'hexagons';
