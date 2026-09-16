@@ -27,6 +27,8 @@ let pressMoved = false;    // pointer travelled past the slop -> this is a real 
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
 let lastTouchAt = 0;       // when the last real touch gesture was seen
+let lastRightEditSquare = null;
+let lastRightEditAt = 0;
 let setupDeferredRack = null;  // rack piece waiting to see if the press is a click or a drag
 const TOUCH_SUPPRESS_MS = 800;
 
@@ -140,8 +142,16 @@ function beginSquarePress(sq, x, y, button, detail) {
     // button erases the piece immediately - no drawing, no arrow.
     if (isEditingPosition()) {
       pressConsumed = true;
-      if (state.setupMode) erasePieceAt(sqName);
-      else if (typeof peErasePiece === 'function') peErasePiece(sqName);
+      // Puzzle authoring also sets setupMode so the piece editor can use the
+      // same board gesture. Check authoring first or a right-click would erase
+      // only the main setup state and bypass the puzzle editor's undo history.
+      lastRightEditSquare = sqName;
+      lastRightEditAt = Date.now();
+      if (typeof isAuthoringMode === 'function' && isAuthoringMode() && typeof peErasePiece === 'function') {
+        peErasePiece(sqName);
+      } else if (state.setupMode) {
+        erasePieceAt(sqName);
+      }
       return;
     }
     // Teaching / playing (Normal, Setup after START FROM POSITION, Puzzle

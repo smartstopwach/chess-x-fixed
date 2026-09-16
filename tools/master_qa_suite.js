@@ -514,6 +514,19 @@ async function runMasterSuite() {
     assert(corrupt === null);
   });
 
+  test('PERSIST', 'triangle and hexagon-only sessions remain restorable', () => {
+    const standard = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const snapshot = {
+      mode: 'front', fen: standard, history: [], arrows: [], circles: [],
+      highlights: [], rectangles: [], triangles: [{ square: 'd4' }], hexagons: [],
+    };
+    assert(window.isRestorable(snapshot) === true, 'triangle-only work must restore');
+    snapshot.triangles = [];
+    snapshot.hexagons = [{ square: 'e5' }];
+    assert(window.isRestorable(snapshot) === true, 'hexagon-only work must restore');
+    assert(window.resumeLabel('front', snapshot).includes('1 marking'), 'resume label counts the shape');
+  });
+
   // ----------------------------------------------------
   // GROUP 11: CHECKMATE, STALEMATE, AND DRAW
   // ----------------------------------------------------
@@ -569,6 +582,32 @@ async function runMasterSuite() {
     window.handleRightClickOrDrag('b5', 'b5', false);   // finish it
     assert(window.state.arrows.length === before + 2);
     assert(window.state.rightArrowFrom === null);
+  });
+
+  test('RIGHT-BUTTON', 'one setup right-click erases once and remains undoable', () => {
+    window.setMode('setup');
+    window.loadPreset('empty');
+    window.placePieceOnSetup('e4', 'K');
+    const first = window.document.querySelector('.square[data-square="e4"]');
+    assert(first, 'setup square exists');
+    // Call the board's press state machine directly so a preceding touch test
+    // cannot make this synthetic mouse event look like Chrome's touch replay.
+    window.beginSquarePress(first, 10, 10, 2, 1);
+    // Erasing re-renders the square, so a real browser targets the replacement
+    // node when its contextmenu event arrives. Exercise the browser ordering
+    // where that event follows mouseup.
+    const current = window.document.querySelector('.square[data-square="e4"]');
+    window.endSquarePress(current, 10, 10);
+    const menu = new window.MouseEvent('contextmenu', {
+      button: 2, bubbles: true, cancelable: true, clientX: 10, clientY: 10
+    });
+    current.dispatchEvent(menu);
+    assert(menu.defaultPrevented === true, 'board context menu is suppressed');
+    assert(window.state.game.get('e4') === null, 'piece was erased');
+    window.setupUndo();
+    assert(window.state.game.get('e4') && window.state.game.get('e4').type === 'k',
+      'one undo restores the erased king; a duplicate erase would require two undos');
+    window.setMode('normal');
   });
 
   // ----------------------------------------------------

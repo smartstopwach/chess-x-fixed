@@ -1,7 +1,13 @@
 // ============================================
 // EVENT BINDINGS
 // ============================================
+let __eventsBound = false;
+
 function bindEvents() {
+  if (__eventsBound) return;
+  if (!els.board) return;
+  __eventsBound = true;
+
   els.board.addEventListener('mousedown', onSquareMouseDown);
   els.board.addEventListener('mousemove', onSquareMouseMove);
   els.board.addEventListener('mouseup', onSquareMouseUp);
@@ -121,15 +127,23 @@ function bindEvents() {
   // only drew an arrow, selected a piece or were rejected as illegal. It now
   // switches inside tryMakeMove(), i.e. only when a move really happened.
 
-  // Prevent right-click menu on board AND erase piece in setup mode
+  // Prevent the browser menu on the board. A real right-button press already
+  // erases in beginSquarePress(); only use contextmenu as a fallback when the
+  // browser delivered that event without the matching mousedown. Otherwise a
+  // single right-click would erase twice and add two setup-history entries.
   els.board.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (state.setupMode) {
-      const sq = e.target.closest('.square');
-      if (sq) {
-        erasePieceAt(sq.dataset.square);
-      }
-    }
+    const sq = e.target.closest('.square');
+    if (!state.setupMode || !sq) return;
+    // Browsers differ on whether contextmenu lands before or after mouseup.
+    // The press path has already erased this square in either ordering; do not
+    // perform the fallback a second time. Keep the fallback for context-menu
+    // events that arrive without a matching right-button press.
+    const alreadyHandled = lastRightEditSquare === sq.dataset.square &&
+      (Date.now() - lastRightEditAt) < 1000;
+    if (alreadyHandled) return;
+    if (isAuthoringMode() && typeof peErasePiece === 'function') peErasePiece(sq.dataset.square);
+    else erasePieceAt(sq.dataset.square);
   });
 
   // Double-click: pick up piece under cursor (in setup mode)

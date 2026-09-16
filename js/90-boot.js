@@ -1,6 +1,8 @@
 // ============================================
 // INITIALIZATION
 // ============================================
+let __bootInitialized = false;
+
 function init() {
   if (typeof Chess === 'undefined') {
     console.warn('Chess.js not loaded yet, retrying...');
@@ -18,6 +20,11 @@ function safeCall(name, fn) {
 }
 
 function doInit() {
+  // Initialization can be requested by both DOMContentLoaded and a dependency
+  // retry. Keep it one-shot so every button and board gesture gets one listener.
+  if (__bootInitialized) return;
+  __bootInitialized = true;
+
   // CRITICAL: render the board FIRST so user sees something even if other things fail
   safeCall('renderBoard', renderBoard);
   safeCall('updateFen', updateFen);

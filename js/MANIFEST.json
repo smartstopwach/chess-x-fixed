@@ -2,154 +2,169 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "611bcf7367f8d0c57cf545c7559a9a76cec20d4cdc90df812f0931a48c03a004",
+  "concat_sha256": "d2829e25a79d012049370f969e62f9eed5aae65019066d2c356ba715ad86c2fd",
   "byte_identical": true,
-  "files": 29,
+  "files": 32,
   "parts": [
     {
       "file": "js/00-constants.js",
-      "lines": 11,
-      "bytes": 377
+      "lines": 21,
+      "bytes": 1048
     },
     {
       "file": "js/01-state.js",
-      "lines": 75,
-      "bytes": 1840
+      "lines": 84,
+      "bytes": 2236
     },
     {
       "file": "js/02-dom.js",
-      "lines": 23,
+      "lines": 22,
       "bytes": 623
     },
     {
       "file": "js/03-utils.js",
-      "lines": 26,
-      "bytes": 679
+      "lines": 84,
+      "bytes": 3523
+    },
+    {
+      "file": "js/04-protect.js",
+      "lines": 90,
+      "bytes": 3682
     },
     {
       "file": "js/10-board-render.js",
-      "lines": 124,
-      "bytes": 3849
+      "lines": 304,
+      "bytes": 11081
     },
     {
       "file": "js/11-annotations-render.js",
-      "lines": 125,
-      "bytes": 3884
+      "lines": 226,
+      "bytes": 9223
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 337,
-      "bytes": 11452
+      "lines": 795,
+      "bytes": 29647
     },
     {
       "file": "js/13-annotation-tools.js",
-      "lines": 44,
-      "bytes": 1393
+      "lines": 218,
+      "bytes": 8344
     },
     {
       "file": "js/14-tool-selection.js",
-      "lines": 11,
-      "bytes": 417
+      "lines": 17,
+      "bytes": 831
     },
     {
       "file": "js/15-position-setup.js",
-      "lines": 288,
-      "bytes": 9087
+      "lines": 574,
+      "bytes": 22156
     },
     {
       "file": "js/16-move-list.js",
-      "lines": 97,
-      "bytes": 2884
+      "lines": 189,
+      "bytes": 6200
     },
     {
       "file": "js/17-fen.js",
-      "lines": 24,
-      "bytes": 583
+      "lines": 65,
+      "bytes": 2510
     },
     {
       "file": "js/18-themes.js",
-      "lines": 12,
+      "lines": 11,
       "bytes": 333
     },
     {
       "file": "js/19-layouts.js",
-      "lines": 4,
+      "lines": 3,
       "bytes": 107
     },
     {
       "file": "js/20-puzzle-library-store.js",
-      "lines": 57,
-      "bytes": 1514
+      "lines": 330,
+      "bytes": 11729
     },
     {
       "file": "js/21-puzzle-uid.js",
-      "lines": 18,
+      "lines": 17,
       "bytes": 674
     },
     {
       "file": "js/22-puzzle-library-ui.js",
-      "lines": 214,
-      "bytes": 8390
+      "lines": 227,
+      "bytes": 9039
     },
     {
       "file": "js/23-puzzle-crud.js",
-      "lines": 266,
-      "bytes": 8132
+      "lines": 471,
+      "bytes": 16648
     },
     {
       "file": "js/24-puzzle-editor-board.js",
-      "lines": 382,
-      "bytes": 12735
+      "lines": 422,
+      "bytes": 14194
     },
     {
       "file": "js/25-puzzle-authoring.js",
-      "lines": 139,
-      "bytes": 4490
+      "lines": 200,
+      "bytes": 7468
     },
     {
       "file": "js/26-engine.js",
-      "lines": 125,
-      "bytes": 3762
+      "lines": 142,
+      "bytes": 5089
     },
     {
       "file": "js/27-autofit.js",
-      "lines": 26,
-      "bytes": 1261
+      "lines": 144,
+      "bytes": 6669
     },
     {
       "file": "js/28-flip-reset.js",
-      "lines": 21,
-      "bytes": 505
+      "lines": 19,
+      "bytes": 478
     },
     {
       "file": "js/29-chess-clock.js",
-      "lines": 53,
-      "bytes": 1753
+      "lines": 81,
+      "bytes": 2902
     },
     {
       "file": "js/30-keyboard.js",
-      "lines": 65,
-      "bytes": 1993
+      "lines": 105,
+      "bytes": 3918
     },
     {
       "file": "js/31-render-all.js",
-      "lines": 16,
-      "bytes": 824
+      "lines": 27,
+      "bytes": 1531
     },
     {
       "file": "js/32-event-bindings.js",
-      "lines": 172,
-      "bytes": 6722
+      "lines": 182,
+      "bytes": 8138
     },
     {
       "file": "js/33-mode-picker.js",
-      "lines": 88,
-      "bytes": 2991
+      "lines": 104,
+      "bytes": 3962
+    },
+    {
+      "file": "js/35-checkmate.js",
+      "lines": 255,
+      "bytes": 9853
+    },
+    {
+      "file": "js/36-persist.js",
+      "lines": 402,
+      "bytes": 16420
     },
     {
       "file": "js/90-boot.js",
-      "lines": 107,
-      "bytes": 4034
+      "lines": 126,
+      "bytes": 5139
     }
   ]
 }
