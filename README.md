@@ -240,6 +240,32 @@ move" plus `in_check()`, so it still works with the offline fallback engine.
 labels without the shake, ripple or sweeps (`prefers-reduced-motion` guard in
 `css/46-checkmate.css`).
 
+### 🔒 Inspection deterrent (`js/04-protect.js`)
+DevTools belong to the browser, so a page can never *truly* disable them — what
+it can do is close every door a page is allowed to close, and that is what this
+file does:
+
+- **shortcuts swallowed** (capture phase, before the app's own handler): `F12`,
+  `Ctrl/Cmd+Shift+I` / `+J` / `+K` / `+C`, and `Ctrl/Cmd+U` (view-source).
+  App shortcuts such as `Ctrl+Z` are untouched.
+- **no right-click "Inspect" menu** anywhere except text fields. The board's
+  own `contextmenu` listener fires first, so right-click drawing and
+  setup-mode erase keep working (verified: 32 → 31 pieces on a right-click).
+- **a debugger trap notices DevTools anyway** (docked, undocked or remote):
+  while they are open the whole app is locked behind a full-screen card
+  (`#inspectGuard`, styled in `css/48-inspect-guard.css`) until they are
+  closed again. A high-threshold window-size check catches the docked case
+  without ever tripping on bookmarks bars.
+
+Owner escape hatch for debugging your own site: open it with
+`?allowinspect=1`, or set `localStorage.setItem('chessx-allow-inspect','1')`.
+
+Honest caveat: this is a deterrent, not a lock. The sources still travel to the
+browser, so a determined person can read them (JS disabled, `curl`, another
+browser, or this repository). Nothing client-side changes that.
+14 headless-Chromium checks cover the shortcuts, the menu, the board
+right-click, the lock screen and the escape hatch — all passing.
+
 ## ⚠️ Known issues found while refactoring (not yet fixed)
 
 1. **Dead keyboard cases** — `js/30-keyboard.js` has `case 'e'`/`case 'E'` and
@@ -338,7 +364,7 @@ numbered to match it — so alphabetical order = load order.
 
 ```
 index.html            the only page: markup + the <link>/<script> list (edit here)
-css/                  33 files — was styles.css, one file per section banner
+css/                  35 files — was styles.css, one file per section banner
   00-base.css           tokens, reset, typography
   10..28-*.css          shared chrome: topbar, layout, board, panels, clock, notes…
   30..35-puzzle-*.css   puzzle library + editor styling
@@ -349,12 +375,14 @@ css/                  33 files — was styles.css, one file per section banner
   45-mode-normal.css    Normal mode overrides
   46-checkmate.css      checkmate / stalemate / draw animations
   47-fullscreen.css     compact chrome while in Full, so the board grows
+  48-inspect-guard.css  full-screen lock shown while DevTools is open
   23-modal-dead.css     ⚠ pre-existing: this block is commented out in the original
                         CSS (.modal-overlay selector line is missing). No modal exists
                         in index.html/app.js, so nothing is lost — safe to delete.
-js/                   31 files — was app.js, one file per section banner
+js/                   32 files — was app.js, one file per section banner
   00-constants.js       PIECE_FONT
   01-state.js 02-dom.js 03-utils.js          shared core
+  04-protect.js         inspection deterrent (shortcuts, menu, devtools lock)
   10..19-*.js           board render, interactions, annotations (arrow shapes
                         live in 11-annotations-render.js), tools, setup,
                         move list, FEN, themes, layouts

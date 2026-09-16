@@ -43,6 +43,7 @@
 <link rel="stylesheet" href="css/45-mode-normal.css" />
 <link rel="stylesheet" href="css/46-checkmate.css" />
 <link rel="stylesheet" href="css/47-fullscreen.css" />
+<link rel="stylesheet" href="css/48-inspect-guard.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -687,6 +688,17 @@
   </aside>
 </main>
 
+<!-- ================= INSPECTION GUARD ================= -->
+<!-- Shown by js/04-protect.js while browser DevTools is open; covers the whole
+     app until they are closed again. -->
+<div class="inspect-guard hidden" id="inspectGuard" role="alert">
+  <div class="inspect-guard-card">
+    <div class="inspect-guard-title">Inspection is disabled</div>
+    <p>Browser developer tools are blocked for ChessX.<br>
+       Close them to continue your lesson.</p>
+  </div>
+</div>
+
 <!-- ================= NOTIFICATION ================= -->
 <div class="toast" id="toast"></div>
 
@@ -699,6 +711,7 @@
 <script src="js/01-state.js"></script>
 <script src="js/02-dom.js"></script>
 <script src="js/03-utils.js"></script>
+<script src="js/04-protect.js"></script>
 <script src="js/10-board-render.js"></script>
 <script src="js/11-annotations-render.js"></script>
 <script src="js/12-board-interactions.js"></script>

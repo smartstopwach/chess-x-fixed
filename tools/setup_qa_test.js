@@ -28,6 +28,7 @@ async function runSetupTests() {
     'js/01-state.js',
     'js/02-dom.js',
     'js/03-utils.js',
+    'js/04-protect.js',
     'js/10-board-render.js',
     'js/11-annotations-render.js',
     'js/12-board-interactions.js',

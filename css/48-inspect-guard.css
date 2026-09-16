@@ -1,0 +1,38 @@
+/* ============================================
+   INSPECTION GUARD (js/04-protect.js)
+   Full-screen lock shown while DevTools is open: the lesson underneath is
+   completely covered, not just blurred, so nothing can be read off it.
+   ============================================ */
+.inspect-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.inspect-guard-card {
+  max-width: 440px;
+  text-align: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 30px 28px;
+  box-shadow: var(--shadow-lg);
+}
+
+.inspect-guard-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  color: var(--danger);
+  margin-bottom: 10px;
+}
+
+.inspect-guard-card p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
