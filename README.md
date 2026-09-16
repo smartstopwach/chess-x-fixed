@@ -17,13 +17,23 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - 3 piece styles (Alpha, Merida, Classic)
 
 ### ✏️ Teaching Drawing Tools
-- Arrows (drag from one square to another) — thick **lichess-style** arrows, see below
-- Circles (click to toggle)
-- Square highlights
-- Rectangle highlight areas
-- Eraser (per-square)
-- 7 colors, default amber `#ffaa00` (the one from the reference shots)
-- "Clear all annotations" button
+- **Select, Arrow, Circle, Highlight, Rectangle, Triangle, Hexagon, Eraser** —
+  the palette in the left sidebar; Triangle and Hexagon are outlined shapes
+  centred on a square, exactly like the circle
+- **Left click does whatever the selected tool says** (select = chess move /
+  piece pick-up, every drawing tool = its own marking), and **a double left
+  click on a square reverses what the left click put there** — every tool
+  except select. Placing never toggles: one click puts the shape down, the
+  double click takes it away (`scheduleLeftAction()` / `placeWithTool()` in
+  `js/12-board-interactions.js`, ~260ms double-click window)
+- **The right button is ALWAYS the arrow** in Normal mode, no matter which
+  tool is selected: right-drag draws it in one gesture, and two single right
+  clicks work too (first = origin square, second = target, same square twice
+  = cancel). `handleRightClickOrDrag()` owns this and nothing else
+- Left-drag keeps its old jobs (rectangle tool = rectangle, eraser = erase both
+  squares, anything else = arrow)
+- 12 colors, default amber `#ffaa00` (the one from the reference shots)
+- "Clear all annotations" button, plus 1-by-1 undo/redo for every marking
 
 ### 🏹 Arrows that read on a recording (`js/11-annotations-render.js`)
 Arrows are drawn as one SVG group per arrow — a round-capped band plus a filled

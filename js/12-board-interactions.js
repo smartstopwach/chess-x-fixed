@@ -16,6 +16,7 @@ let pressSquare = null;    // square the pointer went down on
 let pressX = 0;
 let pressY = 0;
 let pressButton = 0;       // 0 = left, 2 = right
+let pressDetail = 1;       // mousedown detail: 2 = second click of a double click
 let pressMoved = false;    // pointer travelled past the slop -> this is a real drag
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
@@ -33,7 +34,7 @@ function onSquareMouseDown(e) {
       ae.matches('input, textarea, select')) {
     ae.blur();
   }
-  beginSquarePress(e.target.closest('.square'), e.clientX, e.clientY, e.button);
+  beginSquarePress(e.target.closest('.square'), e.clientX, e.clientY, e.button, e.detail);
 }
 
 function onSquareMouseMove(e) {
@@ -79,8 +80,9 @@ function onTouchEnd(e) {
   endSquarePress(target ? target.closest('.square') : null, t ? t.clientX : 0, t ? t.clientY : 0);
 }
 
-function beginSquarePress(sq, x, y, button) {
+function beginSquarePress(sq, x, y, button, detail) {
   pressConsumed = false;
+  pressDetail = (detail >= 2) ? 2 : 1;
 
   if (!sq) return;
   const sqName = sq.dataset.square;
@@ -175,6 +177,7 @@ function endSquarePress(sq, x, y) {
   const from = pressSquare;
   const moved = pressMoved;
   const btn = pressButton;
+  const dbl = pressDetail === 2;
   const consumed = pressConsumed;
 
   cancelSquarePress();
@@ -198,7 +201,8 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 2. RIGHT CLICK / RIGHT DRAG (Drawing Tools):
+  // 2. RIGHT CLICK / RIGHT DRAG: the right button is ALWAYS the arrow in play
+  //    modes, whether or not the arrow tool is selected in the palette.
   if (btn === 2) {
     handleRightClickOrDrag(from, sqName, isDrag);
     return;
@@ -206,6 +210,7 @@ function endSquarePress(sq, x, y) {
 
   // 3. LEFT DRAG (Normal Mode & After START FROM POSITION):
   if (isDrag) {
+    cancelLeftAction();   // a drag is not a click: drop any pending place
     if (state.currentTool === 'rectangle') {
       addRectangle(from, sqName);
     } else if (state.currentTool === 'eraser') {
@@ -218,88 +223,101 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 4. LEFT CLICK with active drawing tool:
-  if (state.currentTool === 'arrow') {
-    if (!state.drawingFrom) {
-      state.drawingFrom = sqName;
-      highlightSquares();
-    } else if (state.drawingFrom === sqName) {
-      state.drawingFrom = null;
-      highlightSquares();
-    } else {
-      addArrow(state.drawingFrom, sqName);
-      state.drawingFrom = null;
-      highlightSquares();
-    }
+  // 4. LEFT CLICK with 'select': chess move / piece selection, instantly.
+  if (state.currentTool === 'select') {
+    handleSquareClick(sqName);
     return;
   }
 
-  if (state.currentTool === 'circle') {
-    addCircle(sqName);
-    return;
-  }
-
-  if (state.currentTool === 'highlight') {
-    addHighlight(sqName);
-    return;
-  }
-
-  if (state.currentTool === 'rectangle') {
-    if (!state.drawingFrom) {
-      state.drawingFrom = sqName;
-      highlightSquares();
-    } else if (state.drawingFrom === sqName) {
-      state.drawingFrom = null;
-      highlightSquares();
-    } else {
-      addRectangle(state.drawingFrom, sqName);
-      state.drawingFrom = null;
-      highlightSquares();
-    }
-    return;
-  }
-
-  if (state.currentTool === 'eraser') {
+  // 5. LEFT CLICK with any drawing tool: the selected tool does its job, but
+  //    through a double-click window, because a DOUBLE left click on a square
+  //    reverses whatever the left click put there (every tool except select).
+  //    The second click of a double click (mousedown detail 2) reverses at
+  //    once; anything else goes through the short double-click window.
+  if (dbl) {
+    cancelLeftAction();
     eraseAnnotationAt(sqName);
     return;
   }
-
-  // 5. LEFT CLICK with 'select' tool (Normal Chess Move / Piece Selection):
-  handleSquareClick(sqName);
+  scheduleLeftAction(sqName);
 }
 
-function handleRightClickOrDrag(from, to, isDrag) {
-  const tool = state.currentTool;
+// ---- left click: single = place, double = reverse -------------------------
+let __leftTimer = null;
+let __leftSq = null;
+const LEFT_DBL_MS = 260;
 
-  if (isDrag && from && to && from !== to) {
-    if (tool === 'rectangle') {
-      addRectangle(from, to);
-    } else if (tool === 'eraser') {
-      eraseAnnotationAt(from);
-      eraseAnnotationAt(to);
-    } else if (tool === 'circle') {
-      addCircle(to);
-    } else if (tool === 'highlight') {
-      addHighlight(to);
-    } else {
-      // Default / 'select' / 'arrow': right-drag draws an arrow
-      addArrow(from, to);
-    }
-  } else {
-    // Single square right-click
-    if (tool === 'circle') {
-      addCircle(to);
-    } else if (tool === 'highlight') {
-      addHighlight(to);
-    } else if (tool === 'eraser') {
-      eraseAnnotationAt(to);
-    } else if (tool === 'rectangle') {
-      addHighlight(to);
-    } else {
-      // Default / 'select' / 'arrow': right-click toggles circle
-      addCircle(to);
-    }
+function cancelLeftAction() {
+  if (__leftTimer) { clearTimeout(__leftTimer); __leftTimer = null; }
+  __leftSq = null;
+}
+
+function flushLeftAction() {
+  if (!__leftTimer) return;
+  clearTimeout(__leftTimer);
+  __leftTimer = null;
+  const sq = __leftSq;
+  __leftSq = null;
+  placeWithTool(sq);
+}
+
+function scheduleLeftAction(sq) {
+  if (__leftTimer && __leftSq === sq) {   // second click on the same square
+    cancelLeftAction();
+    eraseAnnotationAt(sq);                // ...takes back what was placed here
+    return;
   }
+  flushLeftAction();                      // a pending place on another square
+  __leftSq = sq;
+  __leftTimer = setTimeout(() => {
+    __leftTimer = null;
+    __leftSq = null;
+    placeWithTool(sq);
+  }, LEFT_DBL_MS);
+}
+
+function placeWithTool(sq) {
+  const tool = state.currentTool;
+  if (tool === 'arrow' || tool === 'rectangle') {
+    const add = (tool === 'arrow') ? addArrow : addRectangle;
+    if (!state.drawingFrom) {
+      state.drawingFrom = sq;
+    } else if (state.drawingFrom === sq) {
+      state.drawingFrom = null;
+    } else {
+      add(state.drawingFrom, sq);
+      state.drawingFrom = null;
+    }
+    highlightSquares();
+    return;
+  }
+  if (tool === 'circle')    { addShapeOnce('circles', sq);   return; }
+  if (tool === 'highlight') { addShapeOnce('highlights', sq); return; }
+  if (tool === 'triangle')  { addTriangle(sq);               return; }
+  if (tool === 'hexagon')   { addHexagon(sq);                return; }
+  if (tool === 'eraser')    { eraseAnnotationAt(sq);         return; }
+}
+
+// The right button owns ONE job in play modes: the arrow. A drag draws it in a
+// single gesture; two single clicks work as well (first click marks the origin
+// square, second click finishes the arrow, clicking the origin again cancels).
+// Which tool is selected in the palette makes no difference here.
+function handleRightClickOrDrag(from, to, isDrag) {
+  if (isDrag && from && to && from !== to) {
+    state.rightArrowFrom = null;
+    addArrow(from, to);
+    return;
+  }
+  if (!from) return;
+  if (!state.rightArrowFrom) {
+    state.rightArrowFrom = from;
+  } else if (state.rightArrowFrom === from) {
+    state.rightArrowFrom = null;
+  } else {
+    addArrow(state.rightArrowFrom, from);
+    state.rightArrowFrom = null;
+  }
+  highlightSquares();
 }
 
 function cancelSquarePress() {
@@ -307,6 +325,7 @@ function cancelSquarePress() {
   pressMoved = false;
   pressConsumed = false;
   pressButton = 0;
+  pressDetail = 1;
   if (state.isDrawing) {
     state.isDrawing = false;
     state.drawingFrom = null;

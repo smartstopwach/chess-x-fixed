@@ -40,6 +40,9 @@ const state = {
   circles: [],
   highlights: [],
   rectangles: [],
+  triangles: [],
+  hexagons: [],
+  rightArrowFrom: null,   // first square of a right-click-click arrow
   drawingFrom: null,
   isDrawing: false,
   boardTheme: 'classic',

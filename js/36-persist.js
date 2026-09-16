@@ -86,6 +86,8 @@ function sessionPayload() {
     circles: asArray(state.circles),
     highlights: asArray(state.highlights),
     rectangles: asArray(state.rectangles),
+    triangles: asArray(state.triangles),
+    hexagons: asArray(state.hexagons),
     setup: {
       whiteCastleK: fieldVal('optWhiteCastleK'),
       whiteCastleQ: fieldVal('optWhiteCastleQ'),
@@ -227,6 +229,8 @@ function applySession(s) {
     state.circles = asArray(s.circles);
     state.highlights = asArray(s.highlights);
     state.rectangles = asArray(s.rectangles);
+    state.triangles = asArray(s.triangles);
+    state.hexagons = asArray(s.hexagons);
     const su = s.setup || {};
     ['whiteCastleK', 'whiteCastleQ', 'blackCastleK', 'blackCastleQ', 'halfmove', 'fullmove'].forEach(k => {
       if (su[k] !== undefined) setFieldVal('opt' + k.charAt(0).toUpperCase() + k.slice(1), su[k]);

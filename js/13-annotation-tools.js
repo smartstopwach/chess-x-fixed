@@ -43,7 +43,9 @@ function pushAnnoHistory() {
     arrows: state.arrows.map(a => ({ ...a })),
     circles: state.circles.map(c => ({ ...c })),
     highlights: state.highlights.map(h => ({ ...h })),
-    rectangles: state.rectangles.map(r => ({ ...r }))
+    rectangles: state.rectangles.map(r => ({ ...r })),
+    triangles: (state.triangles || []).map(t => ({ ...t })),
+    hexagons: (state.hexagons || []).map(h => ({ ...h }))
   };
   // Truncate future redo branch if we are in the middle of history
   annoHistory.length = annoHistoryIndex + 1;
@@ -74,6 +76,8 @@ function undoAnnotation() {
   state.circles = snap.circles.map(c => ({ ...c }));
   state.highlights = snap.highlights.map(h => ({ ...h }));
   state.rectangles = snap.rectangles.map(r => ({ ...r }));
+  state.triangles = (snap.triangles || []).map(t => ({ ...t }));
+  state.hexagons = (snap.hexagons || []).map(h => ({ ...h }));
   state.drawingFrom = null;
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
@@ -89,6 +93,8 @@ function redoAnnotation() {
   state.circles = snap.circles.map(c => ({ ...c }));
   state.highlights = snap.highlights.map(h => ({ ...h }));
   state.rectangles = snap.rectangles.map(r => ({ ...r }));
+  state.triangles = (snap.triangles || []).map(t => ({ ...t }));
+  state.hexagons = (snap.hexagons || []).map(h => ({ ...h }));
   state.drawingFrom = null;
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
@@ -120,6 +126,20 @@ function addHighlight(sq) {
   pushAnnoHistory();
 }
 
+// Place-if-missing: a single left click puts the shape down, a double left
+// click takes it away again (eraseAnnotationAt), so placing never toggles.
+function addShapeOnce(kind, sq) {
+  const list = state[kind];
+  if (!list) return;
+  if (list.some(x => x.square === sq && x.color === state.currentColor)) return;
+  list.push({ square: sq, color: state.currentColor });
+  renderAnnotations();
+  pushAnnoHistory();
+}
+
+function addTriangle(sq) { addShapeOnce('triangles', sq); }
+function addHexagon(sq) { addShapeOnce('hexagons', sq); }
+
 function addRectangle(from, to) {
   state.rectangles.push({ from, to, color: state.currentColor });
   renderAnnotations();
@@ -132,6 +152,8 @@ function eraseAnnotationAt(sq) {
   state.circles = state.circles.filter(c => c.square !== sq);
   state.highlights = state.highlights.filter(h => h.square !== sq);
   state.rectangles = state.rectangles.filter(r => r.from !== sq && r.to !== sq);
+  state.triangles = (state.triangles || []).filter(t => t.square !== sq);
+  state.hexagons = (state.hexagons || []).filter(h => h.square !== sq);
   const newCount = state.arrows.length + state.circles.length + state.highlights.length + state.rectangles.length;
   renderAnnotations();
   if (prevCount !== newCount) pushAnnoHistory();
@@ -143,7 +165,11 @@ function clearAllAnnotations(keepHistory) {
   state.circles = [];
   state.highlights = [];
   state.rectangles = [];
+  state.triangles = [];
+  state.hexagons = [];
   state.drawingFrom = null;
+  state.rightArrowFrom = null;
+  if (typeof cancelLeftAction === 'function') cancelLeftAction();
   renderAnnotations();
   if (typeof highlightSquares === 'function') highlightSquares();
   if (hadAny && keepHistory !== false) pushAnnoHistory();

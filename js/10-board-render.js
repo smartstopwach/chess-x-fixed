@@ -214,5 +214,11 @@ function highlightSquares() {
     const sel = showSquare(state.drawingFrom);
     if (sel) sel.classList.add('selected');
   }
+
+  // Pending origin of a right-click-click arrow
+  if (state.rightArrowFrom) {
+    const sel = showSquare(state.rightArrowFrom);
+    if (sel) sel.classList.add('selected');
+  }
 }
 
