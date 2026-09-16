@@ -23,7 +23,6 @@
   width: 28px;
   height: 28px;
   object-fit: contain;
-  border-radius: 7px;
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 
