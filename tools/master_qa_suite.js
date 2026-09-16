@@ -689,6 +689,33 @@ async function runMasterSuite() {
     assert(window.state.arrows.length === 0, 'illegal bishop arrow leaves no annotation');
   });
 
+  test('ANNO-FIX', 'rapid triple-click clears drawings and one undo restores all', () => {
+    window.setMode('normal');
+    window.state.game.reset();
+    window.clearAllAnnotations(false);
+    window.initAnnoHistory();
+    window.setTool('circle');
+    window.addCircle('a3');
+    window.addTriangle('b3');
+    window.addHexagon('c3');
+    window.addArrow('a1', 'a4');
+    assert(window.annoTotal() === 4, 'four annotations prepared');
+
+    const blank = window.document.querySelector('.square[data-square="e4"]');
+    window.beginSquarePress(blank, 10, 10, 0, 3);
+    window.endSquarePress(blank, 10, 10);
+    assert(window.annoTotal() === 0, 'triple click clears all annotations');
+    window.undoAnnotation();
+    assert(window.annoTotal() === 4, 'one undo restores every annotation');
+
+    const occupied = window.document.querySelector('.square[data-square="e2"]');
+    window.beginSquarePress(occupied, 10, 10, 0, 4);
+    window.endSquarePress(occupied, 10, 10);
+    assert(window.annoTotal() === 4, 'multi-click on a piece does not clear drawings');
+    window.cancelLeftAction();
+    window.clearAllAnnotations(false);
+  });
+
   test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {
     window.clearAllAnnotations(false); window.initAnnoHistory();
     assert(window.addShapeOnce('circles', 'd4') === true);

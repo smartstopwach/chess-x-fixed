@@ -123,9 +123,24 @@ function rightButtonIsArrow() {
   return !isEditingPosition();
 }
 
+// A rapid triple-click (or any higher browser click detail) on an empty board
+// square is a deliberate "clear all drawings" shortcut. It never fires on a
+// piece, in Select mode, or while the board is being used as a position editor.
+function canClearAllAnnotationsFromClick(sqName, clickCount) {
+  if (!sqName || Number(clickCount) < 3) return false;
+  if (state.setupMode || (typeof isAuthoringMode === 'function' && isAuthoringMode())) return false;
+  if (!state.currentTool || state.currentTool === 'select') return false;
+  try {
+    if (typeof getPieceAt === 'function' && getPieceAt(sqName)) return false;
+  } catch (e) {}
+  return true;
+}
+
 function beginSquarePress(sq, x, y, button, detail) {
   pressConsumed = false;
-  pressDetail = (detail >= 2) ? 2 : 1;
+  // Preserve the browser click count: detail 3+ is the fast multi-click
+  // gesture reserved for clearing annotations on an empty board square.
+  pressDetail = (detail >= 3) ? 3 : (detail >= 2) ? 2 : 1;
 
   if (!sq) return;
   const sqName = sq.dataset.square;
@@ -248,11 +263,23 @@ function endSquarePress(sq, x, y) {
   const from = pressSquare;
   const moved = pressMoved;
   const btn = pressButton;
-  const dbl = pressDetail === 2;
+  const clickCount = pressDetail;
+  const dbl = clickCount === 2;
   const consumed = pressConsumed;
   const deferredRack = setupDeferredRack;   // read before the press state is cleared
 
   cancelSquarePress(true);                  // this release completes a gesture
+
+  // Keep this before the consumed/setup guards: the helper itself rejects
+  // editing modes, while a normal drawing gesture must be able to clear in
+  // one history step and therefore restore everything with one Undo.
+  if (btn === 0 && canClearAllAnnotationsFromClick(sqName, clickCount)) {
+    cancelLeftAction();
+    __lastPlaced = null;
+    state.drawingFrom = null;
+    clearAllAnnotations();
+    return;
+  }
 
   if (consumed) return;
 
