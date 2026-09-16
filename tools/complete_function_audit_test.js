@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 240, `expected the current 240 named declarations, found ${found.length}`);
+assert(found.length === 241, `expected the current 241 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -154,6 +154,9 @@ check('interaction state helpers and all annotation shapes', () => {
   assert(window.addShapeOnce('triangles', 'd4') === true, 'generic shape');
   assert(window.addTriangle('e4') === true && window.addHexagon('f4') === true, 'triangle and hexagon');
   assert(window.addRectangle('g4', 'g4') === true, 'rectangle');
+  window.state.game.reset();
+  assert(window.arrowFollowsPieceRule('c1', 'f4') === true, 'bishop diagonal');
+  assert(window.arrowFollowsPieceRule('c1', 'f5') === false, 'bishop rejects non-diagonal');
   window.takeBack('d4');
   assert(!window.state.triangles.some(shape => shape.square === 'd4'), 'take-back erases shape');
   window.setTool('select');

@@ -122,9 +122,27 @@ function annoTotal() {
          state.rectangles.length + (state.triangles || []).length + (state.hexagons || []).length;
 }
 
+// A bishop-origin teaching arrow must still show a move the bishop could make:
+// its target has to be on the same diagonal. Other teaching arrows keep their
+// existing free-form behaviour, and arrows whose origin is now empty remain
+// restorable after a move.
+function arrowFollowsPieceRule(from, to) {
+  if (!from || !to || from === to) return false;
+  let piece = null;
+  try { piece = state.game && typeof state.game.get === 'function' ? state.game.get(from) : null; } catch (e) {}
+  if (!piece || piece.type !== 'b') return true;
+  const a = squareRC(from);
+  const b = squareRC(to);
+  return Math.abs(a.r - b.r) === Math.abs(a.c - b.c);
+}
+
 // Returns true when the arrow was added, false when an identical arrow was
-// already there and got toggled off.
+// already there and got toggled off or when a bishop target is not diagonal.
 function addArrow(from, to) {
+  if (!arrowFollowsPieceRule(from, to)) {
+    if (typeof toast === 'function') toast('A bishop arrow must follow a diagonal', 'warn');
+    return false;
+  }
   const idx = state.arrows.findIndex(a => a.from === from && a.to === to && a.color === state.currentColor);
   if (idx >= 0) state.arrows.splice(idx, 1);
   else state.arrows.push({ from, to, color: state.currentColor });

@@ -680,6 +680,15 @@ async function runMasterSuite() {
     }
   });
 
+  test('ANNO-FIX', 'bishop arrows stay on a legal diagonal', () => {
+    window.state.game.reset();
+    window.clearAllAnnotations(false);
+    assert(window.arrowFollowsPieceRule('c1', 'f4') === true, 'diagonal bishop arrow allowed');
+    assert(window.arrowFollowsPieceRule('c1', 'f5') === false, 'non-diagonal bishop arrow rejected');
+    assert(window.addArrow('c1', 'f5') === false, 'illegal bishop arrow not drawn');
+    assert(window.state.arrows.length === 0, 'illegal bishop arrow leaves no annotation');
+  });
+
   test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {
     window.clearAllAnnotations(false); window.initAnnoHistory();
     assert(window.addShapeOnce('circles', 'd4') === true);

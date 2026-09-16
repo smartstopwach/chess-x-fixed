@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "43e0961bc168340961715532bfdbf2c4a38b68b8fcc8d300a51a753386e49c45",
+  "concat_sha256": "23630c98d6a1c4343d3b3b85fce357c1dc180077391fa1897d197ad6946fb24f",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -48,8 +48,8 @@
     },
     {
       "file": "js/13-annotation-tools.js",
-      "lines": 218,
-      "bytes": 8344
+      "lines": 236,
+      "bytes": 9190
     },
     {
       "file": "js/14-tool-selection.js",
