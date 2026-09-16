@@ -124,12 +124,13 @@ function rightButtonIsArrow() {
 }
 
 // A rapid triple-click (or any higher browser click detail) on an empty board
-// square is a deliberate "clear all drawings" shortcut. It never fires on a
-// piece, in Select mode, or while the board is being used as a position editor.
+// square is a deliberate "clear all drawings" shortcut. It also covers arrows
+// made with left/right holds while Select is active. It never fires on a piece
+// or while the board is being used as a position editor.
 function canClearAllAnnotationsFromClick(sqName, clickCount) {
   if (!sqName || Number(clickCount) < 3) return false;
   if (state.setupMode || (typeof isAuthoringMode === 'function' && isAuthoringMode())) return false;
-  if (!state.currentTool || state.currentTool === 'select') return false;
+  if (!state.currentTool) return false;
   try {
     if (typeof getPieceAt === 'function' && getPieceAt(sqName)) return false;
   } catch (e) {}

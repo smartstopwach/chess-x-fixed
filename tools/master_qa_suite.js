@@ -711,20 +711,28 @@ async function runMasterSuite() {
     window.addCircle('a3');
     window.addTriangle('b3');
     window.addHexagon('c3');
+    window.addArrow('c1', 'f4');
+
+    // Add the two arrow outputs that are easy to miss: left-hold and
+    // right-hold arrows are created while Select is active, not by the Arrow
+    // palette tool. Their gesture paths are covered by the interaction suite;
+    // here we verify that the clear shortcut treats both as annotations.
+    window.setTool('select');
     window.addArrow('a1', 'a4');
-    assert(window.annoTotal() === 4, 'four annotations prepared');
+    window.handleRightClickOrDrag('b1', 'b4', true);
+    assert(window.annoTotal() === 6, `all six annotations prepared, including held arrows (got ${window.annoTotal()})`);
 
     const blank = window.document.querySelector('.square[data-square="e4"]');
     window.beginSquarePress(blank, 10, 10, 0, 3);
     window.endSquarePress(blank, 10, 10);
     assert(window.annoTotal() === 0, 'triple click clears all annotations');
     window.undoAnnotation();
-    assert(window.annoTotal() === 4, 'one undo restores every annotation');
+    assert(window.annoTotal() === 6, 'one undo restores every annotation including held arrows');
 
     const occupied = window.document.querySelector('.square[data-square="e2"]');
     window.beginSquarePress(occupied, 10, 10, 0, 4);
     window.endSquarePress(occupied, 10, 10);
-    assert(window.annoTotal() === 4, 'multi-click on a piece does not clear drawings');
+    assert(window.annoTotal() === 6, 'multi-click on a piece does not clear drawings');
     window.cancelLeftAction();
     window.clearAllAnnotations(false);
   });
