@@ -28,17 +28,19 @@ function toast(message, type = '') {
   showBoardMessage(message, kind);
 }
 
-// A tiny Web Audio move cue keeps every board mode feeling responsive without
-// shipping an audio asset. It is created lazily from the user's move gesture,
-// so it also satisfies browser autoplay rules. In browsers without Web Audio
-// (or in the DOM test harness) it simply becomes a no-op.
+// A short Web Audio move cue keeps every board mode responsive without
+// shipping a remote asset. The context is warmed on the board press (rather
+// than only after the move), which is important on mobile Safari/Chrome where
+// resume() must happen inside the original user gesture. The old version only
+// resumed while the move was being committed; some browsers then kept the
+// context suspended and the cue was silent.
 let moveAudioContext = null;
 
-function playPieceMoveSound(move, delay = 0) {
+function prepareMoveAudio() {
   try {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return false;
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) return;
+    if (!AudioCtor) return false;
     if (!moveAudioContext || moveAudioContext.state === 'closed') {
       moveAudioContext = new AudioCtor();
     }
@@ -46,22 +48,63 @@ function playPieceMoveSound(move, delay = 0) {
       const resumeResult = moveAudioContext.resume();
       if (resumeResult && typeof resumeResult.catch === 'function') resumeResult.catch(() => {});
     }
+    return true;
+  } catch (e) {
+    // Audio is optional; a blocked/unsupported context must never block a move.
+    return false;
+  }
+}
+
+function playPieceMoveSound(move, delay = 0) {
+  try {
+    if (!prepareMoveAudio()) {
+      // Older embedded browsers may not expose Web Audio at all. Keep a tiny
+      // local WAV fallback so those browsers still get a cue instead of a
+      // silent no-op. It is only used when the Web Audio path is unavailable.
+      if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+        const audio = new window.Audio('audio/move.wav');
+        // JSDOM and a few embedded shells expose Audio but report no WAV
+        // decoder. Avoid calling their placeholder play() implementation;
+        // real browsers return "maybe" or "probably" here.
+        if (typeof audio.canPlayType === 'function' && !audio.canPlayType('audio/wav')) return;
+        audio.volume = 0.65;
+        const playFallback = () => {
+          try {
+            audio.currentTime = 0;
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+          } catch (e) {}
+        };
+        const wait = Math.max(0, Number(delay) || 0) * 1000;
+        if (wait > 0) setTimeout(playFallback, wait);
+        else playFallback();
+      }
+      return;
+    }
 
     const ctx = moveAudioContext;
-    const start = ctx.currentTime + Math.max(0, Number(delay) || 0);
+    // Leave a small scheduling margin. It prevents a cue scheduled at exactly
+    // currentTime from being rejected when resume() completes between the
+    // context lookup and oscillator.start().
+    const now = Number(ctx.currentTime);
+    const start = (Number.isFinite(now) ? now : 0) +
+      Math.max(0.01, Number(delay) || 0);
     const captured = !!(move && (move.captured || (move.flags && String(move.flags).includes('c'))));
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(captured ? 150 : 205, start);
-    oscillator.frequency.exponentialRampToValueAtTime(captured ? 105 : 135, start + 0.12);
+    // The previous 105–205 Hz cue was too quiet on ordinary laptop/phone
+    // speakers. These ranges remain short and unobtrusive, but are clearly
+    // audible as a move/capture distinction.
+    oscillator.frequency.setValueAtTime(captured ? 270 : 420, start);
+    oscillator.frequency.exponentialRampToValueAtTime(captured ? 135 : 220, start + 0.13);
     gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(captured ? 0.16 : 0.12, start + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.15);
+    gain.gain.exponentialRampToValueAtTime(captured ? 0.30 : 0.22, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
     oscillator.connect(gain);
     gain.connect(ctx.destination);
     oscillator.start(start);
-    oscillator.stop(start + 0.16);
+    oscillator.stop(start + 0.19);
   } catch (e) {
     // Sound must never be able to break a legal move or a setup placement.
   }

@@ -136,6 +136,14 @@ function beginSquarePress(sq, x, y, button, detail) {
   pressButton = (button !== undefined) ? button : 0;
   pressMoved = false;
 
+  // Unlock Web Audio at the start of the real board gesture. Waiting until
+  // mouseup/touchend is too late on some mobile browsers, so the first legal
+  // move is not silently lost to autoplay policy. This is intentionally a
+  // warm-up only; it never emits a sound for a selection or drawing gesture.
+  if (pressButton === 0 && typeof prepareMoveAudio === 'function') {
+    prepareMoveAudio();
+  }
+
   // RIGHT-CLICK:
   if (pressButton === 2) {
     // Editing a position (setup editing OR puzzle authoring): the right

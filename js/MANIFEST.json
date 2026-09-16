@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "d2829e25a79d012049370f969e62f9eed5aae65019066d2c356ba715ad86c2fd",
+  "concat_sha256": "92af013c7d38aa0eaf553c824cb80c8d9ca4e15014dfebc543dac57b8d257ff1",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -23,8 +23,8 @@
     },
     {
       "file": "js/03-utils.js",
-      "lines": 84,
-      "bytes": 3523
+      "lines": 127,
+      "bytes": 5468
     },
     {
       "file": "js/04-protect.js",
@@ -43,8 +43,8 @@
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 795,
-      "bytes": 29647
+      "lines": 803,
+      "bytes": 30052
     },
     {
       "file": "js/13-annotation-tools.js",

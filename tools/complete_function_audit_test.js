@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 239, `expected the current 239 named declarations, found ${found.length}`);
+assert(found.length === 240, `expected the current 240 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -126,6 +126,7 @@ check('message, audio, material and promotion helpers', () => {
   assert(window.materialPoints('w') > 0 && window.materialBalance().white > 0, 'material totals');
   window.state.history = ['e4', 'e5', 'a8=Q+'];
   assert(window.promotionCounts().w === 1, 'promotion count');
+  assert(window.prepareMoveAudio() === true, 'audio context warm-up');
   window.playPieceMoveSound({ flags: 'n' });
   window.playPieceMoveSound({ flags: 'c' }, 0.05);
   const audio = getAudioCounts();
