@@ -280,7 +280,8 @@ function resumeLabel(mode, s) {
   const n = asArray(s.history).length;
   if (n) bits.push(n + (n === 1 ? ' move' : ' moves'));
   const drawn = asArray(s.arrows).length + asArray(s.circles).length +
-    asArray(s.highlights).length + asArray(s.rectangles).length;
+    asArray(s.highlights).length + asArray(s.rectangles).length +
+    asArray(s.triangles).length + asArray(s.hexagons).length;
   if (drawn) bits.push(drawn + (drawn === 1 ? ' marking' : ' markings'));
   try {
     const puz = findPuzzleById(getLibrary(), s.activePuzzleId);
@@ -295,7 +296,8 @@ function isRestorable(s) {
   if (s.mode && s.mode !== 'front') return true;
   if (asArray(s.history).length) return true;
   if (asArray(s.arrows).length + asArray(s.circles).length +
-      asArray(s.highlights).length + asArray(s.rectangles).length) return true;
+      asArray(s.highlights).length + asArray(s.rectangles).length +
+      asArray(s.triangles).length + asArray(s.hexagons).length) return true;
   return !!s.fen && s.fen.indexOf('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR') !== 0;
 }
 

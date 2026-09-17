@@ -20,4 +20,61 @@
   min-height: 120px;
 }
 
+/* Play-against-bot controls are available in playable modes only. */
+#botPanel[hidden],
+body.on-front-page #botPanel,
+body[data-authoring="true"] #botPanel,
+body[data-setup-editing="true"] #botPanel {
+  display: none !important;
+}
+
+.bot-panel {
+  border-color: rgba(111, 197, 255, 0.42);
+  background: linear-gradient(180deg, rgba(48, 125, 183, 0.13), rgba(13, 17, 23, 0.2));
+}
+
+.bot-side-info {
+  margin: 2px 0 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.bot-help {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.bot-controls-row {
+  align-items: center;
+}
+
+.bot-controls-row select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bot-toggle.is-active {
+  border-color: rgba(232, 197, 71, 0.75);
+  background: rgba(232, 197, 71, 0.16);
+  color: var(--accent);
+}
+
+.bot-status {
+  min-height: 18px;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.bot-status.is-thinking {
+  color: #8bd49a;
+}
+
 

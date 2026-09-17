@@ -11,6 +11,7 @@ function renderAll() {
   try { highlightSquares(); }  catch (e) { console.error('highlightSquares failed', e); }
   try { renderMovesList(); }   catch (e) { console.error('renderMovesList failed', e); }
   try { updateFen(); }         catch (e) { console.error('updateFen failed', e); }
+  try { updateBotPanel(); }     catch (e) { console.error('updateBotPanel failed', e); }
   // Last step, and isolated like the others: the checkmate/stalemate
   // celebration is decoration, so it must never be able to break a repaint
   // (and it is defined in a later file, hence the typeof guard).

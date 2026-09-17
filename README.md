@@ -13,13 +13,15 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - Legal move highlighting, last-move highlighting, check indication
 - Board coordinates, flip, reset, undo
 - Fullscreen and zoom controls
+- A short, subtle move cue after successful moves and piece placements in every mode
+- A distinct two-note check/checkmate alert, cached locally for offline play
 - 6 board themes (Classic, Tournament, Wooden, Dark, Minimal, Green)
 - 3 piece styles (Alpha, Merida, Classic)
 
 ### ✏️ Teaching Drawing Tools
 - **Select, Arrow, Circle, Highlight, Rectangle, Triangle, Hexagon, Eraser** —
-  the palette in the left sidebar; Triangle and Hexagon are outlined shapes
-  centred on a square, exactly like the circle
+  the palette in the left sidebar; Circle, Rectangle, Triangle and Hexagon are
+  fitted inside one square and centred on that square's piece/centre
 - **Left click does whatever the selected tool says** (select = chess move /
   piece pick-up, every drawing tool = its own marking), and **a double left
   click on a square reverses what the left click put there** — every tool
@@ -38,8 +40,9 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
   tool is selected: right-drag draws it in one gesture, and two single right
   clicks work too (first = origin square, second = target, same square twice
   = cancel). `handleRightClickOrDrag()` owns this and nothing else
-- Left-drag keeps its old jobs (rectangle tool = rectangle, eraser = erase both
-  squares, anything else = arrow)
+- Left-drag draws an arrow (except that Rectangle and Eraser are click-only):
+  Rectangle places one fitted box in the clicked square; Eraser removes marks
+  only from the square clicked after selecting it, never from a held drag
 - The right-button arrow works in **every mode while teaching**, and never
   while **editing a position** (`isEditingPosition()` /
   `rightButtonIsArrow()` in `js/12-board-interactions.js`):
@@ -193,6 +196,15 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 - Eval bar visualization
 - **"Hide Engine"** button — critical for clean recording
 
+### 🤖 Play Against Bot
+- Available in all three playable modes: Normal, Puzzle after leaving position editing, and Custom Setup after **START FROM POSITION**.
+- Hidden automatically while a position is being edited, so the bot cannot interfere with piece placement or puzzle authoring.
+- Starts from the exact position currently on the board and keeps the existing move list; it never resets a half-played game.
+- The side at the bottom of the board is always **You**. The bot plays the opposite side.
+- Press **Flip** during a game to switch the human and bot sides. Any active search is cancelled safely and restarted for the new bot side without losing the position.
+- Includes approximate bot-strength choices from **400 to 2400 Elo**. The UI value is translated to Stockfish skill/depth and calibrated Elo where the engine supports it.
+- If the bot is to move when the game starts, it moves automatically; otherwise it waits for your move.
+
 ### 🎥 Recording Mode (one-click)
 - Activated with the prominent red **RECORDING MODE** button
 - Hides everything except the board, lesson title, and essential teaching controls
@@ -222,6 +234,8 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 - Display "YOUR MOVE?" with custom question
 - **Clicking a puzzle in the library gives you a playable board** (it used to
   leave the piece editor armed, so every click edited instead of moved)
+- Clicking a piece belonging to the side that is **not** to move is rejected
+  with a short error sound; legal moves keep the wooden move tap
 - **✎ Edit position** (in the Puzzle Editor panel) is the explicit way to place
   or remove pieces; `Esc` or ✕ Exit hands the board back to play with the
   position intact — exiting no longer resets to the starting position
@@ -399,6 +413,7 @@ never change the size of the board, and it clears itself after six seconds.
 |---|---|
 | `1` / `2` / `3` | Normal / Puzzle / Custom Setup mode |
 | `←` / `→` | Previous / Next move |
+| `↓` | Next puzzle in Puzzle mode |
 | `F` | Flip board |
 | `R` | Reset board |
 | `V` | Select tool (play chess) |
@@ -418,7 +433,8 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - **Save Lesson** — exports full lesson as JSON (position + moves + annotations + notes + bookmarks + theme)
 - **Load Lesson** — restore from JSON
 - **Export PGN** — download game as PGN
-- **Import** — JSON or PGN
+- **Import Puzzle Library** — choose a `.json` file from the Library / Chapters panel. The importer checks the root schema, chapter/puzzle IDs, references, FEN legality, difficulty, timestamps, and every saved SAN solution before replacing local data; a bad file is rejected without touching the existing library
+- `puzzle-library-example.json` is a ready-to-import sample file
 - Auto-saves current lesson to localStorage
 
 ### 🎬 Built-in Screen Recording
@@ -440,6 +456,9 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 ### 📱 Responsive Design
 - Optimized for Windows, Mac, iPad (landscape), Android tablets and phones
 - Rearranges panels on small screens (one column below 900px, board first)
+- Phone and tablet layouts respect iOS/Android safe-area insets, allow the
+  stacked panels to scroll, keep form fields from triggering browser zoom, and
+  preserve touch drawing with `touch-action` controls
 - The board is re-measured against **the room actually left in the window**, so
   it can never be clipped by the sidebars: a 1024×768 window gets a ~700px
   board, a 390×844 phone a ~365px one, and every rank stays reachable
@@ -450,6 +469,17 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
   piece and turn a drawing tap into a double click that undid itself — drawing
   tools now work with a finger exactly as they do with a mouse (tap-tap for a
   click-click arrow, swipe for a drag arrow)
+
+### 🌐 Web App and Download
+- The front page includes **Web App** to install ChessX as a PWA on supported
+  Android, iPadOS, iOS and desktop browsers. Safari shows its Add to Home Screen
+  guidance when it cannot open an install prompt directly.
+- After the first successful online load, the service worker caches the complete
+  app shell, icons, engine, audio, and downloadable bundle so the installed app
+  continues to open and work without a connection.
+- **Download** saves `ChessX-WebApp.zip`, a complete static copy that can be
+  unzipped and served locally or from any static web host. The extracted bundle
+  includes all application assets and remains usable without internet access.
 
 ## 🚀 Usage
 
@@ -463,7 +493,9 @@ python3 -m http.server 8000
 npx serve
 ```
 
-Then visit `http://localhost:8000`.
+Then visit `http://localhost:8000`. Use a local/static HTTP server rather than
+opening the file directly when you want PWA installation and service-worker
+offline caching; the downloaded files themselves remain local and self-contained.
 
 ## 🌐 Browser Compatibility
 

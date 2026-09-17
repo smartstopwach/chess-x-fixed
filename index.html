@@ -2,10 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#161b22" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ChessX" />
 <title>ChessX — Professional Chess Teaching Studio</title>
-<link rel="icon" type="image/png" href="favicon.png" />
-<link rel="apple-touch-icon" href="favicon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png?v=knight" />
+<link rel="alternate icon" type="image/png" sizes="128x128" href="favicon.png?v=knight" />
+<link rel="apple-touch-icon" href="brand-knight.png?v=knight" />
 <!-- CSS: split per section (was styles.css). Keep this order — it is the
      original cascade order, and css/<file> maps 1:1 to the old section banner.
      `python3 tools/verify_split.py` proves the concatenation is still intact. -->
@@ -56,11 +63,7 @@
     <button class="btn-ghost btn-home" id="btnHome" title="Home / Mode Picker (H)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
     </button>
-    <svg class="brand-icon" viewBox="0 0 32 32" width="28" height="28">
-      <path d="M16 2 L9 9 L16 16 L23 9 Z" fill="#e8c547"/>
-      <circle cx="16" cy="22" r="6" fill="#e8c547"/>
-      <rect x="10" y="26" width="12" height="4" rx="1" fill="#e8c547"/>
-    </svg>
+    <img class="brand-icon" src="brand-knight.png" width="24" height="24" alt="ChessX white knight" />
     <span class="brand-name">Chess<span>X</span></span>
     <span class="brand-tag">Teaching Studio</span>
     <span class="mode-indicator" id="modeIndicator"></span>
@@ -78,11 +81,7 @@
 <div class="front-page" id="frontPage">
   <div class="front-page-inner">
     <div class="front-page-logo">
-      <svg viewBox="0 0 64 64" width="80" height="80">
-        <path d="M32 4 L18 18 L32 32 L46 18 Z" fill="#e8c547"/>
-        <circle cx="32" cy="44" r="12" fill="#e8c547"/>
-        <rect x="20" y="52" width="24" height="8" rx="2" fill="#e8c547"/>
-      </svg>
+      <img class="brand-emblem" src="brand-knight.png" width="84" height="84" alt="ChessX white knight with shield and sword" />
       <h1 class="front-page-title">Chess<span>X</span></h1>
       <p class="front-page-tagline">Professional Chess Teaching Studio</p>
     </div>
@@ -126,6 +125,19 @@
         <span class="mode-card-hotkey">Press 3</span>
       </button>
     </div>
+
+    <div class="front-page-actions" id="appActions" aria-label="ChessX app options">
+      <button class="app-action app-action-install" id="btnInstallApp" type="button">
+        <svg class="app-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/><path d="M5 20h14"/></svg>
+        <span class="app-action-copy"><strong>Web App</strong><small>Install on this device</small></span>
+      </button>
+      <a class="app-action app-action-download" id="btnDownloadApp" href="ChessX-WebApp.zip" download="ChessX-WebApp.zip">
+        <svg class="app-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/><path d="M5 21h14"/></svg>
+        <span class="app-action-copy"><strong>Download</strong><small>Save for offline use</small></span>
+      </a>
+    </div>
+    <p class="app-install-note" id="appInstallNote" role="status" aria-live="polite"></p>
+    <p class="app-offline-note" id="appOfflineNote" role="status" aria-live="polite"></p>
 
     <div class="front-page-footer">
       <p>Tip: Use number keys 1 / 2 / 3 to quickly switch modes. Click the home icon to come back here.</p>
@@ -196,7 +208,7 @@
           <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
           <span>Highlight</span>
         </button>
-        <button class="tool-btn" data-tool="rectangle" title="Rectangle (R)">
+        <button class="tool-btn" data-tool="rectangle" title="Rectangle — one square click">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="4" width="16" height="16"/></svg>
           <span>Rect</span>
         </button>
@@ -492,6 +504,34 @@
   <!-- RIGHT SIDEBAR -->
   <aside class="sidebar sidebar-right" id="rightSidebar">
 
+    <!-- Play against Stockfish from the current position -->
+    <div class="panel bot-panel" id="botPanel" hidden>
+      <div class="panel-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.8 1.8 4 1.8s2.8-.6 4-1.8"/><path d="M12 3v3M4.9 5.1l2.1 2.1M19.1 5.1 17 7.2"/></svg>
+        Play Against Bot
+      </div>
+      <div class="bot-side-info" id="botSideInfo">You: White · Bot: Black</div>
+      <div class="bot-help">Flip the board to change your side. Your current position and move list are kept.</div>
+      <div class="row bot-controls-row">
+        <label class="small-label" for="botElo">Bot Elo</label>
+        <select id="botElo" aria-label="Bot Elo">
+          <option value="400">400 · Beginner</option>
+          <option value="600">600 · Beginner</option>
+          <option value="800">800 · Easy</option>
+          <option value="1000" selected>1000 · Easy</option>
+          <option value="1200">1200 · Club</option>
+          <option value="1400">1400 · Club</option>
+          <option value="1600">1600 · Strong</option>
+          <option value="1800">1800 · Strong</option>
+          <option value="2000">2000 · Expert</option>
+          <option value="2200">2200 · Expert</option>
+          <option value="2400">2400 · Master</option>
+        </select>
+      </div>
+      <button class="btn-primary-full bot-toggle" id="btnBotToggle" type="button">Play Against Bot</button>
+      <div class="bot-status" id="botStatus" role="status" aria-live="polite">Ready — flip the board to choose your side.</div>
+    </div>
+
     <!-- Stockfish Engine -->
     <div class="panel" id="enginePanel">
       <div class="panel-title">
@@ -612,10 +652,10 @@
         <!-- Filled by JS: chapters and puzzles -->
       </div>
       <div class="row">
-        <button class="btn-ghost-full" id="btnImportLibrary">Import</button>
+        <button class="btn-ghost-full" id="btnImportLibrary" title="Import and verify a ChessX puzzle library JSON file">Import</button>
         <button class="btn-ghost-full" id="btnExportLibrary">Export</button>
       </div>
-      <input type="file" id="libraryFileInput" accept=".json" style="display:none" />
+      <input type="file" id="libraryFileInput" accept=".json,application/json" style="display:none" />
     </div>
 
     <!-- PUZZLE EDITOR (blue accent - distinct from left Position Setup) -->

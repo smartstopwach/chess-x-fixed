@@ -5,8 +5,8 @@
 //   • LEFT CLICK on piece/square: normal chess move / piece selection (or setup pick/place)
 //   • LEFT DRAG (sqA -> sqB):
 //       - in setup editing: moves piece from sqA to sqB (NO arrows/drawings)
-//       - in normal mode / after START FROM POSITION: rectangle tool = box,
-//         eraser = wipe both squares, every other tool = arrow
+//       - in normal mode / after START FROM POSITION: a rectangle click marks
+//         one fitted square, eraser is click-only, every other tool = arrow
 //   • LEFT CLICK: the selected tool does its job (select = chess), through a
 //       short double-click window; a DOUBLE left click takes back what the
 //       first click of that pair put down - and never anything older
@@ -27,6 +27,8 @@ let pressMoved = false;    // pointer travelled past the slop -> this is a real 
 let pressConsumed = false; // a mode already acted on the press -> ignore the release
 let touchHandledPress = false;
 let lastTouchAt = 0;       // when the last real touch gesture was seen
+let lastRightEditSquare = null;
+let lastRightEditAt = 0;
 let setupDeferredRack = null;  // rack piece waiting to see if the press is a click or a drag
 const TOUCH_SUPPRESS_MS = 800;
 
@@ -72,10 +74,13 @@ function onSquareMouseUp(e) {
 }
 
 // Touch: phones/tablets fire synthetic mouse events after a tap, and those can
-// land on the wrong square (or not at all once the page scrolls). Handle the
-// touch directly and swallow the emulated mouse pair for this tap.
+// land on the wrong square (or not at all once the page scrolls). A touch that
+// starts on the board belongs to the chess gesture, so stop the browser from
+// scrolling the document underneath a piece while it is being picked up or
+// dragged. The sidebars remain the page-scroll surface on mobile.
 function onTouchStart(e) {
   if (e.touches.length !== 1) return;
+  if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
   const t = e.touches[0];
   touchHandledPress = true;
   lastTouchAt = Date.now();
@@ -121,9 +126,25 @@ function rightButtonIsArrow() {
   return !isEditingPosition();
 }
 
+// A rapid triple-click (or any higher browser click detail) on an empty board
+// square is a deliberate "clear all drawings" shortcut. It also covers arrows
+// made with left/right holds while Select is active. It never fires on a piece
+// or while the board is being used as a position editor.
+function canClearAllAnnotationsFromClick(sqName, clickCount) {
+  if (!sqName || Number(clickCount) < 3) return false;
+  if (state.setupMode || (typeof isAuthoringMode === 'function' && isAuthoringMode())) return false;
+  if (!state.currentTool) return false;
+  try {
+    if (typeof getPieceAt === 'function' && getPieceAt(sqName)) return false;
+  } catch (e) {}
+  return true;
+}
+
 function beginSquarePress(sq, x, y, button, detail) {
   pressConsumed = false;
-  pressDetail = (detail >= 2) ? 2 : 1;
+  // Preserve the browser click count: detail 3+ is the fast multi-click
+  // gesture reserved for clearing annotations on an empty board square.
+  pressDetail = (detail >= 3) ? 3 : (detail >= 2) ? 2 : 1;
 
   if (!sq) return;
   const sqName = sq.dataset.square;
@@ -134,14 +155,30 @@ function beginSquarePress(sq, x, y, button, detail) {
   pressButton = (button !== undefined) ? button : 0;
   pressMoved = false;
 
+  // Unlock Web Audio at the start of the real board gesture. Waiting until
+  // mouseup/touchend is too late on some mobile browsers, so the first legal
+  // move is not silently lost to autoplay policy. This is intentionally a
+  // warm-up only; it never emits a sound for a selection or drawing gesture.
+  if (pressButton === 0 && typeof prepareMoveAudio === 'function') {
+    prepareMoveAudio();
+  }
+
   // RIGHT-CLICK:
   if (pressButton === 2) {
     // Editing a position (setup editing OR puzzle authoring): the right
     // button erases the piece immediately - no drawing, no arrow.
     if (isEditingPosition()) {
       pressConsumed = true;
-      if (state.setupMode) erasePieceAt(sqName);
-      else if (typeof peErasePiece === 'function') peErasePiece(sqName);
+      // Puzzle authoring also sets setupMode so the piece editor can use the
+      // same board gesture. Check authoring first or a right-click would erase
+      // only the main setup state and bypass the puzzle editor's undo history.
+      lastRightEditSquare = sqName;
+      lastRightEditAt = Date.now();
+      if (typeof isAuthoringMode === 'function' && isAuthoringMode() && typeof peErasePiece === 'function') {
+        peErasePiece(sqName);
+      } else if (state.setupMode) {
+        erasePieceAt(sqName);
+      }
       return;
     }
     // Teaching / playing (Normal, Setup after START FROM POSITION, Puzzle
@@ -230,11 +267,23 @@ function endSquarePress(sq, x, y) {
   const from = pressSquare;
   const moved = pressMoved;
   const btn = pressButton;
-  const dbl = pressDetail === 2;
+  const clickCount = pressDetail;
+  const dbl = clickCount === 2;
   const consumed = pressConsumed;
   const deferredRack = setupDeferredRack;   // read before the press state is cleared
 
   cancelSquarePress(true);                  // this release completes a gesture
+
+  // Keep this before the consumed/setup guards: the helper itself rejects
+  // editing modes, while a normal drawing gesture must be able to clear in
+  // one history step and therefore restore everything with one Undo.
+  if (btn === 0 && canClearAllAnnotationsFromClick(sqName, clickCount)) {
+    cancelLeftAction();
+    __lastPlaced = null;
+    state.drawingFrom = null;
+    clearAllAnnotations();
+    return;
+  }
 
   if (consumed) return;
 
@@ -295,10 +344,14 @@ function endSquarePress(sq, x, y) {
     __lastPlaced = null;  // ...and the take-back context goes with it
     if (state.drawingFrom) { state.drawingFrom = null; highlightSquares(); }
     if (state.currentTool === 'rectangle') {
-      addRectangle(from, sqName);
+      // A box is a one-square mark. Do not turn a drag into a large
+      // out-of-square rectangle; click the square to place the fitted box.
+      return;
     } else if (state.currentTool === 'eraser') {
-      eraseAnnotationAt(from);
-      eraseAnnotationAt(sqName);
+      // Eraser is intentionally click-only. Holding and dragging it used to
+      // erase both end squares, which made it too easy to remove drawings by
+      // accident. The single-click path below is its only action.
+      return;
     } else {
       // Left-drag ALWAYS draws an arrow!
       addArrow(from, sqName);
@@ -312,20 +365,40 @@ function endSquarePress(sq, x, y) {
     return;
   }
 
-  // 5. LEFT CLICK with any drawing tool: the selected tool does its job, but
-  //    through a double-click window, because a DOUBLE left click on a square
-  //    reverses whatever the left click put there (every tool except select).
-  //    The second click of a double click (mousedown detail 2) reverses at
-  //    once; anything else goes through the short double-click window.
+  // 5. LEFT CLICK with the remaining drawing tools: the selected tool does its
+  //    job through a double-click window, because a DOUBLE left click on a
+  //    square reverses whatever the left click put there (every tool except
+  //    select, with Rectangle/Eraser handled immediately below). The second
+  //    click of a double click (mousedown detail 2) reverses at once.
   if (dbl) {
     cancelLeftAction();
     // Second click of a real double click: if the first one only marked an
-    // arrow/rectangle origin, drop that mark; if it actually drew something,
-    // take that something back. Drawings that were already on the board stay.
+    // arrow origin, drop that mark; if it actually drew something, take that
+    // something back. Drawings that were already on the board stay.
     if (state.drawingFrom === sqName) { state.drawingFrom = null; highlightSquares(); return; }
     if (takeBackMatches(sqName)) takeBack(sqName);
     return;
   }
+
+  // Rectangle and eraser are deliberately immediate click tools. They do not
+  // need the drawing tools' double-click delay: a single eraser click must
+  // erase now, and a one-square box must appear on that click. A later second
+  // click still reaches the double-click branch above and can take back a box
+  // that this click placed.
+  if (state.currentTool === 'rectangle' || state.currentTool === 'eraser') {
+    flushLeftAction();
+    if (state.currentTool === 'rectangle') {
+      const before = state.rectangles.length;
+      addRectangle(sqName, sqName);
+      if (state.rectangles.length > before) notePlaced(sqName);
+      else __lastPlaced = null;
+    } else {
+      __lastPlaced = null;
+      eraseAnnotationAt(sqName);
+    }
+    return;
+  }
+
   scheduleLeftAction(sqName);
 }
 
@@ -419,7 +492,7 @@ function placeWithTool(sq) {
   if (!sq) return false;
   const tool = state.currentTool;
 
-  if (tool === 'arrow' || tool === 'rectangle') {
+  if (tool === 'arrow') {
     if (!state.drawingFrom) {             // first click: mark the origin square
       state.drawingFrom = sq;
       highlightSquares();
@@ -428,16 +501,26 @@ function placeWithTool(sq) {
     const from = state.drawingFrom;
     state.drawingFrom = null;
     if (from === sq) { highlightSquares(); return false; }   // clicked origin again: cancel
-    const list = (tool === 'arrow') ? state.arrows : state.rectangles;
-    const before = list.length;
-    if (tool === 'arrow') addArrow(from, sq); else addRectangle(from, sq);
+    const before = state.arrows.length;
+    addArrow(from, sq);
     highlightSquares();
-    if (list.length > before) { notePlaced(sq); return true; }
+    if (state.arrows.length > before) { notePlaced(sq); return true; }
     __lastPlaced = null;
     return false;
   }
 
-  if (tool === 'circle' || tool === 'highlight' || tool === 'triangle' || tool === 'hexagon') {
+  // All square marks, including Rect, are placed by one click and are fitted
+  // inside that square. Rect used to share the arrow's two-click range logic,
+  // which is why a test click could produce a box several squares wide.
+  if (tool === 'circle' || tool === 'highlight' || tool === 'rectangle' ||
+      tool === 'triangle' || tool === 'hexagon') {
+    if (tool === 'rectangle') {
+      const before = state.rectangles.length;
+      addRectangle(sq, sq);
+      if (state.rectangles.length > before) { notePlaced(sq); return true; }
+      __lastPlaced = null;
+      return false;
+    }
     const kind = (tool === 'circle') ? 'circles'
                : (tool === 'highlight') ? 'highlights'
                : (tool === 'triangle') ? 'triangles' : 'hexagons';
@@ -505,6 +588,19 @@ function cancelSquarePress(fromRelease) {
 
 // A single click on a square in NORMAL mode.
 function handleSquareClick(sqName) {
+  if (typeof isBotTurn === 'function' && isBotTurn()) {
+    toast('The bot is thinking — please wait for your turn', 'info');
+    return;
+  }
+  // Checkmate, stalemate, and draw are terminal for play. Do this before
+  // selecting a piece, otherwise the first click still appears to offer a move
+  // even though the position has already finished.
+  if (typeof isFinishedPosition === 'function' && isFinishedPosition()) {
+    state.selectedSquare = null;
+    if (typeof celebrateMate === 'function') celebrateMate();
+    return;
+  }
+
   // Clicking the already-selected square deselects it.
   if (state.selectedSquare === sqName) {
     state.selectedSquare = null;
@@ -572,8 +668,10 @@ function rejectMove(from, to, piece) {
   const turn = state.game.turn();
   const toName = pieceName(pieceLetter(piece));
 
-  // Clicked a piece that isn't yours to move.
+  // Clicked a piece that isn't yours to move. Give this specific mistake a
+  // short error cue; legal moves keep the original wooden tap.
   if (piece && piece.color !== turn) {
+    if (typeof playMoveErrorSound === 'function') playMoveErrorSound();
     if (!from) {
       toast(`${turnName(turn)} to move — ${toName} cannot be selected right now`, 'error');
     } else {
@@ -689,6 +787,15 @@ function cancelPromotionDialog() {
 }
 
 function tryMakeMove(from, to, promotion = null) {
+  if (typeof isBotTurn === 'function' && isBotTurn()) return false;
+  // Never allow a new move after checkmate, stalemate, or draw. Navigation,
+  // Undo, and position editing remain available through their own controls.
+  if (typeof isFinishedPosition === 'function' && isFinishedPosition()) {
+    state.selectedSquare = null;
+    if (typeof celebrateMate === 'function') celebrateMate();
+    return false;
+  }
+
   if (!promotion && isPromotionMove(from, to)) {
     const piece = state.game.get(from);
     const color = piece ? piece.color : state.game.turn();
@@ -714,6 +821,8 @@ function tryMakeMove(from, to, promotion = null) {
   state.history = state.history.slice(0, state.historyIndex + 1);
   state.history.push(result.san);
   state.historyIndex = state.history.length - 1;
+  playPieceMoveSound(result);
+  playCheckSoundIfNeeded(result);
 
   // A real move was made: hand the clock over (it used to switch on any board
   // click, so drawing an arrow also flipped whose time was running).
@@ -729,6 +838,7 @@ function tryMakeMove(from, to, promotion = null) {
   // Puzzle play mode: grade the move the user just made.
   try { if (state.puzzle) onPuzzleMovePlayed(result.san); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}
+  try { scheduleBotMove(); } catch (e) {}
   return true;
 }
 

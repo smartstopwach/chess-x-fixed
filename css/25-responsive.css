@@ -68,3 +68,262 @@
   .layout[data-layout="board"],
   .layout[data-layout="present"] { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ================================================================
+   PHONE / TABLET PORTRAIT SAFETY
+   ================================================================
+   A mobile browser has a changing address-bar height and, on iOS/Android,
+   safe-area insets. Let the document scroll once the panels are stacked; the
+   board remains first and the sidebars stay reachable below it. */
+@media (max-width: 900px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .topbar {
+    gap: 8px;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-left: max(10px, env(safe-area-inset-left, 0px));
+    padding-right: max(10px, env(safe-area-inset-right, 0px));
+  }
+
+  .brand {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .brand-name {
+    min-width: 0;
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  .topbar-actions {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+
+  .topbar-actions .btn-ghost {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 6px;
+    justify-content: center;
+  }
+
+  .lesson-header {
+    min-width: 0;
+    flex-wrap: wrap;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  .lesson-title,
+  .lesson-subtitle {
+    min-width: 0;
+    flex: 1 1 180px;
+  }
+
+  .layout,
+  .layout[data-layout],
+  body[data-authoring="true"] .layout[data-layout] {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    min-height: max-content;
+    overflow: visible;
+    gap: 8px;
+    padding-top: 0;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(8px, env(safe-area-inset-left, 0px));
+    padding-right: max(8px, env(safe-area-inset-right, 0px));
+  }
+
+  .layout > *,
+  .layout[data-layout] > * {
+    grid-column: auto !important;
+  }
+
+  .board-area {
+    order: 1;
+    width: 100%;
+    height: auto !important;
+    min-height: 0;
+    overflow: visible;
+    flex: 0 0 auto;
+    padding: 0;
+  }
+
+  .board-wrapper {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+  }
+
+  /* The script still measures the board for annotation geometry, but CSS must
+     prevent its desktop fallback size from ever forcing horizontal scrolling
+     before the first auto-fit frame on a phone. */
+  .board-container {
+    width: 100% !important;
+    width: min(100%, calc(100vw - 16px), calc(100dvh - 96px)) !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .sidebar,
+  .sidebar-right {
+    width: 100%;
+    height: auto !important;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .sidebar-left { order: 2; }
+  .sidebar-right { order: 3; }
+
+  .panel {
+    max-width: 100%;
+  }
+
+  .board-meta-strip {
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  .board-meta-top,
+  .board-meta-bottom {
+    min-width: 0;
+    max-width: 50%;
+  }
+
+  .player-info,
+  .player-name,
+  .captured,
+  .material-adv {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .authoring-toolbar {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    margin-top: 8px;
+    padding: 8px;
+  }
+
+  .authoring-toolbar button {
+    min-height: 36px;
+    flex: 1 1 auto;
+  }
+
+  .puzzle-overlay {
+    max-width: 100%;
+  }
+
+  .puzzle-card-actions {
+    width: 100%;
+  }
+
+  .puzzle-card-actions button {
+    min-height: 36px;
+    flex: 1 1 0;
+  }
+
+  /* Prevent iOS from zooming the page when a form field receives focus. */
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  button,
+  select,
+  input,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  .board-container,
+  .board,
+  .square {
+    touch-action: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: 8px;
+  }
+
+  .topbar-actions .btn-ghost {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 5px;
+  }
+
+  .layout {
+    gap: 6px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .board-meta-strip {
+    gap: 4px;
+  }
+
+  .board-meta-top,
+  .board-meta-bottom {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .topbar-actions {
+    gap: 2px;
+  }
+
+  .topbar-actions .btn-ghost {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    padding: 4px;
+  }
+}

@@ -53,8 +53,14 @@ function autoFitBoard() {
     try {
       const wr = wrapper.getBoundingClientRect();
       const EDGE = 12;
-      const availW = window.innerWidth - Math.max(0, wr.left) - EDGE;
-      const availH = window.innerHeight - Math.max(0, wr.top) - EDGE;
+      // visualViewport tracks the visible area after an iOS/Android browser
+      // toolbar opens or closes; innerHeight can still describe the layout
+      // viewport and leave the bottom rank underneath that toolbar.
+      const viewport = window.visualViewport;
+      const viewportW = viewport && Number(viewport.width) > 0 ? viewport.width : window.innerWidth;
+      const viewportH = viewport && Number(viewport.height) > 0 ? viewport.height : window.innerHeight;
+      const availW = viewportW - Math.max(0, wr.left) - EDGE;
+      const availH = viewportH - Math.max(0, wr.top) - EDGE;
       if (availW > HARD_MIN) free = Math.min(free, availW);
       if (availH > HARD_MIN) free = Math.min(free, availH);
     } catch (e) {}

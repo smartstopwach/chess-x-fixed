@@ -6,6 +6,10 @@ let currentMode = 'front';
 
 function setMode(mode) {
   if (mode === currentMode && mode !== 'front') return;
+  if (typeof state !== 'undefined' && state.bot && state.bot.active &&
+      (mode === 'front' || mode !== currentMode)) {
+    stopBotGame(false);
+  }
   currentMode = mode;
 
   // Hide front page

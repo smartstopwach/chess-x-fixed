@@ -2,169 +2,184 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "21fb37bfd2ef2b313358f727528c66a7a8e27638437cbd3c7cb2f8391b51d798",
+  "concat_sha256": "8cc0687c3b8d5b247929b78a92e7ec41c052c83eaed5052c51d97ad222908fbc",
   "byte_identical": true,
-  "files": 32,
+  "files": 35,
   "parts": [
     {
       "file": "css/00-base.css",
-      "lines": 71,
+      "lines": 70,
       "bytes": 1800
     },
     {
       "file": "css/10-topbar.css",
-      "lines": 85,
-      "bytes": 1542
+      "lines": 89,
+      "bytes": 1632
     },
     {
       "file": "css/11-lesson-header.css",
-      "lines": 76,
+      "lines": 75,
       "bytes": 1757
     },
     {
       "file": "css/12-layout.css",
-      "lines": 48,
-      "bytes": 1695
+      "lines": 54,
+      "bytes": 2175
     },
     {
       "file": "css/13-sidebars.css",
-      "lines": 43,
+      "lines": 42,
       "bytes": 994
     },
     {
       "file": "css/14-drawing-tools.css",
-      "lines": 100,
-      "bytes": 2035
+      "lines": 213,
+      "bytes": 4097
     },
     {
       "file": "css/15-position-editor.css",
-      "lines": 126,
+      "lines": 125,
       "bytes": 2947
     },
     {
       "file": "css/16-bookmarks.css",
-      "lines": 48,
+      "lines": 47,
       "bytes": 1105
     },
     {
       "file": "css/17-themes.css",
-      "lines": 52,
+      "lines": 51,
       "bytes": 1007
     },
     {
       "file": "css/18-board.css",
-      "lines": 279,
-      "bytes": 5559
+      "lines": 507,
+      "bytes": 11291
     },
     {
       "file": "css/19-puzzle-overlay.css",
-      "lines": 182,
-      "bytes": 3503
+      "lines": 222,
+      "bytes": 4446
     },
     {
       "file": "css/20-move-list.css",
-      "lines": 43,
-      "bytes": 1053
+      "lines": 84,
+      "bytes": 1797
     },
     {
       "file": "css/21-chess-clock.css",
-      "lines": 44,
-      "bytes": 876
+      "lines": 67,
+      "bytes": 1327
     },
     {
       "file": "css/22-teacher-notes.css",
-      "lines": 40,
-      "bytes": 901
+      "lines": 16,
+      "bytes": 339
     },
     {
       "file": "css/23-modal-dead.css",
-      "lines": 42,
+      "lines": 41,
       "bytes": 754
     },
     {
       "file": "css/24-utils.css",
-      "lines": 6,
+      "lines": 5,
       "bytes": 147
     },
     {
       "file": "css/25-responsive.css",
-      "lines": 33,
-      "bytes": 964
+      "lines": 329,
+      "bytes": 8095
     },
     {
       "file": "css/26-right-sidebar.css",
-      "lines": 24,
-      "bytes": 480
+      "lines": 80,
+      "bytes": 1561
     },
     {
       "file": "css/27-left-sidebar-toggle.css",
-      "lines": 11,
+      "lines": 10,
       "bytes": 478
     },
     {
       "file": "css/28-position-setup-advanced.css",
-      "lines": 116,
-      "bytes": 2767
+      "lines": 117,
+      "bytes": 2628
     },
     {
       "file": "css/30-puzzle-library.css",
-      "lines": 185,
+      "lines": 184,
       "bytes": 3813
     },
     {
       "file": "css/31-puzzle-editor.css",
-      "lines": 134,
+      "lines": 133,
       "bytes": 2935
     },
     {
       "file": "css/32-puzzle-authoring.css",
-      "lines": 106,
+      "lines": 105,
       "bytes": 2616
     },
     {
       "file": "css/33-puzzle-editor-enhanced.css",
-      "lines": 199,
+      "lines": 198,
       "bytes": 3710
     },
     {
       "file": "css/34-puzzle-inline-setup.css",
-      "lines": 190,
+      "lines": 189,
       "bytes": 3640
     },
     {
       "file": "css/35-puzzle-editor-blue.css",
-      "lines": 70,
-      "bytes": 2278
+      "lines": 66,
+      "bytes": 2288
     },
     {
       "file": "css/36-mode-setup.css",
-      "lines": 14,
-      "bytes": 489
+      "lines": 24,
+      "bytes": 1037
     },
     {
       "file": "css/37-mode-puzzle.css",
-      "lines": 40,
-      "bytes": 1295
+      "lines": 68,
+      "bytes": 2278
     },
     {
       "file": "css/38-puzzle-editor-ui.css",
-      "lines": 434,
+      "lines": 433,
       "bytes": 8758
     },
     {
       "file": "css/40-home-button.css",
-      "lines": 36,
+      "lines": 35,
       "bytes": 837
     },
     {
       "file": "css/41-front-page.css",
-      "lines": 154,
-      "bytes": 3223
+      "lines": 157,
+      "bytes": 3305
     },
     {
       "file": "css/45-mode-normal.css",
-      "lines": 25,
-      "bytes": 853
+      "lines": 206,
+      "bytes": 4095
+    },
+    {
+      "file": "css/46-checkmate.css",
+      "lines": 196,
+      "bytes": 5835
+    },
+    {
+      "file": "css/47-fullscreen.css",
+      "lines": 33,
+      "bytes": 791
+    },
+    {
+      "file": "css/48-inspect-guard.css",
+      "lines": 38,
+      "bytes": 925
     }
   ]
 }

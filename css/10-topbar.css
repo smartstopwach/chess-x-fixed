@@ -19,6 +19,11 @@
 }
 
 .brand-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex: 0 0 24px;
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 

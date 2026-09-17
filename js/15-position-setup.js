@@ -180,6 +180,7 @@ function placePieceOnSetup(sq, piece) {
     parts[0] = rows.join('/');
     const newFen = parts.join(' ');
     state.game.load(newFen);
+    playPieceMoveSound();
 
     // The puzzle editor keeps its OWN Chess instance. Keep it in step with the
     // visible board, otherwise SAVE and the editor disagree and a piece that
@@ -568,6 +569,7 @@ function startFromPosition() {
 
   renderAll();
   updateFen();
+  try { restartBotAfterPositionChange(); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}
   toast('Position set — start playing or drawing annotations', 'success');
 }

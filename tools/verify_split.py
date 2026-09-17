@@ -55,10 +55,21 @@ def check(sub, ext, html_tag):
     else:
         print(f"[{sub}] OK  index.html loads all {len(refs)} files in the same order")
 
-    orphan = set(man_files(man)) - set(names)
+    manifest_names = man_files(man)
+    orphan = set(manifest_names) - set(names)
+    missing = set(names) - set(manifest_names)
     if orphan:
         ok = False
         print(f"[{sub}] FAIL manifest lists files that are gone: {sorted(orphan)}")
+    if missing:
+        ok = False
+        print(f"[{sub}] FAIL manifest omits files that are present: {sorted(missing)}")
+    if manifest_names != names:
+        ok = False
+        print(f"[{sub}] FAIL manifest file order/count does not match the split directory")
+    if man.get('files') != len(names):
+        ok = False
+        print(f"[{sub}] FAIL manifest files={man.get('files')} but the split directory has {len(names)} files")
     return names
 
 

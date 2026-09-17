@@ -190,15 +190,19 @@ async function runMasterSuite() {
     window.renderBoard();
     assert($('playerTopName').textContent === 'Black');
     assert($('playerTop').className.includes('black'));
+    assert($('playerTop').dataset.color === 'b');
     assert($('playerBottomName').textContent === 'White');
     assert($('playerBottom').className.includes('white'));
+    assert($('playerBottom').dataset.color === 'w');
 
     window.flipBoard();
     assert(window.state.flipped === true);
     assert($('playerTopName').textContent === 'White');
     assert($('playerTop').className.includes('white'));
+    assert($('playerTop').dataset.color === 'w');
     assert($('playerBottomName').textContent === 'Black');
     assert($('playerBottom').className.includes('black'));
+    assert($('playerBottom').dataset.color === 'b');
 
     window.flipBoard(); // flip back
     assert(window.state.flipped === false);
@@ -263,8 +267,21 @@ async function runMasterSuite() {
     assert(window.state.selectedSquare === null, `Expected selectedSquare null, got '${window.state.selectedSquare}'`);
     assert(window.state.game.fen().includes('4P3'), `Expected e4 move on board`);
 
-    // Simulated Touch Move
-    window.onTouchStart({ touches: [{ clientX: 50, clientY: 50 }] });
+    // Clicking an opponent piece on the wrong turn rejects the selection and
+    // emits the error cue without changing the board.
+    window.handleSquareClick('d2');
+    assert(window.state.selectedSquare === null, 'opponent piece was not rejected');
+    assert($('boardMsg').className.includes('error'), 'wrong-side click did not show an error');
+
+    // Simulated Touch Move: board touch must claim the gesture immediately so
+    // a phone cannot scroll while a piece is being picked up or dragged.
+    let touchStartPrevented = false;
+    window.onTouchStart({
+      touches: [{ clientX: 50, clientY: 50 }],
+      cancelable: true,
+      preventDefault: () => { touchStartPrevented = true; },
+    });
+    assert(touchStartPrevented === true, 'board touch did not prevent page scrolling');
     window.onTouchMove({ touches: [{ clientX: 150, clientY: 150 }], preventDefault: () => {} });
     window.onTouchEnd({ changedTouches: [{ clientX: 150, clientY: 150 }], preventDefault: () => {} });
     window.cancelSquarePress();
@@ -421,6 +438,62 @@ async function runMasterSuite() {
     // Export & Import
     const exported = JSON.stringify(activeLib);
     assert(exported.includes(chapName));
+
+    // Down-arrow puzzle navigation follows the library order.
+    const navFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const navOne = {
+      id: window.uniqueId('puzzle'), title: 'Navigation One', description: '', solution: '',
+      difficulty: 1, tags: '', fen: navFen, chapterId: newChap.id, createdAt: Date.now()
+    };
+    const navTwo = {
+      id: window.uniqueId('puzzle'), title: 'Navigation Two', description: '', solution: '',
+      difficulty: 1, tags: '', fen: navFen, chapterId: newChap.id, createdAt: Date.now() + 1
+    };
+    foundChap.puzzles.push(navOne, navTwo);
+    activeLib.activeChapterId = newChap.id;
+    activeLib.activePuzzleId = navOne.id;
+    window.saveLibrary(activeLib);
+    window.renderLibrary();
+    const down = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    document.dispatchEvent(down);
+    assert(down.defaultPrevented === true, 'Down arrow shortcut was consumed');
+    const navigatedLib = window.getLibrary();
+    assert(navigatedLib.activeChapterId === newChap.id, 'Active chapter follows the selected puzzle');
+    assert(navigatedLib.activePuzzleId === navTwo.id, 'Down arrow loaded the next puzzle');
+    assert(window.state.game.fen() === navFen, 'Next puzzle position loaded onto the board');
+    assert(document.body.dataset.authoring === 'false' && window.state.setupMode === false, 'Next puzzle is playable');
+    const activeRow = document.querySelector(`[data-action="select-puzzle"][data-puzzle-id="${navTwo.id}"]`);
+    assert(activeRow && activeRow.classList.contains('active'), 'Library highlights the next puzzle');
+  });
+
+  test('PUZZLE/IMPORT', 'strictly validates imported library JSON before storage', () => {
+    const good = {
+      format: 'chessx-puzzle-library',
+      version: 1,
+      chapters: [{
+        id: 'import-chapter', name: 'Import checks', expanded: true,
+        puzzles: [{
+          id: 'import-puzzle', title: 'Back Rank', description: 'Mate in one',
+          solution: 'Re8#', difficulty: 2, tags: 'mate',
+          fen: '6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1',
+          chapterId: 'import-chapter', createdAt: Date.now()
+        }]
+      }],
+      activeChapterId: 'import-chapter', activePuzzleId: 'import-puzzle'
+    };
+    const accepted = window.validatePuzzleLibrary(good);
+    assert(accepted.ok, JSON.stringify(accepted.errors));
+    assert(accepted.library.chapters[0].puzzles.length === 1);
+    assert(window.libraryExportPayload(accepted.library).format === 'chessx-puzzle-library');
+
+    const badFen = JSON.parse(JSON.stringify(good));
+    badFen.chapters[0].puzzles[0].fen = 'not-a-fen';
+    assert(!window.validatePuzzleLibrary(badFen).ok, 'bad FEN was accepted');
+
+    const duplicate = JSON.parse(JSON.stringify(good));
+    duplicate.chapters[0].puzzles[0].id = 'other';
+    duplicate.chapters[0].puzzles.push({ ...duplicate.chapters[0].puzzles[0], id: 'other', title: 'Duplicate' });
+    assert(!window.validatePuzzleLibrary(duplicate).ok, 'duplicate IDs were accepted');
   });
 
   // ----------------------------------------------------
@@ -484,6 +557,19 @@ async function runMasterSuite() {
     assert(corrupt === null);
   });
 
+  test('PERSIST', 'triangle and hexagon-only sessions remain restorable', () => {
+    const standard = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const snapshot = {
+      mode: 'front', fen: standard, history: [], arrows: [], circles: [],
+      highlights: [], rectangles: [], triangles: [{ square: 'd4' }], hexagons: [],
+    };
+    assert(window.isRestorable(snapshot) === true, 'triangle-only work must restore');
+    snapshot.triangles = [];
+    snapshot.hexagons = [{ square: 'e5' }];
+    assert(window.isRestorable(snapshot) === true, 'hexagon-only work must restore');
+    assert(window.resumeLabel('front', snapshot).includes('1 marking'), 'resume label counts the shape');
+  });
+
   // ----------------------------------------------------
   // GROUP 11: CHECKMATE, STALEMATE, AND DRAW
   // ----------------------------------------------------
@@ -504,14 +590,27 @@ async function runMasterSuite() {
     assert(window.mateStatus(staleGame) === 'stalemate');
 
     // Material draw (K vs K)
-    assert(window.looksDrawnMaterial('4k3/8/8/8/8/8/8/4K3 w - - 0 1') === true);
+    const drawFen = '4k3/8/8/8/8/8/8/4K3 w - - 0 1';
+    assert(window.looksDrawnMaterial(drawFen) === true);
+    const savedFen = window.state.game.fen();
+    window.state.game.load(drawFen);
+    window.state.history = [];
+    window.state.historyIndex = -1;
+    window.state.setupMode = false;
+    window.state.authoringMode = false;
+    document.body.dataset.setupEditing = 'false';
+    document.body.dataset.authoring = 'false';
+    assert(window.isFinishedPosition() === true, 'draw is terminal while playing');
+    assert(window.tryMakeMove('e1', 'e2') === false, 'draw blocks another move');
+    assert(window.state.game.fen() === drawFen, 'draw guard leaves position unchanged');
 
-    // Silenced during editing
+    // Silenced during editing and editable despite terminal material
     window.state.setupMode = true;
     document.body.dataset.setupEditing = 'true';
     assert(window.celebrateMate() === false);
     window.state.setupMode = false;
     document.body.dataset.setupEditing = 'false';
+    window.state.game.load(savedFen);
   });
 
   // ----------------------------------------------------
@@ -541,6 +640,32 @@ async function runMasterSuite() {
     assert(window.state.rightArrowFrom === null);
   });
 
+  test('RIGHT-BUTTON', 'one setup right-click erases once and remains undoable', () => {
+    window.setMode('setup');
+    window.loadPreset('empty');
+    window.placePieceOnSetup('e4', 'K');
+    const first = window.document.querySelector('.square[data-square="e4"]');
+    assert(first, 'setup square exists');
+    // Call the board's press state machine directly so a preceding touch test
+    // cannot make this synthetic mouse event look like Chrome's touch replay.
+    window.beginSquarePress(first, 10, 10, 2, 1);
+    // Erasing re-renders the square, so a real browser targets the replacement
+    // node when its contextmenu event arrives. Exercise the browser ordering
+    // where that event follows mouseup.
+    const current = window.document.querySelector('.square[data-square="e4"]');
+    window.endSquarePress(current, 10, 10);
+    const menu = new window.MouseEvent('contextmenu', {
+      button: 2, bubbles: true, cancelable: true, clientX: 10, clientY: 10
+    });
+    current.dispatchEvent(menu);
+    assert(menu.defaultPrevented === true, 'board context menu is suppressed');
+    assert(window.state.game.get('e4') === null, 'piece was erased');
+    window.setupUndo();
+    assert(window.state.game.get('e4') && window.state.game.get('e4').type === 'k',
+      'one undo restores the erased king; a duplicate erase would require two undos');
+    window.setMode('normal');
+  });
+
   // ----------------------------------------------------
   // GROUP 11c: BUG-FIX REGRESSIONS (found by the bughunt harness)
   // ----------------------------------------------------
@@ -564,6 +689,91 @@ async function runMasterSuite() {
     assert(window.addRectangle('c3', 'f6') === false, 'duplicate ignored');
     assert(window.addRectangle('f6', 'c3') === false, 'same box, other corner order');
     assert(window.state.rectangles.length === 1);
+  });
+
+  test('ANNO-FIX', 'triangle and hexagon grow slightly but stay inside their square', () => {
+    const board = $('board');
+    const svg = $('boardSvg');
+    const container = $('boardContainer');
+    const box = { left: 0, top: 0, width: 800, height: 800 };
+    const targets = [board, svg, container];
+    const previous = targets.map(el => el.getBoundingClientRect);
+    targets.forEach(el => Object.defineProperty(el, 'getBoundingClientRect', {
+      configurable: true, value: () => ({ ...box })
+    }));
+    try {
+      window.clearAllAnnotations(false);
+      window.state.triangles = [{ square: 'd4', color: '#06b6d4' }];
+      window.state.hexagons = [{ square: 'e5', color: '#06b6d4' }];
+      window.renderAnnotations();
+      const polygons = Array.from(svg.querySelectorAll('polygon[data-type]'));
+      assert(polygons.length === 2, 'both polygon annotations rendered');
+      polygons.forEach(poly => {
+        const values = poly.getAttribute('points').trim().split(/[, ]+/).map(Number);
+        const points = [];
+        for (let i = 0; i < values.length; i += 2) points.push({ x: values[i], y: values[i + 1] });
+        const square = poly.dataset.square;
+        const rc = window.squareRC(square);
+        const left = rc.c * 100, top = rc.r * 100;
+        const right = left + 100, bottom = top + 100;
+        assert(points.every(p => p.x > left + 2 && p.x < right - 2 && p.y > top + 2 && p.y < bottom - 2),
+          `${poly.dataset.type} crossed its square boundary`);
+        const spanX = Math.max(...points.map(p => p.x)) - Math.min(...points.map(p => p.x));
+        const spanY = Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y));
+        // The equilateral triangle's vertical span is 0.63 squares at the
+        // larger radius; the flat-top hexagon spans 0.84 horizontally.
+        assert(Math.max(spanX, spanY) > 60, `${poly.dataset.type} was not enlarged enough`);
+      });
+    } finally {
+      targets.forEach((el, i) => Object.defineProperty(el, 'getBoundingClientRect', {
+        configurable: true, value: previous[i]
+      }));
+      window.clearAllAnnotations(false);
+    }
+  });
+
+  test('ANNO-FIX', 'bishop arrows stay on a legal diagonal', () => {
+    window.state.game.reset();
+    window.clearAllAnnotations(false);
+    assert(window.arrowFollowsPieceRule('c1', 'f4') === true, 'diagonal bishop arrow allowed');
+    assert(window.arrowFollowsPieceRule('c1', 'f5') === false, 'non-diagonal bishop arrow rejected');
+    assert(window.addArrow('c1', 'f5') === false, 'illegal bishop arrow not drawn');
+    assert(window.state.arrows.length === 0, 'illegal bishop arrow leaves no annotation');
+  });
+
+  test('ANNO-FIX', 'rapid triple-click clears drawings and one undo restores all', () => {
+    window.setMode('normal');
+    window.state.game.reset();
+    window.clearAllAnnotations(false);
+    window.initAnnoHistory();
+    window.setTool('circle');
+    window.addCircle('a3');
+    window.addTriangle('b3');
+    window.addHexagon('c3');
+    window.addArrow('c1', 'f4');
+
+    // Add the two arrow outputs that are easy to miss: left-hold and
+    // right-hold arrows are created while Select is active, not by the Arrow
+    // palette tool. Their gesture paths are covered by the interaction suite;
+    // here we verify that the clear shortcut treats both as annotations.
+    window.setTool('select');
+    window.addArrow('a1', 'a4');
+    window.handleRightClickOrDrag('b1', 'b4', true);
+    assert(window.annoTotal() === 6, `all six annotations prepared, including held arrows (got ${window.annoTotal()})`);
+
+    const blank = window.document.querySelector('.square[data-square="e4"]');
+    window.beginSquarePress(blank, 10, 10, 0, 3);
+    window.endSquarePress(blank, 10, 10);
+    assert(window.annoTotal() === 0, 'triple click clears all annotations');
+    window.undoAnnotation();
+    assert(window.annoTotal() === 6, 'one undo restores every annotation including held arrows');
+
+    const occupied = window.document.querySelector('.square[data-square="e2"]');
+    window.beginSquarePress(occupied, 10, 10, 0, 4);
+    window.endSquarePress(occupied, 10, 10);
+    assert(window.annoTotal() === 6, 'multi-click on a piece does not clear drawings');
+    window.cancelLeftAction();
+    window.clearAllAnnotations(false);
   });
 
   test('ANNO-FIX', 'addShapeOnce / addArrow report whether they placed', () => {

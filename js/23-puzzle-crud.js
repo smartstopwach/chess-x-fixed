@@ -1,4 +1,5 @@
 function loadPuzzleToEditor(puzzleId) {
+  if (state.bot && state.bot.active && typeof stopBotGame === 'function') stopBotGame(false);
   const lib = getLibrary();
   let puzzle = null;
   let chapterId = null;
@@ -237,6 +238,7 @@ function loadFENToBoard(fen) {
     state.game.load(fen);
     resetMoveHistory(fen);
     renderAll();
+    try { restartBotAfterPositionChange(); } catch (e) {}
     toast('Position loaded to board', 'success');
   } catch (e) {
     toast('Invalid FEN', 'error');
@@ -380,6 +382,8 @@ function revealPuzzleAnswer() {
     let res = null;
     try { res = state.game.move(mv); } catch (e) { res = null; }
     if (!res) break;
+    playPieceMoveSound(res, played * 0.08);
+    playCheckSoundIfNeeded(res, played * 0.08);
     state.history.push(res.san);
     state.historyIndex = state.history.length - 1;
     played++;
@@ -412,6 +416,8 @@ function onPuzzleMovePlayed(san) {
       let res = null;
       if (nxt) { try { res = state.game.move(nxt); } catch (e) { res = null; } }
       if (res) {
+        playPieceMoveSound(res);
+        playCheckSoundIfNeeded(res);
         state.history.push(res.san);
         state.historyIndex = state.history.length - 1;
         pz.progress++;

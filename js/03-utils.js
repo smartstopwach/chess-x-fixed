@@ -28,6 +28,176 @@ function toast(message, type = '') {
   showBoardMessage(message, kind);
 }
 
+// A short, dry wooden WAV cue gives moves the familiar chess-board "tap"
+// instead of a synthetic musical tone. The Web Audio context is still warmed
+// on the board press as a reliable fallback for embedded browsers and delayed
+// puzzle replays. Warming it during the original gesture is important on
+// mobile Safari/Chrome, where resuming only after mouseup/touchend can leave
+// the first move silent.
+let moveAudioContext = null;
+
+function prepareMoveAudio() {
+  try {
+    if (typeof window === 'undefined') return false;
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return false;
+    if (!moveAudioContext || moveAudioContext.state === 'closed') {
+      moveAudioContext = new AudioCtor();
+    }
+    if (moveAudioContext.state === 'suspended' && typeof moveAudioContext.resume === 'function') {
+      const resumeResult = moveAudioContext.resume();
+      if (resumeResult && typeof resumeResult.catch === 'function') resumeResult.catch(() => {});
+    }
+    return true;
+  } catch (e) {
+    // Audio is optional; a blocked/unsupported context must never block a move.
+    return false;
+  }
+}
+
+function playPieceMoveSound(move, delay = 0) {
+  try {
+    // Prefer the local wooden sample in real browsers. Unlike a raw oscillator
+    // this has the short, dry attack of a piece landing on a wooden board.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/move.wav');
+      // JSDOM and a few embedded shells expose Audio but report no WAV
+      // decoder. Avoid calling their placeholder play() implementation;
+      // real browsers return "maybe" or "probably" here.
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.78;
+        const playSample = () => {
+          try {
+            audio.currentTime = 0;
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+          } catch (e) {}
+        };
+        const wait = Math.max(0, Number(delay) || 0) * 1000;
+        if (wait > 0) setTimeout(playSample, wait);
+        else playSample();
+        return;
+      }
+    }
+
+    // Web Audio fallback for browsers that can create a context but cannot
+    // decode the local sample. It remains deliberately short and dry.
+    if (!prepareMoveAudio()) return;
+    const ctx = moveAudioContext;
+    const now = Number(ctx.currentTime);
+    const start = (Number.isFinite(now) ? now : 0) +
+      Math.max(0.01, Number(delay) || 0);
+    const captured = !!(move && (move.captured || (move.flags && String(move.flags).includes('c'))));
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(captured ? 270 : 420, start);
+    oscillator.frequency.exponentialRampToValueAtTime(captured ? 135 : 220, start + 0.13);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(captured ? 0.30 : 0.22, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.19);
+  } catch (e) {
+    // Sound must never be able to break a legal move or a setup placement.
+  }
+}
+
+function playCheckSound(delay = 0) {
+  try {
+    // A short two-note alert is distinct from the wooden move tap and the
+    // descending illegal-move buzz. Keep it local so it also works offline.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/check.wav');
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.64;
+        const playSample = () => {
+          try {
+            audio.currentTime = 0;
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+          } catch (e) {}
+        };
+        const wait = Math.max(0, Number(delay) || 0) * 1000;
+        if (wait > 0) setTimeout(playSample, wait);
+        else playSample();
+        return true;
+      }
+    }
+
+    if (!prepareMoveAudio()) return false;
+    const ctx = moveAudioContext;
+    const now = Number(ctx.currentTime);
+    const start = (Number.isFinite(now) ? now : 0) + Math.max(0.01, Number(delay) || 0);
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, start);
+    oscillator.frequency.exponentialRampToValueAtTime(660, start + 0.24);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.29);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.30);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function playCheckSoundIfNeeded(move, delay = 0) {
+  const san = move && typeof move.san === 'string' ? move.san : '';
+  const givesCheck = !!(move && (move.check || move.mate)) || /[+#]$/.test(san);
+  return givesCheck ? playCheckSound(delay) : false;
+}
+
+function playMoveErrorSound() {
+  try {
+    // Use a local short buzzer when the browser can decode audio files. This
+    // keeps the error cue consistent on browsers without Web Audio synthesis.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/error.wav');
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.52;
+        try {
+          audio.currentTime = 0;
+          const result = audio.play();
+          if (result && typeof result.catch === 'function') result.catch(() => {});
+        } catch (e) {}
+        return;
+      }
+    }
+
+    // Web Audio fallback: a brief descending square-wave buzz, deliberately
+    // distinct from the wooden move tap but short enough not to be annoying.
+    if (!prepareMoveAudio()) return;
+    const ctx = moveAudioContext;
+    const now = Number(ctx.currentTime);
+    const start = Number.isFinite(now) ? now : 0;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(180, start);
+    oscillator.frequency.exponentialRampToValueAtTime(110, start + 0.12);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.16, start + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.17);
+  } catch (e) {
+    // Sound is optional and must never block the board interaction.
+  }
+}
+
 function squareName(r, c) {
   return String.fromCharCode(97 + c) + (8 - r);
 }
