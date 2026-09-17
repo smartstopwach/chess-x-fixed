@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "9f6274f1fe38d8db4b77b4c895f25f41a1bc5c89bbf4b63b957e3712d0bde6a2",
+  "concat_sha256": "7f6927ff58e48c9106396a73df273d4e89a601547e08625e84ee63fa290e3a29",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -118,8 +118,8 @@
     },
     {
       "file": "js/27-autofit.js",
-      "lines": 144,
-      "bytes": 6669
+      "lines": 150,
+      "bytes": 7125
     },
     {
       "file": "js/28-flip-reset.js",

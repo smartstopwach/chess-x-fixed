@@ -446,6 +446,9 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 ### 📱 Responsive Design
 - Optimized for Windows, Mac, iPad (landscape), Android tablets and phones
 - Rearranges panels on small screens (one column below 900px, board first)
+- Phone and tablet layouts respect iOS/Android safe-area insets, allow the
+  stacked panels to scroll, keep form fields from triggering browser zoom, and
+  preserve touch drawing with `touch-action` controls
 - The board is re-measured against **the room actually left in the window**, so
   it can never be clipped by the sidebars: a 1024×768 window gets a ~700px
   board, a 390×844 phone a ~365px one, and every rank stays reachable

@@ -22,3 +22,71 @@ body[data-mode="normal"] .layout.left-sidebar-visible #leftSidebar {
   .mode-cards { grid-template-columns: 1fr; }
   .front-page-title { font-size: 44px; }
 }
+
+@media (max-width: 600px) {
+  .front-page {
+    align-items: flex-start;
+    padding-top: max(24px, env(safe-area-inset-top, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .front-page-logo {
+    margin-bottom: 28px;
+  }
+
+  .front-page-logo .brand-emblem {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 10px;
+  }
+
+  .front-page-title {
+    font-size: 38px !important;
+    line-height: 1.1;
+  }
+
+  .front-page-tagline {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .mode-cards {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mode-card {
+    gap: 10px;
+    padding: 20px 18px;
+  }
+
+  .mode-card-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .mode-card-title {
+    font-size: 22px;
+  }
+
+  .mode-card-desc {
+    font-size: 13px;
+  }
+
+  .front-page-footer {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 360px) {
+  .front-page-title {
+    font-size: 32px !important;
+  }
+
+  .mode-card {
+    padding: 16px 14px;
+  }
+}
