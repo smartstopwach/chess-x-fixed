@@ -13,7 +13,10 @@ function bindEvents() {
   els.board.addEventListener('mouseup', onSquareMouseUp);
 
   // Touch support (phones / tablets): a tap = chess move, a swipe = arrow.
-  els.board.addEventListener('touchstart', onTouchStart, { passive: true });
+  // Board touches are gestures, not page-scroll gestures. Keep this
+  // non-passive so onTouchStart can stop a phone from scrolling while a piece
+  // is being picked up or dragged; the sidebars remain the page-scroll area.
+  els.board.addEventListener('touchstart', onTouchStart, { passive: false });
   els.board.addEventListener('touchmove', onTouchMove, { passive: false });
   els.board.addEventListener('touchend', onTouchEnd, { passive: false });
   els.board.addEventListener('touchcancel', () => { touchHandledPress = false; cancelSquarePress(); });

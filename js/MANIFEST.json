@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "7f6927ff58e48c9106396a73df273d4e89a601547e08625e84ee63fa290e3a29",
+  "concat_sha256": "8d438738e8a2b8ab450a0c721cd9a67c145372a8b8d6085e2964dd2ba1935279",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -43,8 +43,8 @@
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 850,
-      "bytes": 32248
+      "lines": 853,
+      "bytes": 32485
     },
     {
       "file": "js/13-annotation-tools.js",
@@ -143,8 +143,8 @@
     },
     {
       "file": "js/32-event-bindings.js",
-      "lines": 182,
-      "bytes": 8138
+      "lines": 185,
+      "bytes": 8365
     },
     {
       "file": "js/33-mode-picker.js",

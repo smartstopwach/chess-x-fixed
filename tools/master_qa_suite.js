@@ -273,8 +273,15 @@ async function runMasterSuite() {
     assert(window.state.selectedSquare === null, 'opponent piece was not rejected');
     assert($('boardMsg').className.includes('error'), 'wrong-side click did not show an error');
 
-    // Simulated Touch Move
-    window.onTouchStart({ touches: [{ clientX: 50, clientY: 50 }] });
+    // Simulated Touch Move: board touch must claim the gesture immediately so
+    // a phone cannot scroll while a piece is being picked up or dragged.
+    let touchStartPrevented = false;
+    window.onTouchStart({
+      touches: [{ clientX: 50, clientY: 50 }],
+      cancelable: true,
+      preventDefault: () => { touchStartPrevented = true; },
+    });
+    assert(touchStartPrevented === true, 'board touch did not prevent page scrolling');
     window.onTouchMove({ touches: [{ clientX: 150, clientY: 150 }], preventDefault: () => {} });
     window.onTouchEnd({ changedTouches: [{ clientX: 150, clientY: 150 }], preventDefault: () => {} });
     window.cancelSquarePress();

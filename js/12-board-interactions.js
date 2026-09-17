@@ -74,10 +74,13 @@ function onSquareMouseUp(e) {
 }
 
 // Touch: phones/tablets fire synthetic mouse events after a tap, and those can
-// land on the wrong square (or not at all once the page scrolls). Handle the
-// touch directly and swallow the emulated mouse pair for this tap.
+// land on the wrong square (or not at all once the page scrolls). A touch that
+// starts on the board belongs to the chess gesture, so stop the browser from
+// scrolling the document underneath a piece while it is being picked up or
+// dragged. The sidebars remain the page-scroll surface on mobile.
 function onTouchStart(e) {
   if (e.touches.length !== 1) return;
+  if (e.cancelable && typeof e.preventDefault === 'function') e.preventDefault();
   const t = e.touches[0];
   touchHandledPress = true;
   lastTouchAt = Date.now();
