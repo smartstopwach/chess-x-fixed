@@ -435,7 +435,92 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - **Export PGN** — download game as PGN
 - **Import Puzzle Library** — choose a `.json` file from the Library / Chapters panel. The importer checks the root schema, chapter/puzzle IDs, references, FEN legality, difficulty, timestamps, and every saved SAN solution before replacing local data; a bad file is rejected without touching the existing library
 - `puzzle-library-example.json` is a ready-to-import sample file
-- `puzzle-generation-prompt.txt` is an editable generation prompt with exact phase counts, ascending beginner-to-higher Elo ordering, no-draw filtering, and the current ChessX JSON schema
+### 🧩 Full Puzzle Generation Prompt
+
+The same prompt is also available as `puzzle-generation-prompt.txt`. The complete copyable version is below; edit the values in the first block before using it.
+
+```text
+CHESSX PUZZLE LIBRARY GENERATION PROMPT
+
+EDIT THESE VALUES BEFORE USING THIS PROMPT
+CHAPTER_NAME = "Beginner No-Draw Chess Puzzles"
+TOTAL_PUZZLES = 30
+STARTING_COUNT = 10
+MIDDLEGAME_COUNT = 10
+ENDGAME_COUNT = 10
+REQUESTED_CATEGORY = "any requested puzzle category"
+FIRST_ESTIMATED_ELO = 100
+
+The three phase counts must add up exactly to TOTAL_PUZZLES. For a 30-puzzle request, the default order is exactly 10 starting/opening puzzles, then 10 middlegame puzzles, then 10 endgame puzzles. The first puzzle must be a starting/opening puzzle, never an endgame puzzle. If the editable counts are changed, use the same phase order and exact counts.
+
+You are generating a ChessX puzzle-library import file. Follow the current ChessX import validator, not a generic chess JSON format. Generate exactly one chapter unless the editable request explicitly asks for more chapters. Use CHAPTER_NAME for the chapter name and generate exactly TOTAL_PUZZLES puzzles in it.
+
+PHASE ORDER AND TEACHING LEVEL
+1. Puzzles 1 through STARTING_COUNT must be starting/opening positions: the game is in its early phase, with simple legal development, basic checks, captures, threats, opening principles, or the requested category. Do not put an endgame position in this block.
+2. The next MIDDLEGAME_COUNT puzzles must be genuine middlegame positions: most relevant pieces are developed, with understandable tactics, pins, forks, captures, checks, threats, or the requested category.
+3. The final ENDGAME_COUNT puzzles must be genuine endgame positions: reduced but sufficient material, with a clear winning idea such as king and pawn technique, a simple rook/queen tactic, or the requested category. Never use a dead or insufficient-material position.
+4. Never shuffle the phases. The output order must be starting/opening, then middlegame, then endgame.
+5. Make every puzzle understandable to someone with almost no chess knowledge. Use a short plain-language description that says whose turn it is and what the learner should look for.
+
+ELO AND DIFFICULTY ORDER
+- Treat FIRST_ESTIMATED_ELO as approximately 100 Elo. The first puzzles must be the simplest and must not begin with advanced tactics or endgames.
+- Increase the estimated Elo gradually as the puzzle number increases. Within each phase, sort from lower estimated Elo to slightly higher estimated Elo. Do not place a high-Elo puzzle before an easier low-Elo puzzle.
+- Keep the sequence broadly non-decreasing: early starting puzzles are lowest, later starting puzzles are a little harder, middlegame puzzles are next, and endgame puzzles are last and may be slightly harder. Do not jump suddenly from beginner level to expert level.
+- ChessX currently stores difficulty as an integer from 1 to 5 and does not preserve a separate elo property. Use difficulty as the validated difficulty band: early puzzles normally 1, then 2, then 3, with 4 or 5 only when the requested category and later position genuinely require it. Put a compact estimated-Elo label in tags, for example "starting, elo-100" or "endgame, elo-350". Do not add unsupported top-level fields such as elo, phase, result, sourceGame, or rating.
+- Follow REQUESTED_CATEGORY for every puzzle, but never sacrifice legality, clarity, phase order, or the no-draw rule to satisfy the category.
+
+HARD NO-DRAW RULE
+- Do not include any puzzle from a drawn game or a line that ends in a draw.
+- Reject and regenerate a candidate if its source game or tested line has a draw result, stalemate, insufficient material, dead position, threefold/fivefold repetition, fifty/seventy-five-move draw, agreement draw, or any other forced draw.
+- Internally replay the complete selected solution line before output. The line must give the side to move a clear decisive winning result or a clearly winning, non-drawing tactical conversion. If the line ends in checkmate, use the correct SAN # marker. Never assume a position is winning without checking it.
+- If there is any uncertainty about whether the candidate can draw, reject it and generate a different candidate. Do not include draw results such as 1/2-1/2 in the solution string.
+
+CHESSX VALIDATION RULES BEFORE OUTPUT
+Internally validate every puzzle, then regenerate any failed puzzle before responding:
+1. The FEN is a legal, loadable position with exactly one white king and one black king, legal piece placement, legal side to move, and consistent castling and en-passant fields. Use all six FEN fields.
+2. Replay every SAN token in solution from that FEN using a chess rules engine. Every move must be legal, in the correct turn order, and unambiguous. Keep the solution to at most 12 plies because ChessX enforces that limit. Use SAN only, separated by spaces; comments and move numbers are unnecessary.
+3. The solution is non-empty and matches the requested puzzle objective. Do not use illegal, guessed, coordinate-only, or UCI moves.
+4. Do not use a drawn or dead starting position. Do not use a solution that reaches stalemate or any draw condition.
+5. Every id is unique across the entire file. Every puzzle chapterId exactly equals the containing chapter id. Chapter names and puzzle titles are non-empty.
+6. The number of generated puzzles equals TOTAL_PUZZLES exactly, and the three phase counts equal STARTING_COUNT, MIDDLEGAME_COUNT, and ENDGAME_COUNT exactly.
+7. Difficulty is an integer from 1 through 5. createdAt is a non-negative numeric Unix timestamp in milliseconds.
+8. activeChapterId points to the generated chapter and activePuzzleId points to the first generated puzzle. Keep all ids and references consistent.
+9. Before responding, parse the final text as JSON and verify that it contains no Markdown fences, comments, trailing commas, explanatory prose, or extra text.
+
+REQUIRED CHESSX OUTPUT SHAPE
+Return one raw JSON object with this structure and no other top-level format:
+{
+  "format": "chessx-puzzle-library",
+  "version": 1,
+  "exportedAt": "ISO-8601 timestamp",
+  "chapters": [
+    {
+      "id": "unique-chapter-id",
+      "name": "CHAPTER_NAME value",
+      "expanded": true,
+      "puzzles": [
+        {
+          "id": "unique-puzzle-id",
+          "title": "short clear title",
+          "description": "plain-language learner instruction",
+          "solution": "legal SAN moves separated by spaces",
+          "difficulty": 1,
+          "tags": "phase, requested-category, elo-100",
+          "fen": "six-field legal FEN",
+          "chapterId": "the containing chapter id",
+          "createdAt": 1780000000000
+        }
+      ]
+    }
+  ],
+  "activeChapterId": "the generated chapter id",
+  "activePuzzleId": "the first puzzle id"
+}
+
+FINAL RESPONSE CONTRACT
+Output only the validated raw JSON object. Do not output Markdown code fences, a title, a checklist, explanations, warnings, comments, or any text before or after the JSON. If a candidate fails any no-draw, phase-order, Elo-order, count, legality, SAN, id, reference, or difficulty check, silently regenerate it before producing the final JSON.
+```
+
 - Auto-saves current lesson to localStorage
 
 ### 🎬 Built-in Screen Recording
