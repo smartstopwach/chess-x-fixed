@@ -90,23 +90,19 @@ function renderLibrary(filter = '') {
   };
 }
 
-// Keyboard navigation stays inside the active chapter. That keeps a chapter
-// with 30 puzzles on a clear 1/30, 2/30 ... sequence instead of jumping into
-// an unrelated chapter. Up = previous, Down = next; the ends are safe no-ops.
+// Keyboard navigation follows the existing library order across chapters, so
+// adding Up Arrow does not change how Down Arrow already moved through a
+// collection. Up = previous, Down = next; the collection ends are safe no-ops.
 function switchPuzzleByOffset(offset = 1) {
   if (!document.body || document.body.dataset.mode !== 'puzzle' || document.body.dataset.testing === 'true') return false;
   if (typeof isAuthoringMode === 'function' && isAuthoringMode()) return false;
   const lib = getLibrary();
-  let chapter = (lib.chapters || []).find(c => c.id === lib.activeChapterId);
-  if (!chapter && lib.activePuzzleId) {
-    chapter = (lib.chapters || []).find(c => (c.puzzles || []).some(p => p.id === lib.activePuzzleId));
-  }
-  chapter = chapter || (lib.chapters || [])[0];
-  const entries = chapter
-    ? (chapter.puzzles || []).map(puzzle => ({ chapter, puzzle }))
-    : [];
+  const entries = [];
+  (lib.chapters || []).forEach(chapter => {
+    (chapter.puzzles || []).forEach(puzzle => entries.push({ chapter, puzzle }));
+  });
   if (!entries.length) {
-    toast('No puzzles available in this chapter', 'info');
+    toast('No puzzles available', 'info');
     return false;
   }
 

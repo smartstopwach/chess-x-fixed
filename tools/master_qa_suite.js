@@ -450,7 +450,16 @@ async function runMasterSuite() {
       id: window.uniqueId('puzzle'), title: 'Navigation Two', description: '', solution: '',
       difficulty: 1, tags: '', fen: navFen, chapterId: newChap.id, createdAt: Date.now() + 1
     };
+    const nextChapter = {
+      id: window.uniqueId('chapter'), name: 'Next Navigation Chapter', expanded: true,
+      puzzles: [{
+        id: window.uniqueId('puzzle'), title: 'Navigation Three', description: '', solution: '',
+        difficulty: 1, tags: '', fen: navFen, chapterId: '', createdAt: Date.now() + 2
+      }]
+    };
+    nextChapter.puzzles[0].chapterId = nextChapter.id;
     foundChap.puzzles.push(navOne, navTwo);
+    activeLib.chapters.push(nextChapter);
     activeLib.activeChapterId = newChap.id;
     activeLib.activePuzzleId = navOne.id;
     window.saveLibrary(activeLib);
@@ -469,25 +478,36 @@ async function runMasterSuite() {
     const activeRow = document.querySelector(`[data-action="select-puzzle"][data-puzzle-id="${navTwo.id}"]`);
     assert(activeRow && activeRow.classList.contains('active'), 'Library highlights the next puzzle');
 
+    const crossChapter = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    document.dispatchEvent(crossChapter);
+    assert(crossChapter.defaultPrevented === true && window.getLibrary().activePuzzleId === nextChapter.puzzles[0].id, 'Existing navigation continues into the next chapter');
+    assert($('puzzleProgress').textContent === '1/1', 'Counter resets for the new chapter');
+
     const lastId = window.getLibrary().activePuzzleId;
     const atLast = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
     document.dispatchEvent(atLast);
     assert(atLast.defaultPrevented === true && window.getLibrary().activePuzzleId === lastId, 'Next at the last puzzle is a safe no-op');
+
+    const upFromNextChapter = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    document.dispatchEvent(upFromNextChapter);
+    assert(upFromNextChapter.defaultPrevented === true && window.getLibrary().activePuzzleId === navTwo.id, 'Up arrow returns to the previous chapter');
+    assert($('puzzleProgress').textContent === '3/3', 'Counter returns to the previous chapter');
 
     const up = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
     document.dispatchEvent(up);
     assert(up.defaultPrevented === true && window.getLibrary().activePuzzleId === navOne.id, 'Up arrow loads the previous puzzle');
     assert($('puzzleProgress').textContent === '2/3', 'Counter moves back to the previous puzzle');
 
-    const first = foundChap.puzzles[0];
+    const firstChapter = activeLib.chapters[0];
+    const first = firstChapter.puzzles[0];
     activeLib.activePuzzleId = first.id;
-    activeLib.activeChapterId = newChap.id;
+    activeLib.activeChapterId = firstChapter.id;
     window.saveLibrary(activeLib);
     window.renderLibrary();
     const atFirst = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
     document.dispatchEvent(atFirst);
-    assert(atFirst.defaultPrevented === true && window.getLibrary().activePuzzleId === first.id, 'Previous at the first puzzle is a safe no-op');
-    assert($('puzzleProgress').textContent === '1/3', 'Counter shows the first puzzle');
+    assert(atFirst.defaultPrevented === true && window.getLibrary().activePuzzleId === first.id, 'Previous at the first collection puzzle is a safe no-op');
+    assert($('puzzleProgress').textContent === `1/${firstChapter.puzzles.length}`, 'Counter shows the first collection puzzle');
 
     window.setAuthoringMode(true);
     const whileEditing = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });

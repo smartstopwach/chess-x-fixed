@@ -413,7 +413,7 @@ never change the size of the board, and it clears itself after six seconds.
 |---|---|
 | `1` / `2` / `3` | Normal / Puzzle / Custom Setup mode |
 | `←` / `→` | Previous / Next move |
-| `↑` / `↓` | Previous / Next puzzle in Puzzle mode (within the active chapter; shows the current position such as `2/30`) |
+| `↑` / `↓` | Previous / Next puzzle in Puzzle mode (existing library order; counter follows the active chapter/collection, such as `2/30`) |
 | `F` | Flip board |
 | `R` | Reset board |
 | `V` | Select tool (play chess) |
