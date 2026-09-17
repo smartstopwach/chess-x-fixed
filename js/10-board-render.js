@@ -122,8 +122,14 @@ function renderPlayerInfo() {
   const topColor = isFlipped ? 'w' : 'b';
   const bottomColor = isFlipped ? 'b' : 'w';
 
-  if (topName) topName.textContent = topColor === 'w' ? 'White' : 'Black';
-  if (bottomName) bottomName.textContent = bottomColor === 'w' ? 'White' : 'Black';
+  const botActive = !!(typeof state !== 'undefined' && state.bot && state.bot.active);
+  const playerName = color => {
+    const side = color === 'w' ? 'White' : 'Black';
+    if (!botActive || !state.bot.color) return side;
+    return color === state.bot.color ? `Bot · ${side}` : `You · ${side}`;
+  };
+  if (topName) topName.textContent = playerName(topColor);
+  if (bottomName) bottomName.textContent = playerName(bottomColor);
 
   if (topFlag) {
     topFlag.className = 'player-flag ' + (topColor === 'w' ? 'white' : 'black');

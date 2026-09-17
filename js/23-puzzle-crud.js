@@ -1,4 +1,5 @@
 function loadPuzzleToEditor(puzzleId) {
+  if (state.bot && state.bot.active && typeof stopBotGame === 'function') stopBotGame(false);
   const lib = getLibrary();
   let puzzle = null;
   let chapterId = null;
@@ -237,6 +238,7 @@ function loadFENToBoard(fen) {
     state.game.load(fen);
     resetMoveHistory(fen);
     renderAll();
+    try { restartBotAfterPositionChange(); } catch (e) {}
     toast('Position loaded to board', 'success');
   } catch (e) {
     toast('Invalid FEN', 'error');

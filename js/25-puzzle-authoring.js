@@ -1,8 +1,12 @@
 // AUTHORING MODE — distinct visual state when making puzzles
 // ============================================
 function setAuthoringMode(on) {
+  if (on && state.bot && state.bot.active && typeof stopBotGame === 'function') {
+    stopBotGame(false);
+  }
   state.authoringMode = on;
   document.body.dataset.authoring = on ? 'true' : 'false';
+  document.body.dataset.setupEditing = on ? 'true' : 'false';
   if (on) {
     state.setupMode = true; // auto-enable setup mode
     toast('Authoring Mode ON — set up your puzzle position', 'success');

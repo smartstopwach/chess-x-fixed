@@ -74,6 +74,8 @@ function bindEvents() {
   $('btnAddVariation').addEventListener('click', saveVariation);
 
   $('btnEngineToggle').addEventListener('click', toggleEngine);
+  $('btnBotToggle').addEventListener('click', startBotGame);
+  $('botElo').addEventListener('change', (e) => setBotElo(e.target.value));
   // Toggle left sidebar (Tools) visibility
   $('btnToggleLeftSidebar').addEventListener('click', () => {
     els.layout.classList.toggle('left-sidebar-visible');

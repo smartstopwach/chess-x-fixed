@@ -75,6 +75,15 @@ const state = {
     pv: '',
     lines: []
   },
+  bot: {
+    active: false,
+    color: null,        // the side Stockfish plays; the user gets the board-bottom side
+    elo: 1000,
+    thinking: false,
+    searchId: 0,
+    timer: null,
+    stockfish: null
+  },
   drag: { active: false, piece: null, from: null }
 };
 

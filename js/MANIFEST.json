@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "311d010d54bd06ee4ce6b6cc66ed4db3112836c6f0ae43f4437adbf56291a8f4",
+  "concat_sha256": "d49b6fe839b5c2423a536c2644525558e9c5b91792fdafde4fac7a9c32885ac0",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -13,8 +13,8 @@
     },
     {
       "file": "js/01-state.js",
-      "lines": 84,
-      "bytes": 2236
+      "lines": 93,
+      "bytes": 2448
     },
     {
       "file": "js/02-dom.js",
@@ -33,8 +33,8 @@
     },
     {
       "file": "js/10-board-render.js",
-      "lines": 308,
-      "bytes": 11353
+      "lines": 314,
+      "bytes": 11626
     },
     {
       "file": "js/11-annotations-render.js",
@@ -43,8 +43,8 @@
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 853,
-      "bytes": 32485
+      "lines": 859,
+      "bytes": 32739
     },
     {
       "file": "js/13-annotation-tools.js",
@@ -58,18 +58,18 @@
     },
     {
       "file": "js/15-position-setup.js",
-      "lines": 574,
-      "bytes": 22156
+      "lines": 575,
+      "bytes": 22212
     },
     {
       "file": "js/16-move-list.js",
-      "lines": 189,
-      "bytes": 6200
+      "lines": 194,
+      "bytes": 6486
     },
     {
       "file": "js/17-fen.js",
-      "lines": 65,
-      "bytes": 2510
+      "lines": 66,
+      "bytes": 2568
     },
     {
       "file": "js/18-themes.js",
@@ -98,8 +98,8 @@
     },
     {
       "file": "js/23-puzzle-crud.js",
-      "lines": 471,
-      "bytes": 16648
+      "lines": 473,
+      "bytes": 16800
     },
     {
       "file": "js/24-puzzle-editor-board.js",
@@ -108,13 +108,13 @@
     },
     {
       "file": "js/25-puzzle-authoring.js",
-      "lines": 200,
-      "bytes": 7468
+      "lines": 204,
+      "bytes": 7640
     },
     {
       "file": "js/26-engine.js",
-      "lines": 142,
-      "bytes": 5089
+      "lines": 467,
+      "bytes": 15523
     },
     {
       "file": "js/27-autofit.js",
@@ -123,8 +123,8 @@
     },
     {
       "file": "js/28-flip-reset.js",
-      "lines": 19,
-      "bytes": 478
+      "lines": 24,
+      "bytes": 801
     },
     {
       "file": "js/29-chess-clock.js",
@@ -138,18 +138,18 @@
     },
     {
       "file": "js/31-render-all.js",
-      "lines": 27,
-      "bytes": 1531
+      "lines": 28,
+      "bytes": 1620
     },
     {
       "file": "js/32-event-bindings.js",
-      "lines": 185,
-      "bytes": 8365
+      "lines": 187,
+      "bytes": 8502
     },
     {
       "file": "js/33-mode-picker.js",
-      "lines": 104,
-      "bytes": 3962
+      "lines": 108,
+      "bytes": 4113
     },
     {
       "file": "js/35-checkmate.js",

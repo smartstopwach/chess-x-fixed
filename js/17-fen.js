@@ -57,6 +57,7 @@ function loadFen() {
       syncSetupControlsFromFen(els.fenInput.value);
     }
     renderAll();
+    try { restartBotAfterPositionChange(); } catch (e) {}
     toast('FEN loaded', 'success');
   } catch (e) {
     toast('Invalid FEN', 'error');

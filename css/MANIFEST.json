@@ -2,7 +2,7 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "4c9baf5f8add01dde1d9f1993fbae889e6047a38ffc668f9821152338e3be40e",
+  "concat_sha256": "8cc0687c3b8d5b247929b78a92e7ec41c052c83eaed5052c51d97ad222908fbc",
   "byte_identical": true,
   "files": 35,
   "parts": [
@@ -93,8 +93,8 @@
     },
     {
       "file": "css/26-right-sidebar.css",
-      "lines": 23,
-      "bytes": 480
+      "lines": 80,
+      "bytes": 1561
     },
     {
       "file": "css/27-left-sidebar-toggle.css",

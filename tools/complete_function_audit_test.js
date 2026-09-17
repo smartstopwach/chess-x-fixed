@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 246, `expected the current 246 named declarations, found ${found.length}`);
+assert(found.length === 265, `expected the current 265 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -147,6 +147,54 @@ check('web app install and download controls are present', () => {
   assert(download && download.getAttribute('href') === 'ChessX-WebApp.zip', 'download link');
   assert(offlineNote && serviceWorker.includes("cache.addAll(APP_SHELL)"), 'offline app shell');
   assert(serviceWorker.includes("OPTIONAL_DOWNLOAD = './ChessX-WebApp.zip'"), 'offline download cache');
+});
+
+check('bot controls follow flip side and stay hidden while editing', () => {
+  const panel = window.document.getElementById('botPanel');
+  const side = window.document.getElementById('botSideInfo');
+  assert(panel && side && typeof window.startBotGame === 'function', 'bot controls');
+  window.state.bot.active = false;
+  window.state.bot.color = null;
+  window.state.setupMode = false;
+  window.state.authoringMode = false;
+  window.document.body.dataset.mode = 'normal';
+  window.document.body.dataset.setupEditing = 'false';
+  window.document.body.dataset.authoring = 'false';
+  window.state.flipped = false;
+  window.updateBotPanel();
+  assert(window.botHumanColor() === 'w' && window.botColorForBoard() === 'b', 'white-side orientation');
+  assert(side.textContent.includes('You: White') && side.textContent.includes('Bot: Black'), 'white side labels');
+  window.state.flipped = true;
+  window.updateBotPanel();
+  assert(window.botHumanColor() === 'b' && window.botColorForBoard() === 'w', 'black-side orientation');
+  assert(side.textContent.includes('You: Black') && side.textContent.includes('Bot: White'), 'black side labels');
+  window.state.setupMode = true;
+  window.document.body.dataset.setupEditing = 'true';
+  window.updateBotPanel();
+  assert(panel.hidden === true, 'bot hidden during setup editing');
+  window.state.setupMode = false;
+  window.document.body.dataset.setupEditing = 'false';
+  window.state.authoringMode = true;
+  window.document.body.dataset.authoring = 'true';
+  window.updateBotPanel();
+  assert(panel.hidden === true, 'bot hidden during puzzle editing');
+  window.state.authoringMode = false;
+  window.document.body.dataset.authoring = 'false';
+  window.state.flipped = false;
+  window.updateBotPanel();
+  window.setMode('normal');
+  const afterWhiteMove = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+  window.state.game.load(afterWhiteMove);
+  window.resetMoveHistory(afterWhiteMove);
+  window.state.bot.active = true;
+  window.state.bot.color = 'b';
+  window.state.bot.thinking = false;
+  assert(window.applyBotMove('e7e5') === true, 'bot move applies to current position');
+  assert(window.state.history[0] === 'e5' && window.state.game.turn() === 'w', 'bot move history');
+  window.state.bot.active = false;
+  window.state.bot.color = null;
+  window.cancelBotSearch();
+  window.renderAll();
 });
 
 check('interaction state helpers and all annotation shapes', () => {

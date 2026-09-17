@@ -67,6 +67,20 @@ class StockfishEngine {
   setMultiPV(n) {
     this.postMessage(`setoption name MultiPV value ${n}`);
   }
+
+  setOption(name, value) {
+    this.postMessage(`setoption name ${name} value ${value}`);
+  }
+
+  terminate() {
+    try {
+      if (this.worker) this.worker.terminate();
+    } catch (e) {}
+    this.worker = null;
+    this.ready = false;
+    this.failed = false;
+    this.listeners = [];
+  }
 }
 
 window.StockfishEngine = StockfishEngine;

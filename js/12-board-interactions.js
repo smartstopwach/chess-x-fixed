@@ -588,6 +588,10 @@ function cancelSquarePress(fromRelease) {
 
 // A single click on a square in NORMAL mode.
 function handleSquareClick(sqName) {
+  if (typeof isBotTurn === 'function' && isBotTurn()) {
+    toast('The bot is thinking — please wait for your turn', 'info');
+    return;
+  }
   // Checkmate, stalemate, and draw are terminal for play. Do this before
   // selecting a piece, otherwise the first click still appears to offer a move
   // even though the position has already finished.
@@ -783,6 +787,7 @@ function cancelPromotionDialog() {
 }
 
 function tryMakeMove(from, to, promotion = null) {
+  if (typeof isBotTurn === 'function' && isBotTurn()) return false;
   // Never allow a new move after checkmate, stalemate, or draw. Navigation,
   // Undo, and position editing remain available through their own controls.
   if (typeof isFinishedPosition === 'function' && isFinishedPosition()) {
@@ -832,6 +837,7 @@ function tryMakeMove(from, to, promotion = null) {
   // Puzzle play mode: grade the move the user just made.
   try { if (state.puzzle) onPuzzleMovePlayed(result.san); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}
+  try { scheduleBotMove(); } catch (e) {}
   return true;
 }
 

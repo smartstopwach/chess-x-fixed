@@ -195,6 +195,15 @@ to numbered grid columns, which left a phone with a 56px-wide board.
 - Eval bar visualization
 - **"Hide Engine"** button — critical for clean recording
 
+### 🤖 Play Against Bot
+- Available in all three playable modes: Normal, Puzzle after leaving position editing, and Custom Setup after **START FROM POSITION**.
+- Hidden automatically while a position is being edited, so the bot cannot interfere with piece placement or puzzle authoring.
+- Starts from the exact position currently on the board and keeps the existing move list; it never resets a half-played game.
+- The side at the bottom of the board is always **You**. The bot plays the opposite side.
+- Press **Flip** during a game to switch the human and bot sides. Any active search is cancelled safely and restarted for the new bot side without losing the position.
+- Includes approximate bot-strength choices from **400 to 2400 Elo**. The UI value is translated to Stockfish skill/depth and calibrated Elo where the engine supports it.
+- If the bot is to move when the game starts, it moves automatically; otherwise it waits for your move.
+
 ### 🎥 Recording Mode (one-click)
 - Activated with the prominent red **RECORDING MODE** button
 - Hides everything except the board, lesson title, and essential teaching controls

@@ -569,6 +569,7 @@ function startFromPosition() {
 
   renderAll();
   updateFen();
+  try { restartBotAfterPositionChange(); } catch (e) {}
   try { requestEngineEval(); } catch (e) {}
   toast('Position set — start playing or drawing annotations', 'success');
 }

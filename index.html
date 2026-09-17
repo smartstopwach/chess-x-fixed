@@ -504,6 +504,34 @@
   <!-- RIGHT SIDEBAR -->
   <aside class="sidebar sidebar-right" id="rightSidebar">
 
+    <!-- Play against Stockfish from the current position -->
+    <div class="panel bot-panel" id="botPanel" hidden>
+      <div class="panel-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.8 1.8 4 1.8s2.8-.6 4-1.8"/><path d="M12 3v3M4.9 5.1l2.1 2.1M19.1 5.1 17 7.2"/></svg>
+        Play Against Bot
+      </div>
+      <div class="bot-side-info" id="botSideInfo">You: White · Bot: Black</div>
+      <div class="bot-help">Flip the board to change your side. Your current position and move list are kept.</div>
+      <div class="row bot-controls-row">
+        <label class="small-label" for="botElo">Bot Elo</label>
+        <select id="botElo" aria-label="Bot Elo">
+          <option value="400">400 · Beginner</option>
+          <option value="600">600 · Beginner</option>
+          <option value="800">800 · Easy</option>
+          <option value="1000" selected>1000 · Easy</option>
+          <option value="1200">1200 · Club</option>
+          <option value="1400">1400 · Club</option>
+          <option value="1600">1600 · Strong</option>
+          <option value="1800">1800 · Strong</option>
+          <option value="2000">2000 · Expert</option>
+          <option value="2200">2200 · Expert</option>
+          <option value="2400">2400 · Master</option>
+        </select>
+      </div>
+      <button class="btn-primary-full bot-toggle" id="btnBotToggle" type="button">Play Against Bot</button>
+      <div class="bot-status" id="botStatus" role="status" aria-live="polite">Ready — flip the board to choose your side.</div>
+    </div>
+
     <!-- Stockfish Engine -->
     <div class="panel" id="enginePanel">
       <div class="panel-title">
