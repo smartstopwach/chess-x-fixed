@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 265, `expected the current 265 named declarations, found ${found.length}`);
+assert(found.length === 267, `expected the current 267 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -132,6 +132,7 @@ check('message, audio, material and promotion helpers', () => {
   window.playMoveErrorSound();
   const audio = getAudioCounts();
   assert(audio.audioCreated === 1 && audio.oscillatorsStarted === 3, 'audio scheduling');
+  assert(window.playCheckSoundIfNeeded({ san: 'Qh5+' }) === true, 'check sound scheduling');
   window.AudioContext = class { constructor() { throw new Error('blocked'); } };
   window.playPieceMoveSound(); // browser restriction must remain a no-op
 });
@@ -142,6 +143,7 @@ check('web app install and download controls are present', () => {
   const download = window.document.getElementById('btnDownloadApp');
   const offlineNote = window.document.getElementById('appOfflineNote');
   const serviceWorker = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
+  assert(fs.existsSync(path.join(ROOT, 'audio', 'check.wav')), 'check sound asset');
   assert(manifestLink && manifestLink.getAttribute('href') === 'manifest.webmanifest', 'manifest link');
   assert(installButton && typeof window.initWebAppControls === 'function', 'install control');
   assert(download && download.getAttribute('href') === 'ChessX-WebApp.zip', 'download link');

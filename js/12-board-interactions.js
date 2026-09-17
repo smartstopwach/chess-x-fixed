@@ -822,6 +822,7 @@ function tryMakeMove(from, to, promotion = null) {
   state.history.push(result.san);
   state.historyIndex = state.history.length - 1;
   playPieceMoveSound(result);
+  playCheckSoundIfNeeded(result);
 
   // A real move was made: hand the clock over (it used to switch on any board
   // click, so drawing an arrow also flipped whose time was running).

@@ -15,6 +15,7 @@ const APP_SHELL = [
   './stockfish-worker.js',
   './audio/move.wav',
   './audio/error.wav',
+  './audio/check.wav',
   './puzzle-library-example.json',
   './css/00-base.css',
   './css/10-topbar.css',

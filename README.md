@@ -14,6 +14,7 @@ ChessX is a **single-page, browser-based chess studio** designed for recording c
 - Board coordinates, flip, reset, undo
 - Fullscreen and zoom controls
 - A short, subtle move cue after successful moves and piece placements in every mode
+- A distinct two-note check/checkmate alert, cached locally for offline play
 - 6 board themes (Classic, Tournament, Wooden, Dark, Minimal, Green)
 - 3 piece styles (Alpha, Merida, Classic)
 

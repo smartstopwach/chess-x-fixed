@@ -106,6 +106,57 @@ function playPieceMoveSound(move, delay = 0) {
   }
 }
 
+function playCheckSound(delay = 0) {
+  try {
+    // A short two-note alert is distinct from the wooden move tap and the
+    // descending illegal-move buzz. Keep it local so it also works offline.
+    if (typeof window !== 'undefined' && typeof window.Audio === 'function') {
+      const audio = new window.Audio('audio/check.wav');
+      const playable = typeof audio.canPlayType !== 'function' || audio.canPlayType('audio/wav');
+      if (playable) {
+        audio.volume = 0.64;
+        const playSample = () => {
+          try {
+            audio.currentTime = 0;
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+          } catch (e) {}
+        };
+        const wait = Math.max(0, Number(delay) || 0) * 1000;
+        if (wait > 0) setTimeout(playSample, wait);
+        else playSample();
+        return true;
+      }
+    }
+
+    if (!prepareMoveAudio()) return false;
+    const ctx = moveAudioContext;
+    const now = Number(ctx.currentTime);
+    const start = (Number.isFinite(now) ? now : 0) + Math.max(0.01, Number(delay) || 0);
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, start);
+    oscillator.frequency.exponentialRampToValueAtTime(660, start + 0.24);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.29);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.30);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function playCheckSoundIfNeeded(move, delay = 0) {
+  const san = move && typeof move.san === 'string' ? move.san : '';
+  const givesCheck = !!(move && (move.check || move.mate)) || /[+#]$/.test(san);
+  return givesCheck ? playCheckSound(delay) : false;
+}
+
 function playMoveErrorSound() {
   try {
     // Use a local short buzzer when the browser can decode audio files. This

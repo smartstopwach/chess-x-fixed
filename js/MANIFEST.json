@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "d49b6fe839b5c2423a536c2644525558e9c5b91792fdafde4fac7a9c32885ac0",
+  "concat_sha256": "452db7441767aa572f6ff370ec76edb62ff9c8c302d5f28b4563dbd436b2a224",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -23,8 +23,8 @@
     },
     {
       "file": "js/03-utils.js",
-      "lines": 164,
-      "bytes": 6800
+      "lines": 215,
+      "bytes": 8772
     },
     {
       "file": "js/04-protect.js",
@@ -43,8 +43,8 @@
     },
     {
       "file": "js/12-board-interactions.js",
-      "lines": 859,
-      "bytes": 32739
+      "lines": 860,
+      "bytes": 32773
     },
     {
       "file": "js/13-annotation-tools.js",
@@ -98,8 +98,8 @@
     },
     {
       "file": "js/23-puzzle-crud.js",
-      "lines": 473,
-      "bytes": 16800
+      "lines": 475,
+      "bytes": 16885
     },
     {
       "file": "js/24-puzzle-editor-board.js",
@@ -113,8 +113,8 @@
     },
     {
       "file": "js/26-engine.js",
-      "lines": 467,
-      "bytes": 15523
+      "lines": 468,
+      "bytes": 15557
     },
     {
       "file": "js/27-autofit.js",

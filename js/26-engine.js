@@ -423,6 +423,7 @@ function applyBotMove(uci) {
   state.history.push(result.san);
   state.historyIndex = state.history.length - 1;
   playPieceMoveSound(result);
+  playCheckSoundIfNeeded(result);
   try {
     if (state.clock && state.clock.running) {
       const ended = typeof stopClockIfGameIsOver === 'function' && stopClockIfGameIsOver();
