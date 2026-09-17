@@ -1,4 +1,5 @@
-const CACHE_NAME = 'chessx-app-v1';
+const CACHE_NAME = 'chessx-app-v2';
+const OPTIONAL_DOWNLOAD = './ChessX-WebApp.zip';
 const APP_SHELL = [
   './',
   './index.html',
@@ -87,7 +88,11 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => cache.addAll(APP_SHELL)
+        // The hosted site also caches the downloadable bundle. The archive
+        // intentionally does not contain itself, so this remains optional when
+        // the app is opened from an extracted download.
+        .then(() => cache.add(OPTIONAL_DOWNLOAD).catch(() => undefined)))
       .then(() => self.skipWaiting())
   );
 });
@@ -113,8 +118,9 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(request)
         .then(response => {
+          if (!response || !response.ok) throw new Error('navigation response unavailable');
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy)));
           return response;
         })
         .catch(() => caches.match('./index.html'))

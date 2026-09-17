@@ -7,8 +7,24 @@ let deferredInstallPrompt = null;
 function initWebAppControls() {
   const installButton = $('btnInstallApp');
   const installNote = $('appInstallNote');
+  const offlineNote = $('appOfflineNote');
+  let offlineSupportReady = false;
   const setNote = message => {
     if (installNote) installNote.textContent = message || '';
+  };
+  const updateOfflineNote = () => {
+    if (!offlineNote) return;
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (!offline) {
+      offlineNote.textContent = '';
+      return;
+    }
+    const localBundle = window.location.protocol === 'file:';
+    const cachedApp = localBundle || offlineSupportReady ||
+      (navigator.serviceWorker && navigator.serviceWorker.controller);
+    offlineNote.textContent = cachedApp
+      ? 'Offline mode: the cached ChessX app is running.'
+      : 'Offline: open ChessX once online to prepare it for offline use.';
   };
   const standalone = () => {
     const mediaStandalone = typeof window.matchMedia === 'function' &&
@@ -70,12 +86,23 @@ function initWebAppControls() {
     markInstalled();
   });
 
+  updateOfflineNote();
+  window.addEventListener('online', updateOfflineNote);
+  window.addEventListener('offline', updateOfflineNote);
+
   if (typeof navigator !== 'undefined' && navigator.serviceWorker &&
       typeof navigator.serviceWorker.register === 'function') {
-    navigator.serviceWorker.register('./service-worker.js').catch(() => {
-      // Opening the static site from file:// or a restricted host is still valid;
-      // only offline/PWA installation is unavailable in that environment.
-    });
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => navigator.serviceWorker.ready)
+      .then(() => {
+        offlineSupportReady = true;
+        updateOfflineNote();
+      })
+      .catch(() => {
+        // Opening the static site from file:// or a restricted host is still valid;
+        // the downloaded local files remain usable even when a service worker is unavailable.
+        updateOfflineNote();
+      });
   }
 }
 

@@ -140,9 +140,13 @@ check('web app install and download controls are present', () => {
   const manifestLink = window.document.querySelector('link[rel="manifest"]');
   const installButton = window.document.getElementById('btnInstallApp');
   const download = window.document.getElementById('btnDownloadApp');
+  const offlineNote = window.document.getElementById('appOfflineNote');
+  const serviceWorker = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
   assert(manifestLink && manifestLink.getAttribute('href') === 'manifest.webmanifest', 'manifest link');
   assert(installButton && typeof window.initWebAppControls === 'function', 'install control');
   assert(download && download.getAttribute('href') === 'ChessX-WebApp.zip', 'download link');
+  assert(offlineNote && serviceWorker.includes("cache.addAll(APP_SHELL)"), 'offline app shell');
+  assert(serviceWorker.includes("OPTIONAL_DOWNLOAD = './ChessX-WebApp.zip'"), 'offline download cache');
 });
 
 check('interaction state helpers and all annotation shapes', () => {

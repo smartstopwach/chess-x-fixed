@@ -464,8 +464,12 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - The front page includes **Web App** to install ChessX as a PWA on supported
   Android, iPadOS, iOS and desktop browsers. Safari shows its Add to Home Screen
   guidance when it cannot open an install prompt directly.
+- After the first successful online load, the service worker caches the complete
+  app shell, icons, engine, audio, and downloadable bundle so the installed app
+  continues to open and work without a connection.
 - **Download** saves `ChessX-WebApp.zip`, a complete static copy that can be
-  unzipped and served locally or from any static web host.
+  unzipped and served locally or from any static web host. The extracted bundle
+  includes all application assets and remains usable without internet access.
 
 ## 🚀 Usage
 
@@ -479,7 +483,9 @@ python3 -m http.server 8000
 npx serve
 ```
 
-Then visit `http://localhost:8000`.
+Then visit `http://localhost:8000`. Use a local/static HTTP server rather than
+opening the file directly when you want PWA installation and service-worker
+offline caching; the downloaded files themselves remain local and self-contained.
 
 ## 🌐 Browser Compatibility
 

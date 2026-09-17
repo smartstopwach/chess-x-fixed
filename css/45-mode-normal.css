@@ -175,7 +175,16 @@ body[data-mode="normal"] .layout.left-sidebar-visible #leftSidebar {
   text-align: center;
 }
 
-.app-install-note:empty { display: none; }
+.app-install-note:empty,
+.app-offline-note:empty { display: none; }
+
+.app-offline-note {
+  min-height: 18px;
+  margin: 4px auto 0;
+  color: #8bd49a;
+  font-size: 11px;
+  text-align: center;
+}
 
 .app-action.is-installed {
   border-color: rgba(63, 185, 80, 0.55);
