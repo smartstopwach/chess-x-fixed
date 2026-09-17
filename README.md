@@ -435,6 +435,7 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - **Export PGN** — download game as PGN
 - **Import Puzzle Library** — choose a `.json` file from the Library / Chapters panel. The importer checks the root schema, chapter/puzzle IDs, references, FEN legality, difficulty, timestamps, and every saved SAN solution before replacing local data; a bad file is rejected without touching the existing library
 - `puzzle-library-example.json` is a ready-to-import sample file
+- `puzzle-generation-prompt.txt` is an editable generation prompt with exact phase counts, ascending beginner-to-higher Elo ordering, no-draw filtering, and the current ChessX JSON schema
 - Auto-saves current lesson to localStorage
 
 ### 🎬 Built-in Screen Recording
