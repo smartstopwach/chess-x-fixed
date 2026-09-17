@@ -91,3 +91,107 @@ body[data-mode="normal"] .layout.left-sidebar-visible #leftSidebar {
     padding: 16px 14px;
   }
 }
+
+/* Web-app install/download actions on the mode picker. */
+.front-page-actions {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 24px auto 0;
+}
+
+.app-action {
+  min-width: 210px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.app-action:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+
+.app-action:active { transform: translateY(0); }
+
+.app-action-install {
+  border-color: rgba(232, 197, 71, 0.65);
+  background: rgba(232, 197, 71, 0.12);
+}
+
+.app-action-download {
+  border-color: rgba(84, 172, 255, 0.5);
+  background: rgba(84, 172, 255, 0.1);
+}
+
+.app-action-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-action-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.app-action-copy strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.app-action-copy small {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.app-install-note {
+  min-height: 18px;
+  margin: 10px auto 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: center;
+}
+
+.app-install-note:empty { display: none; }
+
+.app-action.is-installed {
+  border-color: rgba(63, 185, 80, 0.55);
+  background: rgba(63, 185, 80, 0.12);
+}
+
+@media (max-width: 600px) {
+  .front-page-actions {
+    width: 100%;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .app-action {
+    width: min(100%, 320px);
+    min-width: 0;
+    min-height: 48px;
+  }
+}

@@ -2,7 +2,7 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "60aa94002bc6e0610e78c9172a3df50e9baf03f7b38425ab84b2f2ccb98dad77",
+  "concat_sha256": "c86effd476c191dbb233cc9e8014223d448d57079cfb21176afd600c533462cb",
   "byte_identical": true,
   "files": 35,
   "parts": [
@@ -163,8 +163,8 @@
     },
     {
       "file": "css/45-mode-normal.css",
-      "lines": 93,
-      "bytes": 2002
+      "lines": 197,
+      "bytes": 3946
     },
     {
       "file": "css/46-checkmate.css",

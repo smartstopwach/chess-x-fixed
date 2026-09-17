@@ -460,6 +460,13 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
   tools now work with a finger exactly as they do with a mouse (tap-tap for a
   click-click arrow, swipe for a drag arrow)
 
+### 🌐 Web App and Download
+- The front page includes **Web App** to install ChessX as a PWA on supported
+  Android, iPadOS, iOS and desktop browsers. Safari shows its Add to Home Screen
+  guidance when it cannot open an install prompt directly.
+- **Download** saves `ChessX-WebApp.zip`, a complete static copy that can be
+  unzipped and served locally or from any static web host.
+
 ## 🚀 Usage
 
 It's a pure static website. Open `index.html` in any modern browser, or serve the folder with any static server:

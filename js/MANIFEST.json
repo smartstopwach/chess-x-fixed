@@ -2,7 +2,7 @@
   "source": "app.js",
   "source_bytes": 97288,
   "baseline_sha256": "21db0a23d604963b3d172f00be8d47087fc579b22e30a726bb21bdf6f388c746",
-  "concat_sha256": "8d438738e8a2b8ab450a0c721cd9a67c145372a8b8d6085e2964dd2ba1935279",
+  "concat_sha256": "a05f88c285f27b8dfaa4df4777039fd27321fd009e4d854715b173c15351c545",
   "byte_identical": true,
   "files": 32,
   "parts": [
@@ -163,8 +163,8 @@
     },
     {
       "file": "js/90-boot.js",
-      "lines": 126,
-      "bytes": 5139
+      "lines": 203,
+      "bytes": 8305
     }
   ]
 }
