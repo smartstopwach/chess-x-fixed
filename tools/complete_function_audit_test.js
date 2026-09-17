@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 267, `expected the current 267 named declarations, found ${found.length}`);
+assert(found.length === 268, `expected the current 268 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -197,6 +197,42 @@ check('bot controls follow flip side and stay hidden while editing', () => {
   window.state.bot.color = null;
   window.cancelBotSearch();
   window.renderAll();
+});
+
+check('puzzle navigation, counter and authoring guard', () => {
+  const fen = '4k3/8/8/8/8/8/8/R3K3 w - - 0 1';
+  const chapter = {
+    id: 'audit-navigation-chapter', name: 'Navigation', expanded: true,
+    puzzles: [1, 2, 3].map(n => ({
+      id: `audit-navigation-${n}`, title: `Puzzle ${n}`, description: '', solution: '',
+      difficulty: 1, tags: '', fen, chapterId: 'audit-navigation-chapter', createdAt: n,
+    })),
+  };
+  window.setMode('puzzle');
+  window.saveLibrary({ chapters: [chapter], activeChapterId: chapter.id, activePuzzleId: chapter.puzzles[0].id });
+  window.setAuthoringMode(false);
+  window.renderLibrary();
+  assert(typeof window.updatePuzzleProgress === 'function', 'progress helper');
+  assert(window.document.getElementById('puzzleProgress').textContent === '1/3', 'first counter');
+
+  const down = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+  window.document.dispatchEvent(down);
+  assert(down.defaultPrevented && window.getLibrary().activePuzzleId === chapter.puzzles[1].id, 'down navigation');
+  assert(window.document.getElementById('puzzleProgress').textContent === '2/3', 'second counter');
+
+  const up = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+  window.document.dispatchEvent(up);
+  assert(up.defaultPrevented && window.getLibrary().activePuzzleId === chapter.puzzles[0].id, 'up navigation');
+
+  const firstUp = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+  window.document.dispatchEvent(firstUp);
+  assert(firstUp.defaultPrevented && window.getLibrary().activePuzzleId === chapter.puzzles[0].id, 'first previous no-op');
+
+  window.setAuthoringMode(true);
+  const editDown = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+  window.document.dispatchEvent(editDown);
+  assert(!editDown.defaultPrevented && window.getLibrary().activePuzzleId === chapter.puzzles[0].id, 'authoring guard');
+  window.setAuthoringMode(false);
 });
 
 check('interaction state helpers and all annotation shapes', () => {

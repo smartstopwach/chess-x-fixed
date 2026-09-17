@@ -3,6 +3,24 @@ function stars(n) {
   return '★'.repeat(d) + '☆'.repeat(5 - d);
 }
 
+function updatePuzzleProgress() {
+  const el = $('puzzleProgress');
+  if (!el) return;
+  const lib = getLibrary();
+  let chapter = (lib.chapters || []).find(c => c.id === lib.activeChapterId);
+  if (!chapter && lib.activePuzzleId) {
+    chapter = (lib.chapters || []).find(c => (c.puzzles || []).some(p => p.id === lib.activePuzzleId));
+  }
+  chapter = chapter || (lib.chapters || [])[0];
+  const puzzles = chapter && Array.isArray(chapter.puzzles) ? chapter.puzzles : [];
+  const current = puzzles.findIndex(p => p.id === lib.activePuzzleId);
+  const position = current >= 0 ? current + 1 : 0;
+  el.textContent = `${position}/${puzzles.length}`;
+  el.title = chapter
+    ? `${chapter.name} · ↑ Previous puzzle · ↓ Next puzzle`
+    : 'Select a puzzle to start';
+}
+
 function renderLibrary(filter = '') {
   const tree = $('libraryTree');
   if (!tree) return;
@@ -10,6 +28,7 @@ function renderLibrary(filter = '') {
   const f = filter.toLowerCase().trim();
   if (!lib.chapters.length) {
     tree.innerHTML = '<div class="library-empty">No chapters yet. Click + to create one.</div>';
+    updatePuzzleProgress();
     return;
   }
   let html = '';
@@ -58,6 +77,7 @@ function renderLibrary(filter = '') {
     html += '</div></div>';
   }
   tree.innerHTML = html;
+  updatePuzzleProgress();
 
   // Wire up event delegation
   tree.onclick = (e) => {
@@ -70,26 +90,36 @@ function renderLibrary(filter = '') {
   };
 }
 
-// Keyboard navigation follows the library order across chapters. The Down
-// arrow is intentionally limited to Puzzle mode so normal chess-board arrow
-// keys and text-entry controls keep their existing meaning.
+// Keyboard navigation stays inside the active chapter. That keeps a chapter
+// with 30 puzzles on a clear 1/30, 2/30 ... sequence instead of jumping into
+// an unrelated chapter. Up = previous, Down = next; the ends are safe no-ops.
 function switchPuzzleByOffset(offset = 1) {
   if (!document.body || document.body.dataset.mode !== 'puzzle' || document.body.dataset.testing === 'true') return false;
+  if (typeof isAuthoringMode === 'function' && isAuthoringMode()) return false;
   const lib = getLibrary();
-  const entries = [];
-  (lib.chapters || []).forEach(chapter => {
-    (chapter.puzzles || []).forEach(puzzle => entries.push({ chapter, puzzle }));
-  });
+  let chapter = (lib.chapters || []).find(c => c.id === lib.activeChapterId);
+  if (!chapter && lib.activePuzzleId) {
+    chapter = (lib.chapters || []).find(c => (c.puzzles || []).some(p => p.id === lib.activePuzzleId));
+  }
+  chapter = chapter || (lib.chapters || [])[0];
+  const entries = chapter
+    ? (chapter.puzzles || []).map(puzzle => ({ chapter, puzzle }))
+    : [];
   if (!entries.length) {
-    toast('No puzzles available', 'info');
+    toast('No puzzles available in this chapter', 'info');
     return false;
   }
 
   const current = entries.findIndex(entry => entry.puzzle.id === lib.activePuzzleId);
   const step = Number(offset) < 0 ? -1 : 1;
+  if (current >= 0 && (current + step < 0 || current + step >= entries.length)) {
+    // Consume the key in Puzzle mode, but never wrap from the first puzzle to
+    // the last (or the last puzzle to the first).
+    return true;
+  }
   const nextIndex = current < 0
     ? (step > 0 ? 0 : entries.length - 1)
-    : (current + step + entries.length) % entries.length;
+    : current + step;
   const target = entries[nextIndex];
   handleLibraryAction('select-puzzle', target.chapter.id, target.puzzle.id);
   return true;

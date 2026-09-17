@@ -439,7 +439,8 @@ async function runMasterSuite() {
     const exported = JSON.stringify(activeLib);
     assert(exported.includes(chapName));
 
-    // Down-arrow puzzle navigation follows the library order.
+    // Up/down puzzle navigation follows the active chapter and exposes the
+    // selected puzzle's 1/total counter.
     const navFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     const navOne = {
       id: window.uniqueId('puzzle'), title: 'Navigation One', description: '', solution: '',
@@ -454,6 +455,8 @@ async function runMasterSuite() {
     activeLib.activePuzzleId = navOne.id;
     window.saveLibrary(activeLib);
     window.renderLibrary();
+    assert($('puzzleProgress').textContent === '2/3', 'Counter starts at the selected puzzle position');
+
     const down = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
     document.dispatchEvent(down);
     assert(down.defaultPrevented === true, 'Down arrow shortcut was consumed');
@@ -461,9 +464,36 @@ async function runMasterSuite() {
     assert(navigatedLib.activeChapterId === newChap.id, 'Active chapter follows the selected puzzle');
     assert(navigatedLib.activePuzzleId === navTwo.id, 'Down arrow loaded the next puzzle');
     assert(window.state.game.fen() === navFen, 'Next puzzle position loaded onto the board');
+    assert($('puzzleProgress').textContent === '3/3', 'Counter advances to the last puzzle');
     assert(document.body.dataset.authoring === 'false' && window.state.setupMode === false, 'Next puzzle is playable');
     const activeRow = document.querySelector(`[data-action="select-puzzle"][data-puzzle-id="${navTwo.id}"]`);
     assert(activeRow && activeRow.classList.contains('active'), 'Library highlights the next puzzle');
+
+    const lastId = window.getLibrary().activePuzzleId;
+    const atLast = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    document.dispatchEvent(atLast);
+    assert(atLast.defaultPrevented === true && window.getLibrary().activePuzzleId === lastId, 'Next at the last puzzle is a safe no-op');
+
+    const up = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    document.dispatchEvent(up);
+    assert(up.defaultPrevented === true && window.getLibrary().activePuzzleId === navOne.id, 'Up arrow loads the previous puzzle');
+    assert($('puzzleProgress').textContent === '2/3', 'Counter moves back to the previous puzzle');
+
+    const first = foundChap.puzzles[0];
+    activeLib.activePuzzleId = first.id;
+    activeLib.activeChapterId = newChap.id;
+    window.saveLibrary(activeLib);
+    window.renderLibrary();
+    const atFirst = new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    document.dispatchEvent(atFirst);
+    assert(atFirst.defaultPrevented === true && window.getLibrary().activePuzzleId === first.id, 'Previous at the first puzzle is a safe no-op');
+    assert($('puzzleProgress').textContent === '1/3', 'Counter shows the first puzzle');
+
+    window.setAuthoringMode(true);
+    const whileEditing = new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    document.dispatchEvent(whileEditing);
+    assert(whileEditing.defaultPrevented === false && window.getLibrary().activePuzzleId === first.id, 'Authoring mode ignores puzzle navigation');
+    window.setAuthoringMode(false);
   });
 
   test('PUZZLE/IMPORT', 'strictly validates imported library JSON before storage', () => {

@@ -93,13 +93,13 @@
     },
     {
       "file": "js/22-puzzle-library-ui.js",
-      "lines": 252,
-      "bytes": 10086
+      "lines": 282,
+      "bytes": 11448
     },
     {
       "file": "js/23-puzzle-crud.js",
-      "lines": 475,
-      "bytes": 16885
+      "lines": 476,
+      "bytes": 16959
     },
     {
       "file": "js/24-puzzle-editor-board.js",
@@ -133,8 +133,8 @@
     },
     {
       "file": "js/30-keyboard.js",
-      "lines": 108,
-      "bytes": 4054
+      "lines": 111,
+      "bytes": 4189
     },
     {
       "file": "js/31-render-all.js",

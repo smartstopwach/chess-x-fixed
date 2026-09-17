@@ -1,6 +1,7 @@
 function loadPuzzleToEditor(puzzleId) {
   if (state.bot && state.bot.active && typeof stopBotGame === 'function') stopBotGame(false);
   const lib = getLibrary();
+  if (typeof updatePuzzleProgress === 'function') updatePuzzleProgress();
   let puzzle = null;
   let chapterId = null;
   for (const chap of lib.chapters) {

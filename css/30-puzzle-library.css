@@ -117,6 +117,19 @@
   border-color: var(--accent);
 }
 
+.puzzle-progress {
+  margin: 6px 0 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  color: var(--accent);
+  background: rgba(232, 197, 71, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+
 .library-puzzles {
   padding-left: 16px;
   display: none;

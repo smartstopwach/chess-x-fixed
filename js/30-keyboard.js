@@ -68,6 +68,9 @@ document.addEventListener('keydown', (e) => {
       break;
     case 'ArrowLeft': e.preventDefault(); prevMove(); break;
     case 'ArrowRight': e.preventDefault(); nextMove(); break;
+    case 'ArrowUp':
+      if (typeof switchPuzzleByOffset === 'function' && switchPuzzleByOffset(-1)) e.preventDefault();
+      break;
     case 'ArrowDown':
       if (typeof switchPuzzleByOffset === 'function' && switchPuzzleByOffset(1)) e.preventDefault();
       break;
