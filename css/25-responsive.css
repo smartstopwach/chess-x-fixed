@@ -80,14 +80,16 @@
     height: auto;
     min-height: 100%;
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
+    display: block;
     height: auto;
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .topbar {
@@ -143,6 +145,7 @@
     width: 100%;
     height: auto;
     min-height: 0;
+    min-height: max-content;
     overflow: visible;
     gap: 8px;
     padding-top: 0;

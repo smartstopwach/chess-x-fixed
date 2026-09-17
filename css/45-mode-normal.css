@@ -26,6 +26,7 @@ body[data-mode="normal"] .layout.left-sidebar-visible #leftSidebar {
 @media (max-width: 600px) {
   .front-page {
     align-items: flex-start;
+    -webkit-overflow-scrolling: touch;
     padding-top: max(24px, env(safe-area-inset-top, 0px));
     padding-right: max(12px, env(safe-area-inset-right, 0px));
     padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));

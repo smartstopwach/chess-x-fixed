@@ -2,7 +2,7 @@
   "source": "styles.css",
   "source_bytes": 66811,
   "baseline_sha256": "4ef47cbda4101060871ac14f05215408a94421f36b967a7a0cb39c1cfac7adb1",
-  "concat_sha256": "2c4f53ef6c5afd1babed8c42826d55380b1ce04ff641f3e5ff0de096f7f77e19",
+  "concat_sha256": "daf9916d1c643d6df6e428ff0204f4995d17df062217372115e63b0e0f6fd826",
   "byte_identical": true,
   "files": 35,
   "parts": [
@@ -88,8 +88,8 @@
     },
     {
       "file": "css/25-responsive.css",
-      "lines": 324,
-      "bytes": 7978
+      "lines": 327,
+      "bytes": 8065
     },
     {
       "file": "css/26-right-sidebar.css",
@@ -163,8 +163,8 @@
     },
     {
       "file": "css/45-mode-normal.css",
-      "lines": 92,
-      "bytes": 1963
+      "lines": 93,
+      "bytes": 2002
     },
     {
       "file": "css/46-checkmate.css",
