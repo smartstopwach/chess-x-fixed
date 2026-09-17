@@ -55,6 +55,106 @@ function saveLibrary(lib) {
   }
 }
 
+// Merge an imported library into the current library instead of replacing it.
+// Imports are intentionally additive: an accidental second import must never
+// make the puzzles from the first file disappear. A repeated export is treated
+// as an idempotent import, while a conflicting id gets a fresh id rather than
+// overwriting existing data.
+function mergePuzzleLibraries(existingInput, importedInput) {
+  const existing = existingInput && Array.isArray(existingInput.chapters) ? existingInput : { chapters: [] };
+  const imported = importedInput && Array.isArray(importedInput.chapters) ? importedInput : { chapters: [] };
+  const merged = {
+    chapters: existing.chapters.map(chapter => ({
+      ...chapter,
+      puzzles: Array.isArray(chapter.puzzles) ? chapter.puzzles.map(puzzle => ({ ...puzzle })) : [],
+    })),
+    activeChapterId: existing.activeChapterId || null,
+    activePuzzleId: existing.activePuzzleId || null,
+  };
+  const chapterById = new Map(merged.chapters.map(chapter => [chapter.id, chapter]));
+  const puzzleById = new Map();
+  merged.chapters.forEach(chapter => {
+    chapter.puzzles.forEach(puzzle => puzzleById.set(puzzle.id, { chapter, puzzle }));
+  });
+
+  const chapterMap = new Map();
+  const puzzleMap = new Map();
+  let addedChapters = 0;
+  let addedPuzzles = 0;
+  let skippedPuzzles = 0;
+  let remappedPuzzles = 0;
+
+  const samePuzzle = (a, b) => a.title === b.title
+    && (a.description || '') === (b.description || '')
+    && (a.solution || '') === (b.solution || '')
+    && Number(a.difficulty || 3) === Number(b.difficulty || 3)
+    && (a.tags || '') === (b.tags || '')
+    && a.fen === b.fen;
+
+  const freshPuzzleId = (requestedId) => {
+    let candidate = `${requestedId}-imported`;
+    while (puzzleById.has(candidate)) {
+      candidate = typeof uniqueId === 'function' ? uniqueId('puzzle') : `${requestedId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    }
+    return candidate;
+  };
+
+  imported.chapters.forEach(importedChapter => {
+    let targetChapter = chapterById.get(importedChapter.id);
+    if (!targetChapter) {
+      targetChapter = {
+        id: importedChapter.id,
+        name: importedChapter.name,
+        expanded: importedChapter.expanded !== false,
+        puzzles: [],
+      };
+      merged.chapters.push(targetChapter);
+      chapterById.set(targetChapter.id, targetChapter);
+      addedChapters++;
+    }
+    chapterMap.set(importedChapter.id, targetChapter.id);
+
+    (importedChapter.puzzles || []).forEach(importedPuzzle => {
+      const normalized = { ...importedPuzzle, chapterId: targetChapter.id };
+      const collision = puzzleById.get(normalized.id);
+      if (collision && collision.chapter.id === targetChapter.id && samePuzzle(collision.puzzle, normalized)) {
+        puzzleMap.set(importedPuzzle.id, collision.puzzle.id);
+        skippedPuzzles++;
+        return;
+      }
+
+      if (collision) {
+        normalized.id = freshPuzzleId(normalized.id);
+        remappedPuzzles++;
+      }
+      targetChapter.puzzles.push(normalized);
+      puzzleById.set(normalized.id, { chapter: targetChapter, puzzle: normalized });
+      puzzleMap.set(importedPuzzle.id, normalized.id);
+      addedPuzzles++;
+    });
+  });
+
+  // Follow the imported file's active selection when it has one, including a
+  // remapped puzzle id. If it has no active ids, keep the current selection.
+  if (imported.activeChapterId && chapterMap.has(imported.activeChapterId)) {
+    merged.activeChapterId = chapterMap.get(imported.activeChapterId);
+    merged.activePuzzleId = imported.activePuzzleId
+      ? (puzzleMap.get(imported.activePuzzleId) || null)
+      : null;
+  }
+  if (imported.activePuzzleId && puzzleMap.has(imported.activePuzzleId)) {
+    merged.activePuzzleId = puzzleMap.get(imported.activePuzzleId);
+  }
+
+  return {
+    library: merged,
+    addedChapters,
+    addedPuzzles,
+    skippedPuzzles,
+    remappedPuzzles,
+  };
+}
+
 function getActiveChapter() {
   const lib = getLibrary();
   if (!lib.chapters || !lib.chapters.length) return null;

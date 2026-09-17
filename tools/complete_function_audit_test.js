@@ -94,7 +94,7 @@ function assert(condition, message) {
 const found = discoveredFunctions();
 const names = new Set(found.map(x => x.name));
 assert(found.length === names.size, 'duplicate named function declarations found');
-assert(found.length === 268, `expected the current 268 named declarations, found ${found.length}`);
+assert(found.length === 269, `expected the current 269 named declarations, found ${found.length}`);
 
 const { dom, window, getAudioCounts } = makeWindow();
 const results = [];
@@ -311,6 +311,36 @@ check('puzzle import validator helpers cover valid and invalid input', () => {
   assert(!invalid.ok && invalid.errors.some(e => e.includes('.fen')), 'invalid import');
   const exported = window.libraryExportPayload(valid.library);
   assert(exported.format === 'chessx-puzzle-library' && exported.version === 1 && exported.exportedAt, 'export metadata');
+
+  const mergeFen = '6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1';
+  const existing = {
+    chapters: [{
+      id: 'merge-chapter', name: 'Existing', expanded: true,
+      puzzles: [{
+        id: 'merge-existing', title: 'Keep me', description: 'old', solution: 'Re8#',
+        difficulty: 2, tags: 'mate', fen: mergeFen, chapterId: 'merge-chapter', createdAt: 1,
+      }],
+    }],
+    activeChapterId: 'merge-chapter', activePuzzleId: 'merge-existing',
+  };
+  const incoming = {
+    chapters: [{
+      id: 'merge-chapter', name: 'Imported name', expanded: true,
+      puzzles: [
+        { ...existing.chapters[0].puzzles[0], createdAt: 2 },
+        { ...existing.chapters[0].puzzles[0], id: 'merge-new', title: 'New puzzle', description: 'new' },
+        { ...existing.chapters[0].puzzles[0], id: 'merge-existing', title: 'Conflicting replacement' },
+      ],
+    }],
+    activeChapterId: 'merge-chapter', activePuzzleId: 'merge-new',
+  };
+  const merged = window.mergePuzzleLibraries(existing, incoming);
+  const mergedPuzzles = merged.library.chapters[0].puzzles;
+  assert(merged.addedPuzzles === 2 && merged.skippedPuzzles === 1 && merged.remappedPuzzles === 1, 'merge statistics');
+  assert(mergedPuzzles.some(p => p.title === 'Keep me'), 'existing puzzle was preserved');
+  assert(mergedPuzzles.some(p => p.title === 'New puzzle'), 'new puzzle was added');
+  assert(mergedPuzzles.some(p => p.title === 'Conflicting replacement'), 'conflicting puzzle was remapped instead of overwriting');
+  assert(merged.library.activePuzzleId === 'merge-new', 'imported active puzzle was selected');
 });
 
 check('layout, clock and engine boundary helpers', () => {

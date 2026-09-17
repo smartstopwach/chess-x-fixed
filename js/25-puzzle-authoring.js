@@ -186,18 +186,22 @@ function importLibrary(file) {
       return; // Never overwrite a working library with a bad file.
     }
 
-    const lib = report.library;
+    const existing = getLibrary();
+    const merge = mergePuzzleLibraries(existing, report.library);
+    const lib = merge.library;
     saveLibrary(lib);
     renderLibrary($('librarySearch')?.value || '');
     renderChapterSelect();
-    // If the exported file remembers an active puzzle, refill the editor too;
-    // otherwise the old form used to remain visible after a successful import.
+    // If the imported file remembers an active puzzle, refill the editor too;
+    // otherwise keep the current selection and form state intact.
     if (lib.activePuzzleId && typeof loadPuzzleToEditor === 'function') {
       loadPuzzleToEditor(lib.activePuzzleId);
     }
     const warningText = report.warnings.length ? ` (${report.warnings.length} warning(s))` : '';
     if (report.warnings.length) console.warn('Puzzle library import warnings:', report.warnings);
-    toast(`Imported ${lib.chapters.length} chapter(s), ${lib.chapters.reduce((n, c) => n + c.puzzles.length, 0)} puzzle(s)${warningText}`, 'success');
+    const duplicateText = merge.skippedPuzzles ? `, ${merge.skippedPuzzles} duplicate(s) skipped` : '';
+    const remapText = merge.remappedPuzzles ? `, ${merge.remappedPuzzles} conflicting ID(s) remapped` : '';
+    toast(`Merged ${merge.addedPuzzles} new puzzle(s) in ${merge.addedChapters} new chapter(s)${duplicateText}${remapText}${warningText}; existing puzzles preserved`, 'success');
   };
   reader.readAsText(file);
 }

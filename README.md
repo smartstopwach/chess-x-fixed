@@ -433,7 +433,7 @@ Triangle, Hexagon and Rectangle have no shortcut — pick them from the palette.
 - **Save Lesson** — exports full lesson as JSON (position + moves + annotations + notes + bookmarks + theme)
 - **Load Lesson** — restore from JSON
 - **Export PGN** — download game as PGN
-- **Import Puzzle Library** — choose a `.json` file from the Library / Chapters panel. The importer checks the root schema, chapter/puzzle IDs, references, FEN legality, difficulty, timestamps, and every saved SAN solution before replacing local data; a bad file is rejected without touching the existing library
+- **Import Puzzle Library** — choose a `.json` file from the Library / Chapters panel. The importer checks the root schema, chapter/puzzle IDs, references, FEN legality, difficulty, timestamps, and every saved SAN solution before merging the file into the current library; existing puzzles are preserved, exact duplicates are skipped, and conflicting IDs are remapped instead of overwriting data. A bad file is rejected without touching the existing library
 - `puzzle-library-example.json` is a ready-to-import sample file
 ### 🧩 Full Puzzle Generation Prompt
 

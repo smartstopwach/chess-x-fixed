@@ -83,8 +83,8 @@
     },
     {
       "file": "js/20-puzzle-library-store.js",
-      "lines": 330,
-      "bytes": 11729
+      "lines": 430,
+      "bytes": 15632
     },
     {
       "file": "js/21-puzzle-uid.js",
@@ -108,8 +108,8 @@
     },
     {
       "file": "js/25-puzzle-authoring.js",
-      "lines": 204,
-      "bytes": 7640
+      "lines": 208,
+      "bytes": 7967
     },
     {
       "file": "js/26-engine.js",

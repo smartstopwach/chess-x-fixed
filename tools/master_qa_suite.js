@@ -544,6 +544,17 @@ async function runMasterSuite() {
     duplicate.chapters[0].puzzles[0].id = 'other';
     duplicate.chapters[0].puzzles.push({ ...duplicate.chapters[0].puzzles[0], id: 'other', title: 'Duplicate' });
     assert(!window.validatePuzzleLibrary(duplicate).ok, 'duplicate IDs were accepted');
+
+    const incoming = JSON.parse(JSON.stringify(good));
+    incoming.chapters[0].puzzles.push({
+      ...incoming.chapters[0].puzzles[0], id: 'imported-second-puzzle', title: 'Second imported puzzle'
+    });
+    const merged = window.mergePuzzleLibraries(accepted.library, incoming);
+    const mergedChapter = merged.library.chapters.find(c => c.id === 'import-chapter');
+    assert(mergedChapter.puzzles.length === 2, 'second import is merged into the existing chapter');
+    assert(mergedChapter.puzzles.some(p => p.id === 'import-puzzle'), 'first imported puzzle is preserved');
+    assert(mergedChapter.puzzles.some(p => p.id === 'imported-second-puzzle'), 'second imported puzzle is added');
+    assert(merged.skippedPuzzles === 1, 're-imported puzzle is skipped rather than duplicated');
   });
 
   // ----------------------------------------------------
